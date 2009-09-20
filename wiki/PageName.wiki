@@ -1,6 +1,6 @@
 #summary NShape Purpose
 
-= Introduction =
+= What is NShape? =
 
 NShape is an Open Source diagram designing framework for .NET WinForms.
 Sofware developers use NShape to integrate diagramming capabilities into their applications. Using NShape, applications let users view, annotate, modify and create diagrams like flow charts, wiring schemes or project charts. NShape is open source and has a dual license which allows it to be employed for free in open source projects and for a license fee in commercial projects.
