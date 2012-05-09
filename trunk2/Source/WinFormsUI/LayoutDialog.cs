@@ -122,7 +122,6 @@ namespace Dataweb.NShape.WinFormsUI {
 		#region [Private] Methods
 
 		private void PrepareLayouter() {
-			UnregisterProjectEvents(project);
 			switch ((string)currentPanel.Tag) {
 				case "Expansion": // Distribution
 					if (layouter == null || !(layouter is ExpansionLayouter))
@@ -245,6 +244,14 @@ namespace Dataweb.NShape.WinFormsUI {
 		}
 
 
+		private void StartAnimatedPreview() {
+			UnregisterProjectEvents(project);
+			previewButton.Text = "Running";
+			layoutTimer.Interval = animationInterval;
+			layoutTimer.Start();
+		}
+		
+		
 		private void FinishAnimatedPreview() {
 			layoutTimer.Stop();
 			previewButton.Text = "Execute";
@@ -399,9 +406,7 @@ namespace Dataweb.NShape.WinFormsUI {
 					} else if (animatedRadioButton.Checked) {
 						SetShapes();
 						layouter.Prepare();
-						previewButton.Text = "Running";
-						layoutTimer.Interval = animationInterval;
-						layoutTimer.Start();
+						StartAnimatedPreview();
 					} else if (stepRadioButton.Checked) {
 						// TODO 2: This will not take into account, if selection changes between steps
 						// But that would be difficult to handle anyway.

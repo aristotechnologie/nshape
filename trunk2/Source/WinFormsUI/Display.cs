@@ -1944,8 +1944,9 @@ namespace Dataweb.NShape.WinFormsUI {
 			UnselectShapesOfInvisibleLayers();
 			// Update presenter
 			Invalidate();
-			// Perform notification
-			OnLayerVisibilityChanged(LayerHelper.GetLayersEventArgs(LayerHelper.GetLayers(layerIds, Diagram)));
+			// Perform notification only if a diagram is displayed.
+			if (Diagram != null) 
+				OnLayerVisibilityChanged(LayerHelper.GetLayersEventArgs(LayerHelper.GetLayers(layerIds, Diagram)));
 		}
 
 
@@ -1958,8 +1959,9 @@ namespace Dataweb.NShape.WinFormsUI {
 			else activeLayers ^= (activeLayers & layerIds);
 			// Update presenter
 			Invalidate();
-			// Perform notification
-			OnActiveLayersChanged(LayerHelper.GetLayersEventArgs(LayerHelper.GetLayers(layerIds, Diagram)));
+			// Perform notification only if a diagram is displayed.
+			if (Diagram != null)
+				OnActiveLayersChanged(LayerHelper.GetLayersEventArgs(LayerHelper.GetLayers(layerIds, Diagram)));
 		}
 
 
@@ -2091,6 +2093,8 @@ namespace Dataweb.NShape.WinFormsUI {
 		/// <ToBeCompleted></ToBeCompleted>
 		protected virtual void OnDiagramChanging(EventArgs eventArgs) {
 			ResetBounds();
+			hiddenLayers = LayerIds.None;
+			activeLayers = LayerIds.None;
 			if (DiagramChanging != null) DiagramChanging(this, eventArgs);
 		}
 
@@ -2390,14 +2394,16 @@ namespace Dataweb.NShape.WinFormsUI {
 										}
 									} else {
 										// Delete
-										if (CurrentTool != null && CurrentTool.IsToolActionPending)
-											CurrentTool.Cancel();
-										PerformDelete(Diagram, SelectedShapes, true);
-										// Route event to the current tool in order to refresh the tool - otherwise it will 
-										// not notice that the deleted shape was deleted...
-										if (CurrentTool != null)
-											CurrentTool.ProcessKeyEvent(this, WinFormHelpers.GetKeyEventArgs(KeyEventType.KeyDown, e));
-										e.Handled = true;
+										if (DiagramController.Owner.CanDeleteShapes(Diagram, SelectedShapes)) {
+											if (CurrentTool != null && CurrentTool.IsToolActionPending)
+												CurrentTool.Cancel();
+											PerformDelete(Diagram, SelectedShapes, true);
+											// Route event to the current tool in order to refresh the tool - otherwise it will 
+											// not notice that the deleted shape was deleted...
+											if (CurrentTool != null)
+												CurrentTool.ProcessKeyEvent(this, WinFormHelpers.GetKeyEventArgs(KeyEventType.KeyDown, e));
+											e.Handled = true;
+										}
 									}
 								}
 								break;
@@ -2890,7 +2896,9 @@ namespace Dataweb.NShape.WinFormsUI {
 			get { return currentGraphics; }
 			set {
 				if (currentGraphics != null) {
-					if (value != null) throw new InvalidOperationException("CurrentGraphics is not null.");
+					if (value != null) 
+						throw new InvalidOperationException("currentGraphics is not null. " +
+							"If this happens in the WinForms Designer, make sure your application's target framework is not a 'Client Profile' framework version.");
 					graphicsIsTransformed = false;
 				}
 				currentGraphics = value;
@@ -2939,6 +2947,7 @@ namespace Dataweb.NShape.WinFormsUI {
 				scrollBarHVisible = value;
 				scrollBarH.Visible = scrollBarHVisible;
 				hScrollBarPanel.Visible = scrollBarHVisible;
+				if (!scrollBarHVisible) SetScrollPosX(0);
 			}
 		}
 
@@ -2948,13 +2957,16 @@ namespace Dataweb.NShape.WinFormsUI {
 			set {
 				scrollBarVVisible = value;
 				scrollBarV.Visible = scrollBarVVisible;
+				if (!scrollBarVVisible) SetScrollPosY(0);
 			}
 		}
 
 
 		private Pen GridPen {
 			get {
-				if (gridPen == null) CreatePen(gridColor, gridAlpha, ref gridPen);
+				if (gridPen == null)
+					//CreatePen(gridColor, gridAlpha, 1, new float[2] { 2, 2 }, false, ref gridPen);
+					CreatePen(gridColor, gridAlpha, 1, null, false, ref gridPen);
 				return gridPen;
 			}
 		}
@@ -3828,26 +3840,36 @@ namespace Dataweb.NShape.WinFormsUI {
 
 
 		private void CreatePen(Color color, ref Pen pen) {
-			CreatePen(color, 255, 1, ref pen);
+			CreatePen(color, 255, 1, null, true, ref pen);
 		}
 
 
 		private void CreatePen(Color color, byte alpha, ref Pen pen) {
-			CreatePen(color, alpha, 1, ref pen);
+			CreatePen(color, alpha, 1, null, true, ref pen);
 		}
 
 
 		private void CreatePen(Color color, float lineWidth, ref Pen pen) {
-			CreatePen(color, 255, lineWidth, ref pen);
+			CreatePen(color, 255, lineWidth, null, true, ref pen);
 		}
 
 
 		private void CreatePen(Color color, byte alpha, float lineWidth, ref Pen pen) {
+			CreatePen(color, 255, lineWidth, null, true, ref pen);
+		}
+
+
+		private void CreatePen(Color color, byte alpha, float lineWidth, float[] dashPattern, bool highQuality, ref Pen pen) {
 			DisposeObject(ref pen);
 			pen = new Pen(alpha != 255 ? Color.FromArgb(alpha, color) : color, lineWidth);
-			pen.LineJoin = LineJoin.Round;
-			pen.StartCap = LineCap.Round;
-			pen.EndCap = LineCap.Round;
+			if (dashPattern != null) {
+				pen.DashPattern = dashPattern;
+				pen.DashStyle = System.Drawing.Drawing2D.DashStyle.Custom;
+			} else
+				pen.DashStyle = System.Drawing.Drawing2D.DashStyle.Solid;
+			pen.LineJoin = highQuality ? LineJoin.Round : LineJoin.Miter;
+			pen.StartCap = highQuality ? LineCap.Round : LineCap.Flat;
+			pen.EndCap = highQuality ? LineCap.Round : LineCap.Flat;
 		}
 
 
@@ -4695,10 +4717,9 @@ namespace Dataweb.NShape.WinFormsUI {
 
 
 		private MenuItemDef CreateAggregateMenuItemDef(Diagram diagram, IShapeCollection shapes, LayerIds activeLayers, Point position) {
-			bool isFeasible = diagramSetController.CanAggregateShapes(diagram, shapes);
-			string description = isFeasible ?
-				string.Format("Aggregate {0} shapes into composite shape", shapes.Count - 1)
-				: string.Format(notEnoughShapesSelectedText);
+			string reason;
+			bool isFeasible = diagramSetController.CanAggregateShapes(diagram, shapes, out reason);
+			string description = isFeasible ? string.Format("Aggregate {0} shapes into composite shape", shapes.Count - 1) : reason;
 			// Get host for aggregated child shapes
 			Shape compositeShape = shapes.Bottom;
 			if (compositeShape is ILinearShape) {
@@ -4712,10 +4733,10 @@ namespace Dataweb.NShape.WinFormsUI {
 
 
 		private MenuItemDef CreateUnaggregateMenuItemDef(Diagram diagram, IShapeCollection shapes) {
-			bool isFeasible = diagramSetController.CanSplitShapeAggregation(diagram, shapes);
-			string description;
-			if (isFeasible) description = "Disaggregate the selected shape aggregation";
-			else {
+			string reason = null;
+			bool isFeasible = diagramSetController.CanSplitShapeAggregation(diagram, shapes, out reason);
+			string description = isFeasible ? "Disaggregate the selected shape aggregation" : reason;
+			if (!isFeasible) {
 				if (shapes.Count <= 0)
 					description = noShapesSelectedText;
 				else if (shapes.Count == 1)
@@ -5331,11 +5352,8 @@ namespace Dataweb.NShape.WinFormsUI {
 
 		private void ScrollBar_VisibleChanged(object sender, EventArgs e) {
 			ScrollBar scrollBar = sender as ScrollBar;
-			if (scrollBar != null) {
+			if (scrollBar != null)
 				Invalidate(RectangleToClient(scrollBar.RectangleToScreen(scrollBar.Bounds)));
-				if (scrollBar == scrollBarH) SetScrollPosX(0);
-				else if (scrollBar == scrollBarV) SetScrollPosY(0);
-			}
 			ResetBounds();
 			//CalcDiagramPosition();
 			//// ToDo: Set ScrollBar's Min and Max properties

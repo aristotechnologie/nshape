@@ -979,15 +979,19 @@ namespace Dataweb.NShape {
 			string backupFilepath = Path.Combine(Path.GetDirectoryName(projectFilePath), Path.GetFileNameWithoutExtension(projectFilePath) + backupExtension);
 			string backupImageDir = CalcImageDirectoryName(projectFilePath) + backupExtension;
 			// Delete old backup (if one exists)
-			if (File.Exists(backupFilepath)) {
-				File.Delete(backupFilepath);
-				if (Directory.Exists(backupImageDir))
-					Directory.Delete(backupImageDir, true);
+			try {
+				if (File.Exists(backupFilepath)) {
+					File.Delete(backupFilepath);
+					if (Directory.Exists(backupImageDir))
+						Directory.Delete(backupImageDir, true);
+				}
+				// Rename current files
+				File.Move(projectFilePath, backupFilepath);
+				if (Directory.Exists(projectImageDir))
+					Directory.Move(projectImageDir, backupImageDir);
+			} catch (Exception) {
+				throw;
 			}
-			// Rename current files
-			File.Move(projectFilePath, backupFilepath);
-			if (Directory.Exists(projectImageDir))
-				Directory.Move(projectImageDir, backupImageDir);
 		}
 
 

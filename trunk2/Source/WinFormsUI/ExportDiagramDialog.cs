@@ -131,13 +131,19 @@ namespace Dataweb.NShape.WinFormsUI {
 		private void UpdateFileExtension() {
 			if (!string.IsNullOrEmpty(filePath)) {
 				string currExt = Path.GetExtension(filePath);
+				string newExt = GetFileExtension(imageFormat);
 				if (string.IsNullOrEmpty(currExt))
-					filePathTextBox.Text = filePath + GetFileExtension(imageFormat);
-				else if (IsStandardExtension(currExt)) {
-					string newExt = GetFileExtension(imageFormat);
-					if (string.Compare(currExt, newExt, StringComparison.InvariantCultureIgnoreCase) != 0)
-						filePathTextBox.Text = filePath.Replace(currExt, newExt);
-						//filePathTextBox.Text = Path.Combine(Path.GetDirectoryName(filePath), Path.GetFileNameWithoutExtension(filePath) + newExt);
+					filePathTextBox.Text = filePath + newExt;
+				else {
+					bool updateExtension = true;
+					if (!IsStandardExtension(currExt)) {
+						string msgTxt = string.Format("Do you want the file extension to be updated to '{0}'?", newExt);
+						updateExtension = (MessageBox.Show(this, msgTxt, "Update Extension", MessageBoxButtons.YesNo, MessageBoxIcon.Question) == DialogResult.Yes);
+					}
+					if (updateExtension) {
+						if (string.Compare(currExt, newExt, StringComparison.InvariantCultureIgnoreCase) != 0)
+							SetFilePath(filePath.Replace(currExt, newExt));
+					}
 				}
 			}
 		}
@@ -170,7 +176,33 @@ namespace Dataweb.NShape.WinFormsUI {
 		}
 
 
+		private void SetFilePath(string path) {
+			filePath = path;
+			if (filePathTextBox.Text != filePath) {
+				filePathTextBox.Text = filePath;
+				filePathChanged = true;
+			}
+			EnableOkButton();
+		}
+
+
+		private bool CanOverwriteFile(string path) {
+			if (File.Exists(path)) {
+				string msgTxt = string.Format("The file '{0}' already exists. Do you want to overwrite it?", path);
+				DialogResult res = MessageBox.Show(this, msgTxt, "Overwrite file", MessageBoxButtons.YesNo, MessageBoxIcon.Question);
+				return (res == System.Windows.Forms.DialogResult.Yes);
+			} else return true;
+		}
+
+
 		private void ExportImage() {
+			// Update file extension
+			if (string.IsNullOrEmpty(Path.GetExtension(filePath)))
+				SetFilePath(filePath + GetFileExtension(imageFormat));
+			// Check if the file path changed since last export
+			if (filePathChanged && !CanOverwriteFile(filePath))
+				return;
+
 			if (image == null) CreateImage();
 			if (image != null) {
 				switch (imageFormat) {
@@ -194,6 +226,7 @@ namespace Dataweb.NShape.WinFormsUI {
 					default: throw new NShapeUnsupportedValueException(imageFormat);
 				}
 			}
+			filePathChanged = false;
 		}
 
 
@@ -209,14 +242,6 @@ namespace Dataweb.NShape.WinFormsUI {
 			colorLabelFrontBrush = null;
 			colorLabel.Invalidate();
 			RefreshPreview();
-		}
-
-
-		private void SetFilePath(string path) {
-			filePath = path;
-			if (filePathTextBox.Text != filePath)
-				filePathTextBox.Text = filePath;
-			EnableOkButton();
 		}
 
 
@@ -360,12 +385,19 @@ namespace Dataweb.NShape.WinFormsUI {
 			saveFileDialog.AddExtension = true;
 			saveFileDialog.DefaultExt = GetFileExtension(imageFormat);
 			saveFileDialog.SupportMultiDottedExtensions = true;
+			saveFileDialog.OverwritePrompt = false;
 			if (saveFileDialog.ShowDialog() == DialogResult.OK) {
-				fileName = saveFileDialog.FileName;
-				if (string.IsNullOrEmpty(Path.GetExtension(fileName)))
-					fileName += GetFileExtension(imageFormat);
+				if (string.Compare(fileName, saveFileDialog.FileName) != 0) {
+					if (CanOverwriteFile(saveFileDialog.FileName)) {
+						fileName = saveFileDialog.FileName;
+						if (string.IsNullOrEmpty(Path.GetExtension(fileName)))
+							fileName += GetFileExtension(imageFormat);
+						// Update file path
+						SetFilePath(fileName);
+						filePathChanged = false;
+					}
+				}
 			}
-			SetFilePath(fileName);
 		}
 
 
@@ -594,6 +626,7 @@ namespace Dataweb.NShape.WinFormsUI {
 		private bool exportToClipboard;
 		private byte compressionQuality = 75;
 		private string filePath = null;
+		private bool filePathChanged = false;
 
 		// Fields
 		private IDiagramPresenter diagramPresenter = null;

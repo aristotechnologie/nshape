@@ -52,18 +52,6 @@ namespace Dataweb.NShape {
 		}
 
 
-		/// <ToBeCompleted></ToBeCompleted>
-		public static void AssertSupportedVersion(bool save, int version) {
-			int minVersion = save ? FirstSupportedSaveVersion : FirstSupportedLoadVersion;
-			int maxVersion = save ? LastSupportedSaveVersion : LastSupportedLoadVersion;
-			if (version < minVersion || version > maxVersion) {
-				string msg = string.Format("{0}ing repository failed: The repository is version {1} but this application only supports repositories version {2} to {3}.",
-					(save) ? "Save" : "Load", version, minVersion, maxVersion);
-				throw new NShapeException(msg);
-			}
-		}
-
-
 		/// <summary>
 		/// Constructs a new project instance.
 		/// </summary>
@@ -103,11 +91,6 @@ namespace Dataweb.NShape {
 		/// Occurs when a NShape library was loaded.
 		/// </summary>
 		public event EventHandler<LibraryLoadedEventArgs> LibraryLoaded;
-
-		/// <summary>
-		/// Occurs when templates were changed.
-		/// </summary>
-		public EventHandler TemplatesChanged;
 
 		/// <summary>
 		/// Occurs when styles were changed.
@@ -561,6 +544,18 @@ namespace Dataweb.NShape {
 		}
 
 		#endregion
+
+
+		/// <ToBeCompleted></ToBeCompleted>
+		internal static void AssertSupportedVersion(bool save, int version) {
+			int minVersion = save ? FirstSupportedSaveVersion : FirstSupportedLoadVersion;
+			int maxVersion = save ? LastSupportedSaveVersion : LastSupportedLoadVersion;
+			if (version < minVersion || version > maxVersion) {
+				string msg = string.Format("{0}ing repository failed: The repository is version {1} but this application only supports repositories version {2} to {3}.",
+					(save) ? "Save" : "Load", version, minVersion, maxVersion);
+				throw new NShapeException(msg);
+			}
+		}
 
 
 		#region [Private] Library Class

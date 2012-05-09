@@ -2,7 +2,7 @@
 <dataweb_nshape version="4">
   <project id="eaaa8518-c3ca-4e27-a0f4-6d293584e514" last_saved_utc="2012-02-07 13:26:21">
     <libraries>
-      <library name="GeneralShapes" assembly_name="Dataweb.NShape.GeneralShapes, Version=1.1.0.0, Culture=neutral, PublicKeyToken=1512080cd664963c" repository_version="4" />
+      <library name="GeneralShapes" assembly_name="Dataweb.NShape.GeneralShapes, Version=2.0.0.0, Culture=neutral, PublicKeyToken=1512080cd664963c" repository_version="4" />
     </libraries>
     <color_styles>
       <color_style id="2ca051e8-f499-4d39-b554-74c321b241e7" name="Background" title="" color="-4144960" transparency="0" convert_to_gray="False"></color_style>

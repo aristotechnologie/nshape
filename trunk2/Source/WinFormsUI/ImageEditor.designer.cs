@@ -72,8 +72,9 @@ namespace Dataweb.NShape.WinFormsUI {
 			this.pictureBox.Anchor = ((System.Windows.Forms.AnchorStyles)((((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Bottom) 
             | System.Windows.Forms.AnchorStyles.Left) 
             | System.Windows.Forms.AnchorStyles.Right)));
-			this.pictureBox.BackColor = System.Drawing.Color.Transparent;
+			this.pictureBox.BackColor = System.Drawing.Color.White;
 			this.pictureBox.BackgroundImageLayout = System.Windows.Forms.ImageLayout.Zoom;
+			this.pictureBox.BorderStyle = System.Windows.Forms.BorderStyle.FixedSingle;
 			this.pictureBox.Location = new System.Drawing.Point(12, 12);
 			this.pictureBox.Name = "pictureBox";
 			this.pictureBox.Size = new System.Drawing.Size(421, 291);

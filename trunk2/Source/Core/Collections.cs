@@ -132,7 +132,7 @@ namespace Dataweb.NShape.Advanced {
 
 		
 		public Layer FindLayer(string name) {
-			if (string.IsNullOrEmpty(name)) throw new ArgumentNullException("name");
+			if (name == null) throw new ArgumentNullException("name");
 			int cnt = layers.Count;
 			for (int i = 0; i < cnt; ++i) {
 				if (layers[i] != null && string.Compare(layers[i].Name, name, StringComparison.InvariantCultureIgnoreCase) == 0)

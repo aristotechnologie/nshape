@@ -983,7 +983,7 @@ namespace Dataweb.NShape.Designer {
 			display.DiagramSetController = diagramSetController;
 			display.Diagram = diagram;
 			display.CurrentTool = toolSetController.SelectedTool;
-			//display.UserMessage += display_UserMessage;
+			display.UserMessage += display_UserMessage;
 			//
 			return display;
 		}

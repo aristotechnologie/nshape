@@ -2483,12 +2483,14 @@ namespace Dataweb.NShape.Advanced {
 				if (withContent)
 					DoInsertShapesCore(shape.Children.BottomUp, shape, withContent);
 			}
-			// Now insert connections
-			foreach (Shape shape in shapes) {
-				// Insert only connectons of the active shapes
-				foreach (ShapeConnectionInfo sci in shape.GetConnectionInfos(ControlPointId.Any, null))
-					if (shape.HasControlPointCapability(sci.OwnPointId, ControlPointCapabilities.Glue))
-						DoInsertShapeConnection(shape, sci);
+			// Insert connections only when inserting with content
+			if (withContent) {
+				foreach (Shape shape in shapes) {
+					// Insert only connectons of the active shapes
+					foreach (ShapeConnectionInfo sci in shape.GetConnectionInfos(ControlPointId.Any, null))
+						if (shape.HasControlPointCapability(sci.OwnPointId, ControlPointCapabilities.Glue))
+							DoInsertShapeConnection(shape, sci);
+				}
 			}
 		}
 
@@ -2527,10 +2529,12 @@ namespace Dataweb.NShape.Advanced {
 				// Delete the shape's children
 				foreach (Shape shape in shapes) {
 					DoDeleteShapesCore(shape.Children, withContent);
-					// Delete all connections of the deleted shapes
-					foreach (ShapeConnectionInfo sci in shape.GetConnectionInfos(ControlPointId.Any, null))
-						if (shape.HasControlPointCapability(sci.OwnPointId, ControlPointCapabilities.Glue))
-							DoDeleteShapeConnection(shape, sci);
+					if (withContent) {
+						// Delete all connections of the deleted shapes
+						foreach (ShapeConnectionInfo sci in shape.GetConnectionInfos(ControlPointId.Any, null))
+							if (shape.HasControlPointCapability(sci.OwnPointId, ControlPointCapabilities.Glue))
+								DoDeleteShapeConnection(shape, sci);
+					}
 				}
 			}
 			// Delete the shape itself

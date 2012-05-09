@@ -106,6 +106,8 @@ namespace Dataweb.NShape.Advanced {
 		/// </summary>
 		/// <param name="name"></param>
 		public Layer(string name) {
+			if (name == null) throw new ArgumentNullException("name");
+			if (name == string.Empty) throw new ArgumentException("Parameter name must not be empty.");
 			this.name = name;
 		}
 

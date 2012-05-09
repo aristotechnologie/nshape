@@ -626,24 +626,55 @@ namespace Dataweb.NShape.Controllers {
 
 		/// <ToBeCompleted></ToBeCompleted>
 		public bool CanAggregateShapes(Diagram diagram, IReadOnlyShapeCollection shapes) {
+			string reason;
+			return CanAggregateShapes(diagram, shapes, out reason);
+		}
+
+
+		/// <ToBeCompleted></ToBeCompleted>
+		public bool CanAggregateShapes(Diagram diagram, IReadOnlyShapeCollection shapes, out string reason) {
 			if (diagram == null) throw new ArgumentNullException("diagram");
 			if (shapes == null) throw new ArgumentNullException("shapes");
-			return CanDeleteShapes(diagram, shapes)
-				&& shapes.Count > 1
-				&& !(shapes.Bottom is IShapeGroup);
+			reason = null;
+			Shape compositeShape = shapes.Bottom;
+			if (shapes.Count <= 1)
+				reason = "No shapes selected.";
+			else if (shapes.Count <= 1)
+				reason = "Not enough shapes selected.";
+			else if (!CanDeleteShapes(diagram, shapes))
+				reason = string.Format("Permission {0} is not granted.", Permission.Delete);
+			else if (!Project.SecurityManager.IsGranted(Permission.Present, compositeShape))
+				reason = string.Format("Permission {0} is not granted.", Permission.Present);
+			else if (compositeShape is IShapeGroup)
+				reason = "Groups cannot be aggregated.";
+			return string.IsNullOrEmpty(reason);
 		}
 
 
 		/// <ToBeCompleted></ToBeCompleted>
 		public bool CanSplitShapeAggregation(Diagram diagram, IReadOnlyShapeCollection shapes) {
+			string reason;
+			return CanSplitShapeAggregation(diagram, shapes, out reason);
+		}
+
+
+		/// <ToBeCompleted></ToBeCompleted>
+		public bool CanSplitShapeAggregation(Diagram diagram, IReadOnlyShapeCollection shapes, out string reason) {
 			if (diagram == null) throw new ArgumentNullException("diagram");
 			if (shapes == null) throw new ArgumentNullException("shapes");
-			if (shapes.Count == 1 && !(shapes.TopMost is IShapeGroup)) {
-				Shape s = shapes.TopMost;
-				if (s.Children.Count > 0 && CanInsertShapes(diagram, shapes.TopMost.Children))
-					return true;
-			} 
-			return false;
+			reason = null;
+			Shape compositeShape = shapes.TopMost;
+			if (shapes.Count == 0)
+				reason = "No shapes selected.";
+			else if (shapes.Count > 1)
+				reason = "Too many shapes selected.";
+			else if (compositeShape is IShapeGroup)
+				reason = "Groups cannot be disaggregated.";
+			else if (!CanInsertShapes(diagram, compositeShape.Children))
+				reason = string.Format("Permission {0} is not granted.", Permission.Insert);
+			else if (!Project.SecurityManager.IsGranted(Permission.Present, compositeShape))
+				reason = string.Format("Permission {0} is not granted.", Permission.Present);
+			return string.IsNullOrEmpty(reason);
 		}
 
 

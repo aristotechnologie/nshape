@@ -7,7 +7,24 @@ Known issues:
   
 
 ====================================================================================================
-Changes in 2.0.0:
+Changes in 2.0.1 (Beta 2):
+====================================================================================================
+- Buxfix: IRepository.Insert(Shape shape) and IRepository.Insert(IEnumerable<Shape> shapes) no longer
+  insert shape connections.
+- Bugfix: Several context menu items did display although the required permission was not granted
+- Bugfix: Display did not reset the visible and active layers when changing the diagram
+- Bugfix: NullReferenceException when pressing Del key and no shape was selected
+- Changed Behavior: LayerCollection.Find("") no longer throws an exception.
+- Improvement: Display does not reset the displayed area of the diagram when hidden
+- Improvement: Export dialog adds file extension when not specified
+- Improvement: Export dialog asks whether to overwrite a file after the path changes
+- Improvement: Export dialog updates the file extension when changing the file format (if a non-standard 
+  file extension was specified, the user will be asked whether to update the extension)
+- Documentation: Updated sample code in some chapters of the "Basic Tutorial" to NShape 2.0 code
+
+
+====================================================================================================
+Changes in 2.0.0 (Beta):
 ====================================================================================================
 
 New / Changed / Extended Interfaces:
@@ -33,7 +50,7 @@ Changes in base classes:
 - Removed History.CommandExecuted event because it was obsolete. Use CommandsExecuted event instead.
 - Several Methods of various classes were renamed. The old versions are marked as obsolete.
 - PointerTool was renamed to SelectionTool. PointerTool is now marked as obsolete.
-- New method in linearShapeBase for calculating the bounding rectangle of the line (without line caps): 
+- New method in LinearShapeBase for calculating the bounding rectangle of the line (without line caps): 
   protected abstract Rectangle CalcBoundingRectangleCore(bool tight)
 - Design class now has a Title property.
 

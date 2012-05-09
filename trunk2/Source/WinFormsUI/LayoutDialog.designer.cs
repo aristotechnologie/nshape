@@ -65,6 +65,8 @@ namespace Dataweb.NShape.WinFormsUI {
 			this.repulsionLabel3 = new System.Windows.Forms.Label();
 			this.repulsionLabel2 = new System.Windows.Forms.Label();
 			this.flowPanel = new System.Windows.Forms.Panel();
+			this.flowRowDistanceLabel = new System.Windows.Forms.Label();
+			this.flowLayerDistanceLabel = new System.Windows.Forms.Label();
 			this.label2 = new System.Windows.Forms.Label();
 			this.label1 = new System.Windows.Forms.Label();
 			this.flowRowDistanceTrackBar = new System.Windows.Forms.TrackBar();
@@ -79,8 +81,6 @@ namespace Dataweb.NShape.WinFormsUI {
 			this.toolTip = new System.Windows.Forms.ToolTip(this.components);
 			this.undoButton = new System.Windows.Forms.Button();
 			this.redoButton = new System.Windows.Forms.Button();
-			this.flowLayerDistanceLabel = new System.Windows.Forms.Label();
-			this.flowRowDistanceLabel = new System.Windows.Forms.Label();
 			this.algorithmListBox = new Dataweb.NShape.WinFormsUI.VerticalTabControl();
 			expansionPanel = new System.Windows.Forms.Panel();
 			expansionPanel.SuspendLayout();
@@ -102,6 +102,9 @@ namespace Dataweb.NShape.WinFormsUI {
 			// 
 			// expansionPanel
 			// 
+			expansionPanel.Anchor = ((System.Windows.Forms.AnchorStyles)((((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Bottom) 
+            | System.Windows.Forms.AnchorStyles.Left) 
+            | System.Windows.Forms.AnchorStyles.Right)));
 			expansionPanel.Controls.Add(this.keepAspectRationCheckBox);
 			expansionPanel.Controls.Add(this.expandDescriptionLabel);
 			expansionPanel.Controls.Add(this.verticalCompressionLabel);
@@ -112,7 +115,7 @@ namespace Dataweb.NShape.WinFormsUI {
 			expansionPanel.Controls.Add(this.label8);
 			expansionPanel.Location = new System.Drawing.Point(100, 4);
 			expansionPanel.Name = "expansionPanel";
-			expansionPanel.Size = new System.Drawing.Size(367, 277);
+			expansionPanel.Size = new System.Drawing.Size(366, 275);
 			expansionPanel.TabIndex = 10;
 			expansionPanel.Tag = "Expansion";
 			// 
@@ -131,9 +134,11 @@ namespace Dataweb.NShape.WinFormsUI {
 			// 
 			// expandDescriptionLabel
 			// 
+			this.expandDescriptionLabel.Anchor = ((System.Windows.Forms.AnchorStyles)(((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Left) 
+            | System.Windows.Forms.AnchorStyles.Right)));
 			this.expandDescriptionLabel.Location = new System.Drawing.Point(4, 3);
 			this.expandDescriptionLabel.Name = "expandDescriptionLabel";
-			this.expandDescriptionLabel.Size = new System.Drawing.Size(359, 69);
+			this.expandDescriptionLabel.Size = new System.Drawing.Size(358, 69);
 			this.expandDescriptionLabel.TabIndex = 8;
 			this.expandDescriptionLabel.Text = "Track the sliders to compress or expand the selected shapes without modifying the" +
     "ir relative positions.\r\nUse this layouter to assign a larger or smaller area of " +
@@ -159,12 +164,13 @@ namespace Dataweb.NShape.WinFormsUI {
 			// 
 			// verticalCompressionTrackBar
 			// 
+			this.verticalCompressionTrackBar.Anchor = ((System.Windows.Forms.AnchorStyles)(((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Left) 
+            | System.Windows.Forms.AnchorStyles.Right)));
 			this.verticalCompressionTrackBar.LargeChange = 20;
 			this.verticalCompressionTrackBar.Location = new System.Drawing.Point(8, 178);
 			this.verticalCompressionTrackBar.Maximum = 500;
 			this.verticalCompressionTrackBar.Name = "verticalCompressionTrackBar";
-			this.verticalCompressionTrackBar.Size = new System.Drawing.Size(344, 45);
-			this.verticalCompressionTrackBar.SmallChange = 5;
+			this.verticalCompressionTrackBar.Size = new System.Drawing.Size(343, 45);
 			this.verticalCompressionTrackBar.TabIndex = 5;
 			this.verticalCompressionTrackBar.TickFrequency = 25;
 			this.verticalCompressionTrackBar.Value = 100;
@@ -172,13 +178,14 @@ namespace Dataweb.NShape.WinFormsUI {
 			// 
 			// horizontalCompressionTrackBar
 			// 
+			this.horizontalCompressionTrackBar.Anchor = ((System.Windows.Forms.AnchorStyles)(((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Left) 
+            | System.Windows.Forms.AnchorStyles.Right)));
 			this.horizontalCompressionTrackBar.AutoSize = false;
 			this.horizontalCompressionTrackBar.LargeChange = 20;
 			this.horizontalCompressionTrackBar.Location = new System.Drawing.Point(8, 114);
 			this.horizontalCompressionTrackBar.Maximum = 500;
 			this.horizontalCompressionTrackBar.Name = "horizontalCompressionTrackBar";
-			this.horizontalCompressionTrackBar.Size = new System.Drawing.Size(344, 45);
-			this.horizontalCompressionTrackBar.SmallChange = 5;
+			this.horizontalCompressionTrackBar.Size = new System.Drawing.Size(343, 45);
 			this.horizontalCompressionTrackBar.TabIndex = 4;
 			this.horizontalCompressionTrackBar.TickFrequency = 25;
 			this.horizontalCompressionTrackBar.Value = 100;
@@ -204,6 +211,7 @@ namespace Dataweb.NShape.WinFormsUI {
 			// 
 			// fastRadioButton
 			// 
+			this.fastRadioButton.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Left)));
 			this.fastRadioButton.AutoSize = true;
 			this.fastRadioButton.Location = new System.Drawing.Point(85, 19);
 			this.fastRadioButton.Name = "fastRadioButton";
@@ -214,6 +222,7 @@ namespace Dataweb.NShape.WinFormsUI {
 			// 
 			// animatedRadioButton
 			// 
+			this.animatedRadioButton.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Left)));
 			this.animatedRadioButton.AutoSize = true;
 			this.animatedRadioButton.Checked = true;
 			this.animatedRadioButton.Location = new System.Drawing.Point(136, 19);
@@ -226,22 +235,26 @@ namespace Dataweb.NShape.WinFormsUI {
 			// 
 			// previewGroupBox
 			// 
+			this.previewGroupBox.Anchor = ((System.Windows.Forms.AnchorStyles)(((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Left) 
+            | System.Windows.Forms.AnchorStyles.Right)));
 			this.previewGroupBox.Controls.Add(this.stepRadioButton);
 			this.previewGroupBox.Controls.Add(this.immediateRadioButton);
 			this.previewGroupBox.Controls.Add(this.fastRadioButton);
 			this.previewGroupBox.Controls.Add(this.animatedRadioButton);
-			this.previewGroupBox.Location = new System.Drawing.Point(106, 294);
+			this.previewGroupBox.Location = new System.Drawing.Point(100, 292);
 			this.previewGroupBox.Name = "previewGroupBox";
-			this.previewGroupBox.Size = new System.Drawing.Size(279, 49);
+			this.previewGroupBox.Size = new System.Drawing.Size(284, 49);
 			this.previewGroupBox.TabIndex = 5;
 			this.previewGroupBox.TabStop = false;
 			this.previewGroupBox.Text = "Preview";
 			// 
 			// stepRadioButton
 			// 
-			this.stepRadioButton.Location = new System.Drawing.Point(211, 16);
+			this.stepRadioButton.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Left)));
+			this.stepRadioButton.AutoSize = true;
+			this.stepRadioButton.Location = new System.Drawing.Point(211, 19);
 			this.stepRadioButton.Name = "stepRadioButton";
-			this.stepRadioButton.Size = new System.Drawing.Size(61, 19);
+			this.stepRadioButton.Size = new System.Drawing.Size(47, 17);
 			this.stepRadioButton.TabIndex = 3;
 			this.stepRadioButton.TabStop = true;
 			this.stepRadioButton.Text = "Step";
@@ -249,6 +262,7 @@ namespace Dataweb.NShape.WinFormsUI {
 			// 
 			// immediateRadioButton
 			// 
+			this.immediateRadioButton.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Left)));
 			this.immediateRadioButton.AutoSize = true;
 			this.immediateRadioButton.Location = new System.Drawing.Point(6, 19);
 			this.immediateRadioButton.Name = "immediateRadioButton";
@@ -261,7 +275,8 @@ namespace Dataweb.NShape.WinFormsUI {
 			// 
 			// applyButton
 			// 
-			this.applyButton.Location = new System.Drawing.Point(162, 358);
+			this.applyButton.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Left)));
+			this.applyButton.Location = new System.Drawing.Point(162, 356);
 			this.applyButton.Name = "applyButton";
 			this.applyButton.Size = new System.Drawing.Size(51, 23);
 			this.applyButton.TabIndex = 6;
@@ -273,8 +288,9 @@ namespace Dataweb.NShape.WinFormsUI {
 			// 
 			// closeButton
 			// 
+			this.closeButton.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Right)));
 			this.closeButton.DialogResult = System.Windows.Forms.DialogResult.OK;
-			this.closeButton.Location = new System.Drawing.Point(391, 360);
+			this.closeButton.Location = new System.Drawing.Point(390, 358);
 			this.closeButton.Name = "closeButton";
 			this.closeButton.Size = new System.Drawing.Size(75, 23);
 			this.closeButton.TabIndex = 7;
@@ -285,6 +301,9 @@ namespace Dataweb.NShape.WinFormsUI {
 			// 
 			// alignmentPanel
 			// 
+			this.alignmentPanel.Anchor = ((System.Windows.Forms.AnchorStyles)((((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Bottom) 
+            | System.Windows.Forms.AnchorStyles.Left) 
+            | System.Windows.Forms.AnchorStyles.Right)));
 			this.alignmentPanel.Controls.Add(this.gridDescriptionLabel);
 			this.alignmentPanel.Controls.Add(this.gridRowDistanceLabel);
 			this.alignmentPanel.Controls.Add(this.gridColumnDistanceLabel);
@@ -294,15 +313,17 @@ namespace Dataweb.NShape.WinFormsUI {
 			this.alignmentPanel.Controls.Add(this.label3);
 			this.alignmentPanel.Location = new System.Drawing.Point(100, 4);
 			this.alignmentPanel.Name = "alignmentPanel";
-			this.alignmentPanel.Size = new System.Drawing.Size(367, 277);
+			this.alignmentPanel.Size = new System.Drawing.Size(366, 275);
 			this.alignmentPanel.TabIndex = 5;
 			this.alignmentPanel.Tag = "Alignment";
 			// 
 			// gridDescriptionLabel
 			// 
+			this.gridDescriptionLabel.Anchor = ((System.Windows.Forms.AnchorStyles)(((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Left) 
+            | System.Windows.Forms.AnchorStyles.Right)));
 			this.gridDescriptionLabel.Location = new System.Drawing.Point(3, 0);
 			this.gridDescriptionLabel.Name = "gridDescriptionLabel";
-			this.gridDescriptionLabel.Size = new System.Drawing.Size(359, 34);
+			this.gridDescriptionLabel.Size = new System.Drawing.Size(358, 34);
 			this.gridDescriptionLabel.TabIndex = 9;
 			this.gridDescriptionLabel.Text = "Positions the shapes on the intersections of a rectangular grid.  Greater coarsen" +
     "ess  leads to larger grids.";
@@ -327,12 +348,13 @@ namespace Dataweb.NShape.WinFormsUI {
 			// 
 			// rowDistanceTrackBar
 			// 
-			this.rowDistanceTrackBar.LargeChange = 200;
+			this.rowDistanceTrackBar.Anchor = ((System.Windows.Forms.AnchorStyles)(((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Left) 
+            | System.Windows.Forms.AnchorStyles.Right)));
+			this.rowDistanceTrackBar.LargeChange = 10;
 			this.rowDistanceTrackBar.Location = new System.Drawing.Point(6, 164);
 			this.rowDistanceTrackBar.Maximum = 100;
 			this.rowDistanceTrackBar.Name = "rowDistanceTrackBar";
-			this.rowDistanceTrackBar.Size = new System.Drawing.Size(356, 45);
-			this.rowDistanceTrackBar.SmallChange = 50;
+			this.rowDistanceTrackBar.Size = new System.Drawing.Size(355, 45);
 			this.rowDistanceTrackBar.TabIndex = 5;
 			this.rowDistanceTrackBar.TickFrequency = 5;
 			this.rowDistanceTrackBar.Value = 50;
@@ -340,13 +362,14 @@ namespace Dataweb.NShape.WinFormsUI {
 			// 
 			// columnDistanceTrackBar
 			// 
+			this.columnDistanceTrackBar.Anchor = ((System.Windows.Forms.AnchorStyles)(((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Left) 
+            | System.Windows.Forms.AnchorStyles.Right)));
 			this.columnDistanceTrackBar.AutoSize = false;
-			this.columnDistanceTrackBar.LargeChange = 200;
+			this.columnDistanceTrackBar.LargeChange = 10;
 			this.columnDistanceTrackBar.Location = new System.Drawing.Point(6, 101);
 			this.columnDistanceTrackBar.Maximum = 100;
 			this.columnDistanceTrackBar.Name = "columnDistanceTrackBar";
-			this.columnDistanceTrackBar.Size = new System.Drawing.Size(356, 45);
-			this.columnDistanceTrackBar.SmallChange = 50;
+			this.columnDistanceTrackBar.Size = new System.Drawing.Size(355, 45);
 			this.columnDistanceTrackBar.TabIndex = 4;
 			this.columnDistanceTrackBar.TickFrequency = 5;
 			this.columnDistanceTrackBar.Value = 50;
@@ -372,7 +395,8 @@ namespace Dataweb.NShape.WinFormsUI {
 			// 
 			// centerButton
 			// 
-			this.centerButton.Location = new System.Drawing.Point(100, 358);
+			this.centerButton.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Left)));
+			this.centerButton.Location = new System.Drawing.Point(100, 356);
 			this.centerButton.Name = "centerButton";
 			this.centerButton.Size = new System.Drawing.Size(56, 23);
 			this.centerButton.TabIndex = 4;
@@ -387,6 +411,9 @@ namespace Dataweb.NShape.WinFormsUI {
 			// 
 			// repulsionPanel
 			// 
+			this.repulsionPanel.Anchor = ((System.Windows.Forms.AnchorStyles)((((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Bottom) 
+            | System.Windows.Forms.AnchorStyles.Left) 
+            | System.Windows.Forms.AnchorStyles.Right)));
 			this.repulsionPanel.Controls.Add(this.repulsionRangeTrackBar);
 			this.repulsionPanel.Controls.Add(this.repulsionRangeLabel);
 			this.repulsionPanel.Controls.Add(this.repulsionLabel4);
@@ -399,19 +426,20 @@ namespace Dataweb.NShape.WinFormsUI {
 			this.repulsionPanel.Controls.Add(this.repulsionLabel2);
 			this.repulsionPanel.Location = new System.Drawing.Point(100, 4);
 			this.repulsionPanel.Name = "repulsionPanel";
-			this.repulsionPanel.Size = new System.Drawing.Size(367, 277);
+			this.repulsionPanel.Size = new System.Drawing.Size(366, 275);
 			this.repulsionPanel.TabIndex = 9;
 			this.repulsionPanel.Tag = "Clusters";
 			// 
 			// repulsionRangeTrackBar
 			// 
+			this.repulsionRangeTrackBar.Anchor = ((System.Windows.Forms.AnchorStyles)(((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Left) 
+            | System.Windows.Forms.AnchorStyles.Right)));
 			this.repulsionRangeTrackBar.LargeChange = 50;
-			this.repulsionRangeTrackBar.Location = new System.Drawing.Point(8, 189);
+			this.repulsionRangeTrackBar.Location = new System.Drawing.Point(8, 202);
 			this.repulsionRangeTrackBar.Maximum = 1000;
 			this.repulsionRangeTrackBar.Minimum = 100;
 			this.repulsionRangeTrackBar.Name = "repulsionRangeTrackBar";
-			this.repulsionRangeTrackBar.Size = new System.Drawing.Size(344, 45);
-			this.repulsionRangeTrackBar.SmallChange = 10;
+			this.repulsionRangeTrackBar.Size = new System.Drawing.Size(343, 45);
 			this.repulsionRangeTrackBar.TabIndex = 18;
 			this.repulsionRangeTrackBar.TickFrequency = 50;
 			this.repulsionRangeTrackBar.Value = 600;
@@ -420,7 +448,7 @@ namespace Dataweb.NShape.WinFormsUI {
 			// repulsionRangeLabel
 			// 
 			this.repulsionRangeLabel.AutoSize = true;
-			this.repulsionRangeLabel.Location = new System.Drawing.Point(191, 171);
+			this.repulsionRangeLabel.Location = new System.Drawing.Point(191, 184);
 			this.repulsionRangeLabel.Name = "repulsionRangeLabel";
 			this.repulsionRangeLabel.Size = new System.Drawing.Size(25, 13);
 			this.repulsionRangeLabel.TabIndex = 17;
@@ -429,7 +457,7 @@ namespace Dataweb.NShape.WinFormsUI {
 			// repulsionLabel4
 			// 
 			this.repulsionLabel4.AutoSize = true;
-			this.repulsionLabel4.Location = new System.Drawing.Point(5, 171);
+			this.repulsionLabel4.Location = new System.Drawing.Point(5, 184);
 			this.repulsionLabel4.Name = "repulsionLabel4";
 			this.repulsionLabel4.Size = new System.Drawing.Size(180, 13);
 			this.repulsionLabel4.TabIndex = 15;
@@ -437,9 +465,11 @@ namespace Dataweb.NShape.WinFormsUI {
 			// 
 			// label14
 			// 
+			this.label14.Anchor = ((System.Windows.Forms.AnchorStyles)(((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Left) 
+            | System.Windows.Forms.AnchorStyles.Right)));
 			this.label14.Location = new System.Drawing.Point(3, 3);
 			this.label14.Name = "label14";
-			this.label14.Size = new System.Drawing.Size(359, 31);
+			this.label14.Size = new System.Drawing.Size(358, 31);
 			this.label14.TabIndex = 14;
 			this.label14.Text = "Moves connected shapes nearer together and thrusts unconnected shapes further apa" +
     "rt.";
@@ -447,7 +477,7 @@ namespace Dataweb.NShape.WinFormsUI {
 			// attractionStrengthLabel
 			// 
 			this.attractionStrengthLabel.AutoSize = true;
-			this.attractionStrengthLabel.Location = new System.Drawing.Point(254, 43);
+			this.attractionStrengthLabel.Location = new System.Drawing.Point(254, 56);
 			this.attractionStrengthLabel.Name = "attractionStrengthLabel";
 			this.attractionStrengthLabel.Size = new System.Drawing.Size(25, 13);
 			this.attractionStrengthLabel.TabIndex = 13;
@@ -456,7 +486,7 @@ namespace Dataweb.NShape.WinFormsUI {
 			// repulsionStrengthLabel
 			// 
 			this.repulsionStrengthLabel.AutoSize = true;
-			this.repulsionStrengthLabel.Location = new System.Drawing.Point(198, 107);
+			this.repulsionStrengthLabel.Location = new System.Drawing.Point(198, 120);
 			this.repulsionStrengthLabel.Name = "repulsionStrengthLabel";
 			this.repulsionStrengthLabel.Size = new System.Drawing.Size(25, 13);
 			this.repulsionStrengthLabel.TabIndex = 12;
@@ -464,20 +494,24 @@ namespace Dataweb.NShape.WinFormsUI {
 			// 
 			// repulsionStrengthTrackBar
 			// 
-			this.repulsionStrengthTrackBar.Location = new System.Drawing.Point(8, 123);
+			this.repulsionStrengthTrackBar.Anchor = ((System.Windows.Forms.AnchorStyles)(((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Left) 
+            | System.Windows.Forms.AnchorStyles.Right)));
+			this.repulsionStrengthTrackBar.Location = new System.Drawing.Point(8, 136);
 			this.repulsionStrengthTrackBar.Name = "repulsionStrengthTrackBar";
-			this.repulsionStrengthTrackBar.Size = new System.Drawing.Size(344, 45);
+			this.repulsionStrengthTrackBar.Size = new System.Drawing.Size(343, 45);
 			this.repulsionStrengthTrackBar.TabIndex = 11;
 			this.repulsionStrengthTrackBar.Value = 1;
 			this.repulsionStrengthTrackBar.ValueChanged += new System.EventHandler(this.repulsionStrengthTrackBar_ValueChanged);
 			// 
 			// attractionStrengthTrackBar
 			// 
+			this.attractionStrengthTrackBar.Anchor = ((System.Windows.Forms.AnchorStyles)(((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Left) 
+            | System.Windows.Forms.AnchorStyles.Right)));
 			this.attractionStrengthTrackBar.AutoSize = false;
-			this.attractionStrengthTrackBar.Location = new System.Drawing.Point(6, 59);
+			this.attractionStrengthTrackBar.Location = new System.Drawing.Point(6, 72);
 			this.attractionStrengthTrackBar.Maximum = 20;
 			this.attractionStrengthTrackBar.Name = "attractionStrengthTrackBar";
-			this.attractionStrengthTrackBar.Size = new System.Drawing.Size(344, 45);
+			this.attractionStrengthTrackBar.Size = new System.Drawing.Size(343, 45);
 			this.attractionStrengthTrackBar.TabIndex = 10;
 			this.attractionStrengthTrackBar.Value = 8;
 			this.attractionStrengthTrackBar.ValueChanged += new System.EventHandler(this.attractionStrengthTrackBar_ValueChanged);
@@ -485,7 +519,7 @@ namespace Dataweb.NShape.WinFormsUI {
 			// repulsionLabel3
 			// 
 			this.repulsionLabel3.AutoSize = true;
-			this.repulsionLabel3.Location = new System.Drawing.Point(4, 107);
+			this.repulsionLabel3.Location = new System.Drawing.Point(4, 120);
 			this.repulsionLabel3.Name = "repulsionLabel3";
 			this.repulsionLabel3.Size = new System.Drawing.Size(188, 13);
 			this.repulsionLabel3.TabIndex = 9;
@@ -494,7 +528,7 @@ namespace Dataweb.NShape.WinFormsUI {
 			// repulsionLabel2
 			// 
 			this.repulsionLabel2.AutoSize = true;
-			this.repulsionLabel2.Location = new System.Drawing.Point(4, 43);
+			this.repulsionLabel2.Location = new System.Drawing.Point(4, 56);
 			this.repulsionLabel2.Name = "repulsionLabel2";
 			this.repulsionLabel2.Size = new System.Drawing.Size(244, 13);
 			this.repulsionLabel2.TabIndex = 8;
@@ -502,6 +536,9 @@ namespace Dataweb.NShape.WinFormsUI {
 			// 
 			// flowPanel
 			// 
+			this.flowPanel.Anchor = ((System.Windows.Forms.AnchorStyles)((((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Bottom) 
+            | System.Windows.Forms.AnchorStyles.Left) 
+            | System.Windows.Forms.AnchorStyles.Right)));
 			this.flowPanel.Controls.Add(this.flowRowDistanceLabel);
 			this.flowPanel.Controls.Add(this.flowLayerDistanceLabel);
 			this.flowPanel.Controls.Add(this.label2);
@@ -512,14 +549,32 @@ namespace Dataweb.NShape.WinFormsUI {
 			this.flowPanel.Controls.Add(this.flowDescriptionLabel);
 			this.flowPanel.Location = new System.Drawing.Point(100, 4);
 			this.flowPanel.Name = "flowPanel";
-			this.flowPanel.Size = new System.Drawing.Size(367, 277);
+			this.flowPanel.Size = new System.Drawing.Size(366, 275);
 			this.flowPanel.TabIndex = 11;
 			this.flowPanel.Tag = "Flow";
+			// 
+			// flowRowDistanceLabel
+			// 
+			this.flowRowDistanceLabel.AutoSize = true;
+			this.flowRowDistanceLabel.Location = new System.Drawing.Point(180, 216);
+			this.flowRowDistanceLabel.Name = "flowRowDistanceLabel";
+			this.flowRowDistanceLabel.Size = new System.Drawing.Size(25, 13);
+			this.flowRowDistanceLabel.TabIndex = 12;
+			this.flowRowDistanceLabel.Text = "100";
+			// 
+			// flowLayerDistanceLabel
+			// 
+			this.flowLayerDistanceLabel.AutoSize = true;
+			this.flowLayerDistanceLabel.Location = new System.Drawing.Point(137, 152);
+			this.flowLayerDistanceLabel.Name = "flowLayerDistanceLabel";
+			this.flowLayerDistanceLabel.Size = new System.Drawing.Size(25, 13);
+			this.flowLayerDistanceLabel.TabIndex = 11;
+			this.flowLayerDistanceLabel.Text = "100";
 			// 
 			// label2
 			// 
 			this.label2.AutoSize = true;
-			this.label2.Location = new System.Drawing.Point(5, 148);
+			this.label2.Location = new System.Drawing.Point(5, 152);
 			this.label2.Name = "label2";
 			this.label2.Size = new System.Drawing.Size(126, 13);
 			this.label2.TabIndex = 10;
@@ -528,7 +583,7 @@ namespace Dataweb.NShape.WinFormsUI {
 			// label1
 			// 
 			this.label1.AutoSize = true;
-			this.label1.Location = new System.Drawing.Point(5, 212);
+			this.label1.Location = new System.Drawing.Point(5, 216);
 			this.label1.Name = "label1";
 			this.label1.Size = new System.Drawing.Size(169, 13);
 			this.label1.TabIndex = 9;
@@ -536,38 +591,45 @@ namespace Dataweb.NShape.WinFormsUI {
 			// 
 			// flowRowDistanceTrackBar
 			// 
+			this.flowRowDistanceTrackBar.Anchor = ((System.Windows.Forms.AnchorStyles)(((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Left) 
+            | System.Windows.Forms.AnchorStyles.Right)));
 			this.flowRowDistanceTrackBar.AutoSize = false;
-			this.flowRowDistanceTrackBar.Location = new System.Drawing.Point(8, 229);
+			this.flowRowDistanceTrackBar.LargeChange = 10;
+			this.flowRowDistanceTrackBar.Location = new System.Drawing.Point(8, 233);
 			this.flowRowDistanceTrackBar.Maximum = 1000;
 			this.flowRowDistanceTrackBar.Name = "flowRowDistanceTrackBar";
-			this.flowRowDistanceTrackBar.Size = new System.Drawing.Size(344, 34);
-			this.flowRowDistanceTrackBar.SmallChange = 10;
+			this.flowRowDistanceTrackBar.Size = new System.Drawing.Size(343, 34);
 			this.flowRowDistanceTrackBar.TabIndex = 8;
-			this.flowRowDistanceTrackBar.TickFrequency = 10;
+			this.flowRowDistanceTrackBar.TickFrequency = 50;
 			this.flowRowDistanceTrackBar.Value = 100;
 			this.flowRowDistanceTrackBar.ValueChanged += new System.EventHandler(this.flowRowDistanceTrackBar_ValueChanged);
 			// 
 			// flowLayerDistanceTrackBar
 			// 
+			this.flowLayerDistanceTrackBar.Anchor = ((System.Windows.Forms.AnchorStyles)(((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Left) 
+            | System.Windows.Forms.AnchorStyles.Right)));
 			this.flowLayerDistanceTrackBar.AutoSize = false;
-			this.flowLayerDistanceTrackBar.Location = new System.Drawing.Point(8, 165);
+			this.flowLayerDistanceTrackBar.LargeChange = 10;
+			this.flowLayerDistanceTrackBar.Location = new System.Drawing.Point(8, 169);
 			this.flowLayerDistanceTrackBar.Maximum = 1000;
 			this.flowLayerDistanceTrackBar.Name = "flowLayerDistanceTrackBar";
-			this.flowLayerDistanceTrackBar.Size = new System.Drawing.Size(344, 33);
+			this.flowLayerDistanceTrackBar.Size = new System.Drawing.Size(350, 33);
 			this.flowLayerDistanceTrackBar.TabIndex = 7;
-			this.flowLayerDistanceTrackBar.TickFrequency = 10;
+			this.flowLayerDistanceTrackBar.TickFrequency = 50;
 			this.flowLayerDistanceTrackBar.Value = 100;
 			this.flowLayerDistanceTrackBar.ValueChanged += new System.EventHandler(this.flowLayerDistanceTrackBar_ValueChanged);
 			// 
 			// flowDirectionGroupBox
 			// 
+			this.flowDirectionGroupBox.Anchor = ((System.Windows.Forms.AnchorStyles)(((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Left) 
+            | System.Windows.Forms.AnchorStyles.Right)));
 			this.flowDirectionGroupBox.Controls.Add(this.leftToRightRadioButton);
 			this.flowDirectionGroupBox.Controls.Add(this.topDownRadioButton);
 			this.flowDirectionGroupBox.Controls.Add(this.rightToLeftRadioButton);
 			this.flowDirectionGroupBox.Controls.Add(this.bottomUpRadioButton);
-			this.flowDirectionGroupBox.Location = new System.Drawing.Point(8, 85);
+			this.flowDirectionGroupBox.Location = new System.Drawing.Point(8, 89);
 			this.flowDirectionGroupBox.Name = "flowDirectionGroupBox";
-			this.flowDirectionGroupBox.Size = new System.Drawing.Size(344, 49);
+			this.flowDirectionGroupBox.Size = new System.Drawing.Size(350, 49);
 			this.flowDirectionGroupBox.TabIndex = 6;
 			this.flowDirectionGroupBox.TabStop = false;
 			this.flowDirectionGroupBox.Text = "Flow Direction";
@@ -616,15 +678,19 @@ namespace Dataweb.NShape.WinFormsUI {
 			// 
 			// flowDescriptionLabel
 			// 
+			this.flowDescriptionLabel.Anchor = ((System.Windows.Forms.AnchorStyles)((((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Bottom) 
+            | System.Windows.Forms.AnchorStyles.Left) 
+            | System.Windows.Forms.AnchorStyles.Right)));
 			this.flowDescriptionLabel.Location = new System.Drawing.Point(5, 0);
 			this.flowDescriptionLabel.Name = "flowDescriptionLabel";
-			this.flowDescriptionLabel.Size = new System.Drawing.Size(340, 79);
+			this.flowDescriptionLabel.Size = new System.Drawing.Size(356, 79);
 			this.flowDescriptionLabel.TabIndex = 0;
 			this.flowDescriptionLabel.Text = resources.GetString("flowDescriptionLabel.Text");
 			// 
 			// previewButton
 			// 
-			this.previewButton.Location = new System.Drawing.Point(391, 310);
+			this.previewButton.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Right)));
+			this.previewButton.Location = new System.Drawing.Point(390, 308);
 			this.previewButton.Name = "previewButton";
 			this.previewButton.Size = new System.Drawing.Size(75, 23);
 			this.previewButton.TabIndex = 12;
@@ -634,7 +700,8 @@ namespace Dataweb.NShape.WinFormsUI {
 			// 
 			// undoButton
 			// 
-			this.undoButton.Location = new System.Drawing.Point(219, 358);
+			this.undoButton.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Left)));
+			this.undoButton.Location = new System.Drawing.Point(219, 356);
 			this.undoButton.Name = "undoButton";
 			this.undoButton.Size = new System.Drawing.Size(56, 23);
 			this.undoButton.TabIndex = 13;
@@ -644,31 +711,14 @@ namespace Dataweb.NShape.WinFormsUI {
 			// 
 			// redoButton
 			// 
-			this.redoButton.Location = new System.Drawing.Point(281, 358);
+			this.redoButton.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Left)));
+			this.redoButton.Location = new System.Drawing.Point(281, 356);
 			this.redoButton.Name = "redoButton";
 			this.redoButton.Size = new System.Drawing.Size(56, 23);
 			this.redoButton.TabIndex = 14;
 			this.redoButton.Text = "Redo";
 			this.redoButton.UseVisualStyleBackColor = true;
 			this.redoButton.Click += new System.EventHandler(this.redoButton_Click);
-			// 
-			// flowLayerDistanceLabel
-			// 
-			this.flowLayerDistanceLabel.AutoSize = true;
-			this.flowLayerDistanceLabel.Location = new System.Drawing.Point(137, 148);
-			this.flowLayerDistanceLabel.Name = "flowLayerDistanceLabel";
-			this.flowLayerDistanceLabel.Size = new System.Drawing.Size(25, 13);
-			this.flowLayerDistanceLabel.TabIndex = 11;
-			this.flowLayerDistanceLabel.Text = "100";
-			// 
-			// flowRowDistanceLabel
-			// 
-			this.flowRowDistanceLabel.AutoSize = true;
-			this.flowRowDistanceLabel.Location = new System.Drawing.Point(180, 212);
-			this.flowRowDistanceLabel.Name = "flowRowDistanceLabel";
-			this.flowRowDistanceLabel.Size = new System.Drawing.Size(25, 13);
-			this.flowRowDistanceLabel.TabIndex = 12;
-			this.flowRowDistanceLabel.Text = "100";
 			// 
 			// algorithmListBox
 			// 
@@ -694,7 +744,7 @@ namespace Dataweb.NShape.WinFormsUI {
 			this.algorithmListBox.Name = "algorithmListBox";
 			this.algorithmListBox.SelectedItemColor = System.Drawing.SystemColors.Window;
 			this.algorithmListBox.SelectedItemTextColor = System.Drawing.SystemColors.ControlText;
-			this.algorithmListBox.Size = new System.Drawing.Size(93, 397);
+			this.algorithmListBox.Size = new System.Drawing.Size(93, 395);
 			this.algorithmListBox.TabIndex = 0;
 			this.algorithmListBox.SelectedIndexChanged += new System.EventHandler(this.algorithmListBox_SelectedIndexChanged);
 			// 
@@ -704,11 +754,11 @@ namespace Dataweb.NShape.WinFormsUI {
 			this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
 			this.BackColor = System.Drawing.SystemColors.Window;
 			this.CancelButton = this.closeButton;
-			this.ClientSize = new System.Drawing.Size(475, 394);
+			this.ClientSize = new System.Drawing.Size(474, 392);
 			this.Controls.Add(this.flowPanel);
-			this.Controls.Add(expansionPanel);
-			this.Controls.Add(this.alignmentPanel);
 			this.Controls.Add(this.repulsionPanel);
+			this.Controls.Add(this.alignmentPanel);
+			this.Controls.Add(expansionPanel);
 			this.Controls.Add(this.redoButton);
 			this.Controls.Add(this.undoButton);
 			this.Controls.Add(this.previewButton);
@@ -718,6 +768,7 @@ namespace Dataweb.NShape.WinFormsUI {
 			this.Controls.Add(this.previewGroupBox);
 			this.Controls.Add(this.algorithmListBox);
 			this.DoubleBuffered = true;
+			this.MinimumSize = new System.Drawing.Size(490, 430);
 			this.Name = "LayoutDialog";
 			this.SizeGripStyle = System.Windows.Forms.SizeGripStyle.Show;
 			this.StartPosition = System.Windows.Forms.FormStartPosition.CenterScreen;
