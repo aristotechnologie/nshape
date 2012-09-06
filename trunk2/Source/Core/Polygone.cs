@@ -322,13 +322,8 @@ namespace Dataweb.NShape.Advanced {
 			float normalizedDeltaY = transformedDeltaY;
 			Geometry.RotatePoint(0, 0, -ptAngle, ref normalizedDeltaX, ref normalizedDeltaY);
 
-			//int tmpY = (int)diameter + 100;
-			//Point p = Geometry.GetNearestPoint(0, tmpY, Geometry.IntersectPolygonLine(shapePoints, 0, 0, 0, tmpY, false));
-			//float dist = diameter - Geometry.DistancePointPoint(0, 0, p.X, p.Y);
-			//float movementCorrectionFactor = (float)Math.Round(Geometry.DistancePointPoint(0, 0, p.X, p.Y) / diameter, 1);
-
 			float dx = 0;
-			float dy = (normalizedDeltaY / 2); // * movementCorrectionFactor;
+			float dy = (normalizedDeltaY / 2);
 			diameter = (int)Math.Round(diameter - (normalizedDeltaY - dy));
 			UpdateShapePoints();
 

@@ -16,6 +16,7 @@ using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Drawing;
+using System.Drawing.Drawing2D;
 
 
 namespace Dataweb.NShape.Advanced {
@@ -247,8 +248,25 @@ namespace Dataweb.NShape.Advanced {
 		public override void DrawOutline(Graphics graphics, Pen pen) {
 			if (graphics == null) throw new ArgumentNullException("graphics");
 			if (pen == null) throw new ArgumentNullException("pen");
+			// Workaround for a very strange problem:
+			// If a 1-segment line with custom line caps is drawn and the line has exactly the same 
+			// length as the sum of both cap's BaseInset, an OutOfMemoryException is thrown sometimes 
+			// (not always). The exception is thrown in DrawLines and all efforts to trace down the 
+			// cause of this issue came to nothing.
+			if (shapePoints.Length == 2 && pen.StartCap == LineCap.Custom && pen.EndCap == LineCap.Custom
+				&& (pen.Width * pen.CustomStartCap.BaseInset + pen.Width * pen.CustomEndCap.BaseInset) == Geometry.DistancePointPoint(shapePoints[0], shapePoints[1])) {
+				// Draw line a little bit longer in order to avoid the issue described above
+				const float delta = 0.001f;
+				PointF p1 = shapePoints[0];
+				PointF p2 = shapePoints[1];
+				if (p1.X == p2.X) p2.Y += delta;
+				else p2.X += delta;
+				graphics.DrawLine(pen, p1, p2);
+			} else {
+				// Draw line
+				graphics.DrawLines(pen, shapePoints);
+			}
 			base.DrawOutline(graphics, pen);
-			graphics.DrawLines(pen, shapePoints);
 		}
 
 

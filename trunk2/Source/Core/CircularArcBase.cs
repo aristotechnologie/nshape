@@ -254,7 +254,7 @@ namespace Dataweb.NShape.Advanced {
 			yield return new CommandMenuItemDef("Insert Point", null, description, isFeasible,
 				new AddVertexCommand(this, mouseX, mouseY));
 
-			isFeasible = !HasControlPointCapability(clickedPointId, ControlPointCapabilities.Glue) && VertexCount > 2;
+			isFeasible = (clickedPointId != ControlPointId.None && !HasControlPointCapability(clickedPointId, ControlPointCapabilities.Glue) && VertexCount > 2);
 			if (clickedPointId == ControlPointId.None || clickedPointId == ControlPointId.Reference)
 				description = "No control point was clicked";
 			else description = "Glue control points may not be removed.";
@@ -467,12 +467,12 @@ namespace Dataweb.NShape.Advanced {
 			if (graphics == null) throw new ArgumentNullException("graphics");
 			UpdateDrawCache();
 			if (VertexCount > 1) {
-				// draw caps interior
+				// Draw caps interior
 				DrawStartCapBackground(graphics, shapePoints[0].X, shapePoints[0].Y);
 				int endPtIdx = shapePoints.Length - 1;
 				DrawEndCapBackground(graphics, shapePoints[endPtIdx].X, shapePoints[endPtIdx].Y);
 
-				// draw line
+				// Draw line
 				Pen pen = ToolCache.GetPen(LineStyle, StartCapStyleInternal, EndCapStyleInternal);
 				DrawOutline(graphics, pen);
 
@@ -733,14 +733,32 @@ namespace Dataweb.NShape.Advanced {
 
 		/// <override></override>
 		public override void DrawOutline(Graphics graphics, Pen pen) {
-			base.DrawOutline(graphics, pen);
-			if (IsLine) graphics.DrawLine(pen, StartPoint, EndPoint);
-			else {
+			if (IsLine) {
+				// Workaround for a very strange problem:
+				// If a 1-segment line with custom line caps is drawn and the line has exactly the same 
+				// length as the sum of both cap's BaseInset, an OutOfMemoryException is thrown sometimes 
+				// (not always). The exception is thrown in DrawLines and all efforts to trace down the 
+				// cause of this issue came to nothing.
+				if (IsLine && IsShapedLineCap(StartCapStyleInternal) && IsShapedLineCap(EndCapStyleInternal)
+					&& (pen.Width * pen.CustomStartCap.BaseInset + pen.Width * pen.CustomEndCap.BaseInset) == Geometry.DistancePointPoint(StartPoint, EndPoint)) {
+					// Draw line a little bit longer in order to avoid the issue described above
+					const float delta = 0.001f;
+					PointF p1 = StartPoint;
+					PointF p2 = EndPoint;
+					if (p1.X == p2.X) p2.Y += delta;
+					else p2.X += delta;
+					graphics.DrawLine(pen, p1, p2);
+				} else {
+					// Draw line
+					graphics.DrawLine(pen, StartPoint, EndPoint);
+				}
+			} else {
 				Debug.Assert(Geometry.IsValid(arcBounds));
 				Debug.Assert(!float.IsNaN(StartAngle));
 				Debug.Assert(!float.IsNaN(SweepAngle));
 				graphics.DrawArc(pen, arcBounds, StartAngle, SweepAngle);
 			}
+			base.DrawOutline(graphics, pen);
 		}
 
 

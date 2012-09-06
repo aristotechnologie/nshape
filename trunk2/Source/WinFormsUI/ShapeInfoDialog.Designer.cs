@@ -27,7 +27,6 @@
 		/// the contents of this method with the code editor.
 		/// </summary>
 		private void InitializeComponent() {
-			this.components = new System.ComponentModel.Container();
 			this.splitContainer1 = new System.Windows.Forms.SplitContainer();
 			this.splitContainer2 = new System.Windows.Forms.SplitContainer();
 			this.display = new Dataweb.NShape.WinFormsUI.Display();
@@ -44,9 +43,9 @@
 			this.label5 = new System.Windows.Forms.Label();
 			this.permissionsLbl = new System.Windows.Forms.Label();
 			this.ctrlPointListView = new System.Windows.Forms.ListView();
-			this.columnId = new System.Windows.Forms.ColumnHeader();
-			this.columnCapabilities = new System.Windows.Forms.ColumnHeader();
-			this.columnConnectedShapes = new System.Windows.Forms.ColumnHeader();
+			this.columnId = ((System.Windows.Forms.ColumnHeader)(new System.Windows.Forms.ColumnHeader()));
+			this.columnCapabilities = ((System.Windows.Forms.ColumnHeader)(new System.Windows.Forms.ColumnHeader()));
+			this.columnConnectedShapes = ((System.Windows.Forms.ColumnHeader)(new System.Windows.Forms.ColumnHeader()));
 			this.panel1 = new System.Windows.Forms.Panel();
 			this.okButton = new System.Windows.Forms.Button();
 			this.splitContainer1.Panel1.SuspendLayout();
@@ -99,40 +98,24 @@
 			// 
 			this.display.AllowDrop = true;
 			this.display.BackColorGradient = System.Drawing.SystemColors.Control;
-			this.display.BackgroundGradientAngle = 45;
 			this.display.BorderStyle = System.Windows.Forms.BorderStyle.FixedSingle;
-			this.display.ConnectionPointShape = Dataweb.NShape.Controllers.ControlPointShape.Circle;
-			this.display.ControlPointAlpha = ((byte)(255));
 			this.display.DiagramSetController = this.diagramSetController;
 			this.display.Dock = System.Windows.Forms.DockStyle.Fill;
-			this.display.GridAlpha = ((byte)(255));
 			this.display.GridColor = System.Drawing.Color.Gainsboro;
 			this.display.GridSize = 19;
-			this.display.GripSize = 3;
-			this.display.HideDeniedMenuItems = false;
-			this.display.HighQualityBackground = true;
-			this.display.HighQualityRendering = true;
 			this.display.ImeMode = System.Windows.Forms.ImeMode.NoControl;
 			this.display.Location = new System.Drawing.Point(0, 0);
-			this.display.MinRotateRange = 30;
 			this.display.Name = "display";
 			this.display.PropertyController = null;
-			this.display.RenderingQualityHighQuality = Dataweb.NShape.Advanced.RenderingQuality.HighQuality;
-			this.display.RenderingQualityLowQuality = Dataweb.NShape.Advanced.RenderingQuality.DefaultQuality;
-			this.display.ResizeGripShape = Dataweb.NShape.Controllers.ControlPointShape.Square;
 			this.display.SelectionHilightColor = System.Drawing.Color.Firebrick;
 			this.display.SelectionInactiveColor = System.Drawing.Color.Gray;
 			this.display.SelectionInteriorColor = System.Drawing.Color.WhiteSmoke;
 			this.display.SelectionNormalColor = System.Drawing.Color.DarkGreen;
-			this.display.ShowGrid = true;
-			this.display.ShowScrollBars = true;
 			this.display.Size = new System.Drawing.Size(248, 174);
-			this.display.SnapDistance = 5;
 			this.display.SnapToGrid = false;
 			this.display.TabIndex = 0;
 			this.display.ToolPreviewBackColor = System.Drawing.Color.FromArgb(((int)(((byte)(64)))), ((int)(((byte)(119)))), ((int)(((byte)(136)))), ((int)(((byte)(153)))));
 			this.display.ToolPreviewColor = System.Drawing.Color.FromArgb(((int)(((byte)(96)))), ((int)(((byte)(70)))), ((int)(((byte)(130)))), ((int)(((byte)(180)))));
-			this.display.ZoomLevel = 100;
 			this.display.ZoomWithMouseWheel = true;
 			// 
 			// diagramSetController
@@ -307,6 +290,7 @@
 			this.okButton.TabIndex = 0;
 			this.okButton.Text = "OK";
 			this.okButton.UseVisualStyleBackColor = true;
+			this.okButton.Click += new System.EventHandler(this.okButton_Click);
 			// 
 			// ShapeInfoDialog
 			// 

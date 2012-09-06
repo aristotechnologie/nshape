@@ -1305,17 +1305,9 @@ namespace Dataweb.NShape.Advanced {
 			// GDI+ only reads the file header and keeps the image file locked for loading the 
 			// image data later on demand. 
 			// So we have to read the entire image to a buffer and create the image from a MemoryStream
-			//
-			// Read the image data into a byte array
-            byte[] buffer = null;
-            using (FileStream fs = new FileStream(fileName, FileMode.Open, FileAccess.Read)) {
-                // Copy image data to memory buffer
-                buffer = new byte[fs.Length];
-                fs.Read(buffer, 0, buffer.Length);
-                fs.Close();
-            }
-			// Create the image from the read byte buffer (does not copy the buffer)
-			image = Image.FromStream(new MemoryStream(buffer), true, true);
+
+			// Create the image from the read byte buffer (MemoryStream constructor does *not* copy the buffer)
+			image = Image.FromStream(new MemoryStream(File.ReadAllBytes(fileName)), true, true);
 			imageSize = image.Size;
 			imageType = image.GetType();
 			if (!canLoadFromFile) canLoadFromFile = true;

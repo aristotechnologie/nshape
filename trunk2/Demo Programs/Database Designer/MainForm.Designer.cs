@@ -77,11 +77,11 @@
 			// toolStripContainer.ContentPanel
 			// 
 			this.toolStripContainer.ContentPanel.Controls.Add(this.display);
-			this.toolStripContainer.ContentPanel.Size = new System.Drawing.Size(850, 550);
+			this.toolStripContainer.ContentPanel.Size = new System.Drawing.Size(884, 515);
 			this.toolStripContainer.Dock = System.Windows.Forms.DockStyle.Fill;
 			this.toolStripContainer.Location = new System.Drawing.Point(0, 0);
 			this.toolStripContainer.Name = "toolStripContainer";
-			this.toolStripContainer.Size = new System.Drawing.Size(850, 597);
+			this.toolStripContainer.Size = new System.Drawing.Size(884, 562);
 			this.toolStripContainer.TabIndex = 3;
 			this.toolStripContainer.Text = "toolStripContainer";
 			// 
@@ -95,7 +95,7 @@
 			this.statusStrip1.Location = new System.Drawing.Point(0, 0);
 			this.statusStrip1.Name = "statusStrip1";
 			this.statusStrip1.RenderMode = System.Windows.Forms.ToolStripRenderMode.ManagerRenderMode;
-			this.statusStrip1.Size = new System.Drawing.Size(850, 22);
+			this.statusStrip1.Size = new System.Drawing.Size(884, 22);
 			this.statusStrip1.TabIndex = 5;
 			this.statusStrip1.Text = "statusStrip1";
 			// 
@@ -106,41 +106,27 @@
 			this.display.BackColorGradient = System.Drawing.Color.FromArgb(((int)(((byte)(226)))), ((int)(((byte)(226)))), ((int)(((byte)(226)))));
 			this.display.BackgroundGradientAngle = 0;
 			this.display.BackgroundImageLayout = System.Windows.Forms.ImageLayout.Zoom;
-			this.display.ConnectionPointShape = Dataweb.NShape.Controllers.ControlPointShape.Circle;
-			this.display.ControlPointAlpha = ((byte)(255));
 			this.display.DiagramSetController = this.diagramSetController;
 			this.display.Dock = System.Windows.Forms.DockStyle.Fill;
 			this.display.GridAlpha = ((byte)(128));
 			this.display.GridColor = System.Drawing.Color.White;
-			this.display.GridSize = 20;
-			this.display.GripSize = 3;
 			this.display.HideDeniedMenuItems = true;
-			this.display.HighQualityBackground = true;
-			this.display.HighQualityRendering = true;
 			this.display.ImeMode = System.Windows.Forms.ImeMode.NoControl;
 			this.display.Location = new System.Drawing.Point(0, 0);
-			this.display.MinRotateRange = 30;
 			this.display.Name = "display";
 			this.display.PropertyController = this.propertyController;
-			this.display.RenderingQualityHighQuality = Dataweb.NShape.Advanced.RenderingQuality.HighQuality;
-			this.display.RenderingQualityLowQuality = Dataweb.NShape.Advanced.RenderingQuality.DefaultQuality;
-			this.display.ResizeGripShape = Dataweb.NShape.Controllers.ControlPointShape.Square;
 			this.display.SelectionHilightColor = System.Drawing.Color.Firebrick;
 			this.display.SelectionInactiveColor = System.Drawing.Color.Gray;
 			this.display.SelectionInteriorColor = System.Drawing.Color.WhiteSmoke;
 			this.display.SelectionNormalColor = System.Drawing.Color.DarkGreen;
 			this.display.ShowGrid = false;
-			this.display.ShowScrollBars = true;
-			this.display.Size = new System.Drawing.Size(850, 550);
-			this.display.SnapDistance = 5;
+			this.display.Size = new System.Drawing.Size(884, 515);
 			this.display.SnapToGrid = false;
 			this.display.TabIndex = 4;
 			this.display.ToolPreviewBackColor = System.Drawing.Color.FromArgb(((int)(((byte)(64)))), ((int)(((byte)(119)))), ((int)(((byte)(136)))), ((int)(((byte)(153)))));
 			this.display.ToolPreviewColor = System.Drawing.Color.FromArgb(((int)(((byte)(96)))), ((int)(((byte)(70)))), ((int)(((byte)(130)))), ((int)(((byte)(180)))));
-			this.display.ZoomLevel = 100;
-			this.display.ZoomWithMouseWheel = false;
-			this.display.ZoomChanged += new System.EventHandler(this.display_ZoomChanged);
 			this.display.ShapesSelected += new System.EventHandler(this.display_ShapesSelected);
+			this.display.ZoomChanged += new System.EventHandler(this.display_ZoomChanged);
 			// 
 			// diagramSetController
 			// 
@@ -409,8 +395,8 @@
 			// toolSetController
 			// 
 			this.toolSetController.DiagramSetController = this.diagramSetController;
-			this.toolSetController.TemplateEditorSelected += new System.EventHandler<Dataweb.NShape.Controllers.TemplateEditorEventArgs>(this.toolSetController_TemplateEditorSelected);
 			this.toolSetController.DesignEditorSelected += new System.EventHandler(this.toolSetController_DesignEditorSelected);
+			this.toolSetController.TemplateEditorSelected += new System.EventHandler<Dataweb.NShape.Controllers.TemplateEditorEventArgs>(this.toolSetController_TemplateEditorSelected);
 			// 
 			// propertyPresenter
 			// 
@@ -423,7 +409,7 @@
 			this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
 			this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
 			this.BackColor = System.Drawing.SystemColors.Info;
-			this.ClientSize = new System.Drawing.Size(850, 597);
+			this.ClientSize = new System.Drawing.Size(884, 562);
 			this.Controls.Add(this.toolStripContainer);
 			this.DoubleBuffered = true;
 			this.Icon = ((System.Drawing.Icon)(resources.GetObject("$this.Icon")));

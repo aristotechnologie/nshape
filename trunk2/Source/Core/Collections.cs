@@ -176,15 +176,27 @@ namespace Dataweb.NShape.Advanced {
 
 		public void Add(Layer item) {
 			if (item == null) throw new ArgumentNullException("item");
-			for (int i = 0; i < layers.Count; ++i) {
-				if (layers[i] == null) {
-					item.Id = (LayerIds)Math.Pow(2, i);
-					layers[i] = item;
-					++layerCount;
-					break;
+			if (item.Id == LayerIds.All) throw new ArgumentException("LayerId.All is not a valid id for a layer");
+			if (item.Id == LayerIds.None) {
+				// LayerId is not set: 
+				// Insert layer at the next free slot and assign the corresponding LayerId.
+				for (int i = 0; i < layers.Count; ++i) {
+					if (layers[i] == null) {
+						item.Id = (LayerIds)Math.Pow(2, i);
+						layers[i] = item;
+						++layerCount;
+						break;
+					}
 				}
+				if (item.Id == LayerIds.None) throw new ArgumentOutOfRangeException("All available layers are used");
+			} else {
+				// LayerId is already set (e.g. when loading layers):
+				// Assign layer to the corresponding slot
+				int layerBit = GetLayerBit(item.Id);
+				Debug.Assert(layers[layerBit] == null);
+				layers[layerBit] = item;
+				++layerCount;
 			}
-			Debug.Assert(item.Id != LayerIds.None);
 		}
 
 		public void Clear() {

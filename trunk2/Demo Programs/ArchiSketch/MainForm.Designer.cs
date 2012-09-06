@@ -319,41 +319,22 @@ namespace ArchiSketch {
 			this.display.AllowDrop = true;
 			this.display.AutoScroll = true;
 			this.display.BackColorGradient = System.Drawing.SystemColors.Control;
-			this.display.BackgroundGradientAngle = 45;
-			this.display.ConnectionPointShape = Dataweb.NShape.Controllers.ControlPointShape.Circle;
 			this.display.ContextMenuStrip = this.mainContextMenuStrip;
-			this.display.ControlPointAlpha = ((byte)(255));
 			this.display.DiagramSetController = this.diagramSetController;
 			this.display.Dock = System.Windows.Forms.DockStyle.Fill;
-			this.display.GridAlpha = ((byte)(255));
 			this.display.GridColor = System.Drawing.Color.Gainsboro;
-			this.display.GridSize = 20;
-			this.display.GripSize = 3;
-			this.display.HideDeniedMenuItems = false;
-			this.display.HighQualityBackground = true;
-			this.display.HighQualityRendering = true;
 			this.display.ImeMode = System.Windows.Forms.ImeMode.NoControl;
 			this.display.Location = new System.Drawing.Point(0, 0);
-			this.display.MinRotateRange = 30;
 			this.display.Name = "display";
 			this.display.PropertyController = null;
-			this.display.RenderingQualityHighQuality = Dataweb.NShape.Advanced.RenderingQuality.HighQuality;
-			this.display.RenderingQualityLowQuality = Dataweb.NShape.Advanced.RenderingQuality.DefaultQuality;
-			this.display.ResizeGripShape = Dataweb.NShape.Controllers.ControlPointShape.Square;
 			this.display.SelectionHilightColor = System.Drawing.Color.Firebrick;
 			this.display.SelectionInactiveColor = System.Drawing.Color.Gray;
 			this.display.SelectionInteriorColor = System.Drawing.Color.WhiteSmoke;
 			this.display.SelectionNormalColor = System.Drawing.Color.DarkGreen;
-			this.display.ShowGrid = true;
-			this.display.ShowScrollBars = true;
 			this.display.Size = new System.Drawing.Size(906, 567);
-			this.display.SnapDistance = 5;
-			this.display.SnapToGrid = true;
 			this.display.TabIndex = 0;
 			this.display.ToolPreviewBackColor = System.Drawing.Color.FromArgb(((int)(((byte)(64)))), ((int)(((byte)(119)))), ((int)(((byte)(136)))), ((int)(((byte)(153)))));
 			this.display.ToolPreviewColor = System.Drawing.Color.FromArgb(((int)(((byte)(96)))), ((int)(((byte)(70)))), ((int)(((byte)(130)))), ((int)(((byte)(180)))));
-			this.display.ZoomLevel = 100;
-			this.display.ZoomWithMouseWheel = false;
 			// 
 			// diagramSetController
 			// 
@@ -362,7 +343,6 @@ namespace ArchiSketch {
 			// 
 			// project
 			// 
-			this.project.AutoGenerateTemplates = true;
 			this.project.LibrarySearchPaths = ((System.Collections.Generic.IList<string>)(resources.GetObject("project.LibrarySearchPaths")));
 			this.project.Name = "ArchiSketch Project 1";
 			this.project.Repository = this.repository;

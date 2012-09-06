@@ -153,6 +153,7 @@ namespace NShapeViewer {
 			openFileDialog.InitialDirectory = Path.GetFullPath(projectsDirectory);
 			if (openFileDialog.ShowDialog(this) == DialogResult.OK) {
 				xmlStore.DirectoryName = Path.GetDirectoryName(openFileDialog.FileName);
+				xmlStore.FileExtension = Path.GetExtension(openFileDialog.FileName);
 				project.Name = Path.GetFileNameWithoutExtension(openFileDialog.FileName);
 				project.Open();
 			}

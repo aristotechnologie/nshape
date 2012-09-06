@@ -1712,9 +1712,6 @@ namespace Dataweb.NShape.Advanced {
 				get {
 					if (currentId == ControlPointId.None) throw new InvalidOperationException("ControlPointId.None is not a valid ControlPointId for iterating.");
 					return currentId;
-					//int result = currentId;
-					//currentId = shape.GetNextPointIdCore(currentId, ControlPointCapabilities.All, +1);
-					//return result;
 				}
 			}
 

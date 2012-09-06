@@ -33,42 +33,42 @@ namespace Dataweb.NShape.Advanced {
 		/// Releases all resources
 		/// </summary>
 		public static void Clear() {
-			// dispose and clear pens
+			// Dispose and clear pens
 			foreach (KeyValuePair<PenKey, Pen> item in penCache)
 				item.Value.Dispose();
 			penCache.Clear();
 
-			// dispose and clear solid brushes
+			// Dispose and clear solid brushes
 			foreach (KeyValuePair<IColorStyle, SolidBrush> item in solidBrushCache)
 				item.Value.Dispose();
 			solidBrushCache.Clear();
 
-			// dispose and clear other brushes
+			// Dispose and clear other brushes
 			foreach (KeyValuePair<BrushKey, Brush> item in brushCache)
 				item.Value.Dispose();
 			brushCache.Clear();
 
-			// dispose and clear image attributes
+			// Dispose and clear image attributes
 			foreach (KeyValuePair<BrushKey, ImageAttributes> item in imageAttribsCache)
 				item.Value.Dispose();
 			imageAttribsCache.Clear();
 
-			// dispose and clear fonts
+			// Dispose and clear fonts
 			foreach (KeyValuePair<ICharacterStyle, Font> item in fontCache)
 				item.Value.Dispose();
 			fontCache.Clear();
 
-			// dispose and clear string formatters
+			// Dispose and clear string formatters
 			foreach (KeyValuePair<IParagraphStyle, StringFormat> item in stringFormatCache)
 				item.Value.Dispose();
 			stringFormatCache.Clear();
 
-			// dispose and clear cap paths
+			// Dispose and clear cap paths
 			foreach (KeyValuePair<CapKey, GraphicsPath> item in capPathCache)
 				item.Value.Dispose();
 			capPathCache.Clear();
 
-			// dispose and clear caps
+			// Dispose and clear caps
 			foreach (KeyValuePair<CapKey, CustomLineCap> item in capCache)
 				item.Value.Dispose();
 			capCache.Clear();
@@ -81,7 +81,7 @@ namespace Dataweb.NShape.Advanced {
 		public static void RemoveStyleSetTools(IStyleSet styleSet) {
 			if (styleSet == null) throw new ArgumentNullException("styleSet");
 
-			// delete GDI+ objects created from styles
+			// Delete GDI+ objects created from styles
 			foreach (ICapStyle style in styleSet.CapStyles)
 				ToolCache.NotifyCapStyleChanged(style);
 			foreach (ICharacterStyle style in styleSet.CharacterStyles)
@@ -246,7 +246,7 @@ namespace Dataweb.NShape.Advanced {
 			solidBrushCache.TryGetValue(colorStyle, out brush);
 			if (brush == null) {
 				brush = new SolidBrush(GetColor(colorStyle, colorStyle.ConvertToGray));
-				// add created brush to the BrushCache
+				// Add created brush to the BrushCache
 				solidBrushCache.Add(colorStyle, brush);
 			}
 			return brush;
@@ -319,7 +319,7 @@ namespace Dataweb.NShape.Advanced {
 					default: throw new NShapeUnsupportedValueException(fillStyle.FillMode);
 				}
 
-				// add created brush to the BrushCache
+				// Add created brush to the BrushCache
 				if (brushCache.ContainsKey(brushKey))
 					brushCache[brushKey] = brush;
 				else brushCache.Add(brushKey, brush);
@@ -341,7 +341,7 @@ namespace Dataweb.NShape.Advanced {
 			if (font == null) {
 				FontFamily fontFamily = characterStyle.FontFamily;
 				FontStyle style = characterStyle.Style;
-				// check if the desired FontStyle is available for this particular FontFamily
+				// Check if the desired FontStyle is available for this particular FontFamily
 				// Set an available FontStyle if not.
 				if (fontFamily != null && !fontFamily.IsStyleAvailable(style)) {
 					if (fontFamily.IsStyleAvailable(FontStyle.Regular)) {
@@ -368,7 +368,7 @@ namespace Dataweb.NShape.Advanced {
 				}
 				//font = new Font(fontFamily, characterStyle.PointSize, style, GraphicsUnit.Point);
 				font = new Font(fontFamily, characterStyle.Size, style, GraphicsUnit.Pixel);
-				// add font to the FontCache
+				// Add font to the FontCache
 				fontCache.Add(characterStyle, font);
 			}
 			return font;
@@ -434,7 +434,7 @@ namespace Dataweb.NShape.Advanced {
 					stringFormat.FormatFlags |= StringFormatFlags.NoWrap;
 				stringFormat.Trimming = paragraphStyle.Trimming;
 				
-				// add font to the FontCache
+				// Add font to the FontCache
 				stringFormatCache.Add(paragraphStyle, stringFormat);
 			}
 			return stringFormat;
@@ -451,14 +451,14 @@ namespace Dataweb.NShape.Advanced {
 		private static void NotifyCapStyleChanged(ICapStyle capStyle) {
 			Debug.Assert(capStyle != null);
 			
-			// collect affected PenKeys
+			// Collect affected PenKeys
 			List<PenKey> penKeys = new List<PenKey>();
 			foreach (KeyValuePair<PenKey, Pen> item in penCache)
 				if (item.Key.StartCapStyle != null && item.Key.StartCapStyle == capStyle)
 					penKeys.Add(item.Key);
 				else if (item.Key.EndCapStyle != null && item.Key.EndCapStyle == capStyle)
 					penKeys.Add(item.Key);
-			// delete affected Pens
+			// Delete affected Pens
 			foreach (PenKey penKey in penKeys) {
 				Pen pen = penCache[penKey];
 				penCache.Remove(penKey);
@@ -467,20 +467,20 @@ namespace Dataweb.NShape.Advanced {
 			}
 			penKeys.Clear();
 
-			// collect affected CustomLineCaps
+			// Collect affected CustomLineCaps
 			List<CapKey> capKeys = new List<CapKey>();
 			foreach (KeyValuePair<CapKey, CustomLineCap> item in capCache)
 				if (item.Key.CapStyle == capStyle)
 					capKeys.Add(item.Key);
-			// delete affected CustomLineCaps
+
+			// Delete affected CustomLineCaps
 			foreach (CapKey capKey in capKeys) {
 				CustomLineCap cap = capCache[capKey];
 				capCache.Remove(capKey);
 				cap.Dispose();
 				cap = null;
 			}
-
-			// delete all GraphicsPaths
+			// Delete affected GraphicsPaths
 			foreach (CapKey capKey in capKeys) {
 				if (capPathCache.ContainsKey(capKey)) {
 					GraphicsPath path = capPathCache[capKey];
@@ -498,7 +498,7 @@ namespace Dataweb.NShape.Advanced {
 		/// </summary>
 		private static void NotifyCharacterStyleChanged(ICharacterStyle characterStyle) {
 			Debug.Assert(characterStyle != null);
-			
+			// Delete affected fonts
 			while (fontCache.ContainsKey(characterStyle)) {
 				Font font = fontCache[characterStyle];
 				fontCache.Remove(characterStyle);
@@ -514,7 +514,7 @@ namespace Dataweb.NShape.Advanced {
 		private static void NotifyColorStyleChanged(IColorStyle colorStyle) {
 			Debug.Assert(colorStyle != null);
 
-			// dispose affected SolidBrushes
+			// Dispose affected SolidBrushes
 			while (solidBrushCache.ContainsKey(colorStyle)) {
 				Brush brush = solidBrushCache[colorStyle];
 				solidBrushCache.Remove(colorStyle);
@@ -522,7 +522,7 @@ namespace Dataweb.NShape.Advanced {
 				brush = null;
 			}
 
-			// collect affected Brushes
+			// Collect affected Brushes
 			List<IFillStyle> fillStyles = new List<IFillStyle>();
 			foreach (KeyValuePair<BrushKey, Brush> item in brushCache) {
 				if (item.Key.FillStyle != null
@@ -531,12 +531,12 @@ namespace Dataweb.NShape.Advanced {
 					fillStyles.Add(item.Key.FillStyle);
 				}
 			}
-			// delete affected Brushes and notify that FillStyles have changed
+			// Delete affected Brushes and notify that FillStyles have changed
 			foreach (IFillStyle fillStyle in fillStyles)
 				NotifyFillStyleChanged(fillStyle);
 			fillStyles.Clear();
 
-			// collect affected Pens
+			// Collect affected Pens
 			List<PenKey> penKeys = new List<PenKey>();
 			foreach (KeyValuePair<PenKey, Pen> item in penCache) {
 				if (item.Key.LineStyle.ColorStyle == colorStyle)
@@ -546,18 +546,18 @@ namespace Dataweb.NShape.Advanced {
 				else if (item.Key.EndCapStyle != null && item.Key.EndCapStyle.ColorStyle == colorStyle)
 					penKeys.Add(item.Key);
 			}
-			// delete affected Pens
+			// Delete affected Pens
 			foreach (PenKey penKey in penKeys)
 				// notify only affected LineStyles, affected CapStyles are notified later
 				NotifyLineStyleChanged(penKey.LineStyle);
 			penKeys.Clear();
 
-			// collect affected CustomLineCaps
+			// Collect affected CustomLineCaps
 			List<CapKey> capKeys = new List<CapKey>();
 			foreach (KeyValuePair<CapKey, CustomLineCap> item in capCache)
 				if (item.Key.CapStyle.ColorStyle == colorStyle || item.Key.CapStyle.ColorStyle == colorStyle)
 					capKeys.Add(item.Key);
-			// delete affected CustomLineCaps
+			// Delete affected CustomLineCaps
 			foreach (CapKey capKey in capKeys)
 				NotifyCapStyleChanged(capKey.CapStyle);
 			capKeys.Clear();
@@ -572,12 +572,14 @@ namespace Dataweb.NShape.Advanced {
 			BrushKey brushKey;
 			brushKey.FillStyle = fillStyle;
 			brushKey.Image = null;
+			// Delete affected brushes
 			while (brushCache.ContainsKey(brushKey)) {
 				Brush brush = brushCache[brushKey];
 				brushCache.Remove(brushKey);
 				brush.Dispose();
 				brush = null;
 			}
+			// Delete affected ImageAttributes
 			while (imageAttribsCache.ContainsKey(brushKey)) {
 				ImageAttributes imgAttribs = imageAttribsCache[brushKey];
 				imageAttribsCache.Remove(brushKey);
@@ -593,12 +595,12 @@ namespace Dataweb.NShape.Advanced {
 		private static void NotifyLineStyleChanged(ILineStyle lineStyle) {
 			Debug.Assert(lineStyle != null);
 
-			// collect affected PenKeys
+			// Collect affected PenKeys
 			List<PenKey> penKeys = new List<PenKey>();
 			foreach (KeyValuePair<PenKey, Pen> item in penCache)
 				if (item.Key.LineStyle == lineStyle)
 					penKeys.Add(item.Key);
-			// delete affected Pens
+			// Delete affected Pens
 			foreach (PenKey penKey in penKeys) {
 				Pen pen = penCache[penKey];
 				penCache.Remove(penKey);
@@ -607,12 +609,12 @@ namespace Dataweb.NShape.Advanced {
 			}
 			penKeys.Clear();
 
-			// collect affected CustomLineCaps
+			// Collect affected CustomLineCaps
 			List<CapKey> capKeys = new List<CapKey>();
 			foreach (KeyValuePair<CapKey, CustomLineCap> item in capCache)
 				if (item.Key.LineStyle == lineStyle)
 					capKeys.Add(item.Key);
-			// delete affected CustomLineCaps and their GraphicsPaths
+			// Delete affected CustomLineCaps and their GraphicsPaths
 			foreach (CapKey capKey in capKeys)
 				NotifyCapStyleChanged(capKey.CapStyle);
 			capKeys.Clear();
@@ -658,7 +660,7 @@ namespace Dataweb.NShape.Advanced {
 				rectBuffer.Height = image.Height;
 				brush = new TextureBrush(image, rectBuffer, imgAttribs);
 
-				// add created brush to the BrushCache
+				// Add created brush to the BrushCache
 				if (brushCache.ContainsKey(brushKey))
 					brushCache[brushKey] = brush;
 				else brushCache.Add(brushKey, brush);
@@ -689,13 +691,13 @@ namespace Dataweb.NShape.Advanced {
 			if (capStyle == null) throw new ArgumentNullException("capStyle");
 			if (lineStyle == null) throw new ArgumentNullException("lineStyle");
 
-			// build CapKey
+			// Build CapKey
 			CapKey capKey;
 			capKey.CapStyle = capStyle;
 			capKey.LineStyle = lineStyle;
-			// get GraphicsPath for the CustomLineCap
+			// Get GraphicsPath for the CustomLineCap
 			GraphicsPath capPath = GetCapPath(capStyle, lineStyle);
-			// find/create CustomLineCap
+			// Find/create CustomLineCap
 			CustomLineCap customCap = null;
 			capCache.TryGetValue(capKey, out customCap);
 			if (customCap == null) {

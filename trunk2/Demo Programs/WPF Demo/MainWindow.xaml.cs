@@ -147,7 +147,7 @@ namespace NShape_WPF_Demo {
 				saveFileDialog.CreatePrompt = false;		// Do not ask wether to create the file
 				saveFileDialog.CheckFileExists = false;	// Do not check wether the file does NOT exist
 				saveFileDialog.CheckPathExists = true;		// Ask wether to overwrite existing file
-				saveFileDialog.Filter = "NShape XML Repositories|*.xml|All Files|*.*";
+				saveFileDialog.Filter = "NShape XML Repositories|*.nspj;*.xml|All Files|*.*";
 				if (Directory.Exists(xmlStore.DirectoryName))
 					saveFileDialog.InitialDirectory = xmlStore.DirectoryName;
 				else
@@ -223,7 +223,7 @@ namespace NShape_WPF_Demo {
 
 		private void openProjectMenuItem_Click(object sender, RoutedEventArgs e) {
 			OpenFileDialog openFileDialog = new OpenFileDialog();
-			openFileDialog.Filter = "NShape Project Files|*.xml|All Files|*.*";
+			openFileDialog.Filter = "NShape Project Files|*.nspj;*.xml|All Files|*.*";
 			openFileDialog.Multiselect = false;
 			if (openFileDialog.ShowDialog(this).GetValueOrDefault()) {
 				string directory = System.IO.Path.GetDirectoryName(openFileDialog.FileName);

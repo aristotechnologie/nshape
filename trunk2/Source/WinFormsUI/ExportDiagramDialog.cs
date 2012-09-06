@@ -563,15 +563,15 @@ namespace Dataweb.NShape.WinFormsUI {
 
 		private void okButton_Click(object sender, EventArgs e) {
 			ExportImage();
-			if (Modal) DialogResult = DialogResult.OK;
-			else Close();
+			DialogResult = DialogResult.OK;
+			if (!Modal) Close();
 			DeleteImage();
 		}
 
 
 		private void cancelButton_Click(object sender, EventArgs e) {
-			if (this.Modal) DialogResult = DialogResult.Cancel;
-			else Close();
+			DialogResult = DialogResult.Cancel;
+			if (!Modal) Close();
 			DeleteImage();
 		}
 

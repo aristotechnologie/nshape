@@ -72,6 +72,7 @@
 			// 
 			// xmlStore
 			// 
+			this.xmlStore.BackupGenerationMode = Dataweb.NShape.XmlStore.BackupFileGenerationMode.BakFile;
 			this.xmlStore.DesignFileName = "";
 			this.xmlStore.DirectoryName = "";
 			this.xmlStore.FileExtension = ".xml";
@@ -89,7 +90,7 @@
 			// openFileDialog
 			// 
 			this.openFileDialog.FileName = "openFileDialog1";
-			this.openFileDialog.Filter = "XML Repositories|*.xml|AllFiles|*.*";
+			this.openFileDialog.Filter = "NShape XML Repositories|*.nspj;*.xml|AllFiles|*.*";
 			// 
 			// menuStrip
 			// 

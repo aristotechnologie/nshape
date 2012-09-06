@@ -25,7 +25,7 @@
 		private void InitializeComponent() {
 			this.components = new System.ComponentModel.Container();
 			System.ComponentModel.ComponentResourceManager resources = new System.ComponentModel.ComponentResourceManager(typeof(MainForm));
-			Dataweb.NShape.RoleBasedSecurityManager roleBasedSecurityManager1 = new Dataweb.NShape.RoleBasedSecurityManager();
+			Dataweb.NShape.RoleBasedSecurityManager roleBasedSecurityManager3 = new Dataweb.NShape.RoleBasedSecurityManager();
 			this.diagramSetController = new Dataweb.NShape.Controllers.DiagramSetController();
 			this.project = new Dataweb.NShape.Project(this.components);
 			this.cachedRepository = new Dataweb.NShape.Advanced.CachedRepository();
@@ -57,9 +57,8 @@
 			this.chkHideMenuItems = new System.Windows.Forms.CheckBox();
 			this.editPermissionsButton = new System.Windows.Forms.Button();
 			this.PermissionsGroupBox = new System.Windows.Forms.GroupBox();
-			this.label1 = new System.Windows.Forms.Label();
-			this.cboDomain = new System.Windows.Forms.ComboBox();
 			this.domainPermissionInfoPanel = new System.Windows.Forms.TableLayoutPanel();
+			this.label1 = new System.Windows.Forms.Label();
 			this.lblDomainPermissions = new System.Windows.Forms.Label();
 			this.chkModifyPresent = new System.Windows.Forms.CheckBox();
 			this.chkViewPresent = new System.Windows.Forms.CheckBox();
@@ -92,6 +91,7 @@
 			this.lblPermissions = new System.Windows.Forms.Label();
 			this.lblModifyAccess = new System.Windows.Forms.Label();
 			this.lblViewAccess = new System.Windows.Forms.Label();
+			this.cboDomain = new System.Windows.Forms.ComboBox();
 			this.panel1 = new System.Windows.Forms.Panel();
 			this.splitter1 = new System.Windows.Forms.Splitter();
 			this.toolSetListViewPresenter = new Dataweb.NShape.WinFormsUI.ToolSetListViewPresenter(this.components);
@@ -127,9 +127,9 @@
 			this.project.LibrarySearchPaths = ((System.Collections.Generic.IList<string>)(resources.GetObject("project.LibrarySearchPaths")));
 			this.project.Name = null;
 			this.project.Repository = this.cachedRepository;
-			roleBasedSecurityManager1.CurrentRole = Dataweb.NShape.StandardRole.Administrator;
-			roleBasedSecurityManager1.CurrentRoleName = "Administrator";
-			this.project.SecurityManager = roleBasedSecurityManager1;
+			roleBasedSecurityManager3.CurrentRole = Dataweb.NShape.StandardRole.Administrator;
+			roleBasedSecurityManager3.CurrentRoleName = "Administrator";
+			this.project.SecurityManager = roleBasedSecurityManager3;
 			// 
 			// cachedRepository
 			// 
@@ -208,6 +208,7 @@
 			this.display1.DiagramSetController = this.diagramSetController;
 			this.display1.Dock = System.Windows.Forms.DockStyle.Fill;
 			this.display1.GridColor = System.Drawing.Color.Gainsboro;
+			this.display1.GridSize = 19;
 			this.display1.ImeMode = System.Windows.Forms.ImeMode.NoControl;
 			this.display1.Location = new System.Drawing.Point(0, 0);
 			this.display1.Name = "display1";
@@ -484,8 +485,6 @@
 			this.PermissionsGroupBox.Anchor = ((System.Windows.Forms.AnchorStyles)((((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Bottom) 
             | System.Windows.Forms.AnchorStyles.Left) 
             | System.Windows.Forms.AnchorStyles.Right)));
-			this.PermissionsGroupBox.Controls.Add(this.label1);
-			this.PermissionsGroupBox.Controls.Add(this.cboDomain);
 			this.PermissionsGroupBox.Controls.Add(this.domainPermissionInfoPanel);
 			this.PermissionsGroupBox.Font = new System.Drawing.Font("Microsoft Sans Serif", 8.25F, System.Drawing.FontStyle.Bold, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
 			this.PermissionsGroupBox.Location = new System.Drawing.Point(3, 215);
@@ -494,54 +493,6 @@
 			this.PermissionsGroupBox.TabIndex = 1;
 			this.PermissionsGroupBox.TabStop = false;
 			this.PermissionsGroupBox.Text = "Permissions";
-			// 
-			// label1
-			// 
-			this.label1.AutoSize = true;
-			this.label1.Font = new System.Drawing.Font("Microsoft Sans Serif", 8.25F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
-			this.label1.Location = new System.Drawing.Point(9, 22);
-			this.label1.Name = "label1";
-			this.label1.Size = new System.Drawing.Size(84, 13);
-			this.label1.TabIndex = 3;
-			this.label1.Text = "SecurityDomain:";
-			// 
-			// cboDomain
-			// 
-			this.cboDomain.DropDownStyle = System.Windows.Forms.ComboBoxStyle.DropDownList;
-			this.cboDomain.Font = new System.Drawing.Font("Microsoft Sans Serif", 8.25F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
-			this.cboDomain.FormattingEnabled = true;
-			this.cboDomain.Items.AddRange(new object[] {
-            "A",
-            "B",
-            "C",
-            "D",
-            "E",
-            "F",
-            "G",
-            "H",
-            "I",
-            "J",
-            "K",
-            "L",
-            "M",
-            "N",
-            "O",
-            "P",
-            "Q",
-            "R",
-            "S",
-            "T",
-            "U",
-            "V",
-            "W",
-            "X",
-            "Y",
-            "Z"});
-			this.cboDomain.Location = new System.Drawing.Point(96, 19);
-			this.cboDomain.Name = "cboDomain";
-			this.cboDomain.Size = new System.Drawing.Size(45, 21);
-			this.cboDomain.TabIndex = 2;
-			this.cboDomain.SelectedIndexChanged += new System.EventHandler(this.userOrDomainCheckBox_SelectedIndexChanged);
 			// 
 			// domainPermissionInfoPanel
 			// 
@@ -552,60 +503,75 @@
 			this.domainPermissionInfoPanel.ColumnStyles.Add(new System.Windows.Forms.ColumnStyle(System.Windows.Forms.SizeType.Percent, 100F));
 			this.domainPermissionInfoPanel.ColumnStyles.Add(new System.Windows.Forms.ColumnStyle());
 			this.domainPermissionInfoPanel.ColumnStyles.Add(new System.Windows.Forms.ColumnStyle());
-			this.domainPermissionInfoPanel.Controls.Add(this.lblDomainPermissions, 0, 7);
-			this.domainPermissionInfoPanel.Controls.Add(this.chkModifyPresent, 2, 13);
-			this.domainPermissionInfoPanel.Controls.Add(this.chkViewPresent, 1, 13);
-			this.domainPermissionInfoPanel.Controls.Add(this.chkModifyData, 2, 12);
-			this.domainPermissionInfoPanel.Controls.Add(this.chkViewData, 1, 12);
-			this.domainPermissionInfoPanel.Controls.Add(this.chkModifyLayout, 2, 11);
-			this.domainPermissionInfoPanel.Controls.Add(this.chkViewLayout, 1, 11);
-			this.domainPermissionInfoPanel.Controls.Add(this.chkModifyConnect, 2, 10);
-			this.domainPermissionInfoPanel.Controls.Add(this.chkViewConnect, 1, 10);
-			this.domainPermissionInfoPanel.Controls.Add(this.chkModifyDelete, 2, 9);
-			this.domainPermissionInfoPanel.Controls.Add(this.chkViewDelete, 1, 9);
-			this.domainPermissionInfoPanel.Controls.Add(this.chkModifyInsert, 2, 8);
-			this.domainPermissionInfoPanel.Controls.Add(this.chkViewInsert, 1, 8);
-			this.domainPermissionInfoPanel.Controls.Add(this.chkModifyTemplates, 2, 6);
-			this.domainPermissionInfoPanel.Controls.Add(this.chkViewTemplates, 1, 6);
-			this.domainPermissionInfoPanel.Controls.Add(this.chkModifySecurity, 2, 5);
-			this.domainPermissionInfoPanel.Controls.Add(this.chkViewSecurity, 1, 5);
-			this.domainPermissionInfoPanel.Controls.Add(this.chkModifyDesigns, 2, 4);
-			this.domainPermissionInfoPanel.Controls.Add(this.chkViewDesigns, 1, 4);
-			this.domainPermissionInfoPanel.Controls.Add(this.lblGeneralPermissions, 0, 3);
-			this.domainPermissionInfoPanel.Controls.Add(this.lblPermissionDesigns, 0, 4);
-			this.domainPermissionInfoPanel.Controls.Add(this.lblPermissionSecurity, 0, 5);
-			this.domainPermissionInfoPanel.Controls.Add(this.lblPermissionTemplates, 0, 6);
-			this.domainPermissionInfoPanel.Controls.Add(this.lblPermissionPresent, 0, 13);
-			this.domainPermissionInfoPanel.Controls.Add(this.lblPermissionDelete, 0, 9);
-			this.domainPermissionInfoPanel.Controls.Add(this.lblPermissionInsert, 0, 8);
-			this.domainPermissionInfoPanel.Controls.Add(this.lblPermissionConnect, 0, 10);
-			this.domainPermissionInfoPanel.Controls.Add(this.lblPermissionLayout, 0, 11);
-			this.domainPermissionInfoPanel.Controls.Add(this.lblPermissionData, 0, 12);
+			this.domainPermissionInfoPanel.Controls.Add(this.label1, 0, 6);
+			this.domainPermissionInfoPanel.Controls.Add(this.lblDomainPermissions, 0, 8);
+			this.domainPermissionInfoPanel.Controls.Add(this.chkModifyPresent, 2, 14);
+			this.domainPermissionInfoPanel.Controls.Add(this.chkViewPresent, 1, 14);
+			this.domainPermissionInfoPanel.Controls.Add(this.chkModifyData, 2, 13);
+			this.domainPermissionInfoPanel.Controls.Add(this.chkViewData, 1, 13);
+			this.domainPermissionInfoPanel.Controls.Add(this.chkModifyLayout, 2, 12);
+			this.domainPermissionInfoPanel.Controls.Add(this.chkViewLayout, 1, 12);
+			this.domainPermissionInfoPanel.Controls.Add(this.chkModifyConnect, 2, 11);
+			this.domainPermissionInfoPanel.Controls.Add(this.chkViewConnect, 1, 11);
+			this.domainPermissionInfoPanel.Controls.Add(this.chkModifyDelete, 2, 10);
+			this.domainPermissionInfoPanel.Controls.Add(this.chkViewDelete, 1, 10);
+			this.domainPermissionInfoPanel.Controls.Add(this.chkModifyInsert, 2, 9);
+			this.domainPermissionInfoPanel.Controls.Add(this.chkViewInsert, 1, 9);
+			this.domainPermissionInfoPanel.Controls.Add(this.chkModifyTemplates, 2, 4);
+			this.domainPermissionInfoPanel.Controls.Add(this.chkViewTemplates, 1, 4);
+			this.domainPermissionInfoPanel.Controls.Add(this.chkModifySecurity, 2, 3);
+			this.domainPermissionInfoPanel.Controls.Add(this.chkViewSecurity, 1, 3);
+			this.domainPermissionInfoPanel.Controls.Add(this.chkModifyDesigns, 2, 2);
+			this.domainPermissionInfoPanel.Controls.Add(this.chkViewDesigns, 1, 2);
+			this.domainPermissionInfoPanel.Controls.Add(this.lblGeneralPermissions, 0, 1);
+			this.domainPermissionInfoPanel.Controls.Add(this.lblPermissionDesigns, 0, 2);
+			this.domainPermissionInfoPanel.Controls.Add(this.lblPermissionSecurity, 0, 3);
+			this.domainPermissionInfoPanel.Controls.Add(this.lblPermissionTemplates, 0, 4);
+			this.domainPermissionInfoPanel.Controls.Add(this.lblPermissionPresent, 0, 14);
+			this.domainPermissionInfoPanel.Controls.Add(this.lblPermissionDelete, 0, 10);
+			this.domainPermissionInfoPanel.Controls.Add(this.lblPermissionInsert, 0, 9);
+			this.domainPermissionInfoPanel.Controls.Add(this.lblPermissionConnect, 0, 11);
+			this.domainPermissionInfoPanel.Controls.Add(this.lblPermissionLayout, 0, 12);
+			this.domainPermissionInfoPanel.Controls.Add(this.lblPermissionData, 0, 13);
 			this.domainPermissionInfoPanel.Controls.Add(this.lblPermissions, 0, 0);
 			this.domainPermissionInfoPanel.Controls.Add(this.lblModifyAccess, 2, 0);
 			this.domainPermissionInfoPanel.Controls.Add(this.lblViewAccess, 1, 0);
+			this.domainPermissionInfoPanel.Controls.Add(this.cboDomain, 2, 6);
 			this.domainPermissionInfoPanel.Location = new System.Drawing.Point(9, 46);
 			this.domainPermissionInfoPanel.Name = "domainPermissionInfoPanel";
-			this.domainPermissionInfoPanel.RowCount = 15;
+			this.domainPermissionInfoPanel.RowCount = 16;
 			this.domainPermissionInfoPanel.RowStyles.Add(new System.Windows.Forms.RowStyle(System.Windows.Forms.SizeType.Absolute, 20F));
-			this.domainPermissionInfoPanel.RowStyles.Add(new System.Windows.Forms.RowStyle());
-			this.domainPermissionInfoPanel.RowStyles.Add(new System.Windows.Forms.RowStyle());
 			this.domainPermissionInfoPanel.RowStyles.Add(new System.Windows.Forms.RowStyle(System.Windows.Forms.SizeType.Absolute, 20F));
-			this.domainPermissionInfoPanel.RowStyles.Add(new System.Windows.Forms.RowStyle());
-			this.domainPermissionInfoPanel.RowStyles.Add(new System.Windows.Forms.RowStyle());
-			this.domainPermissionInfoPanel.RowStyles.Add(new System.Windows.Forms.RowStyle());
-			this.domainPermissionInfoPanel.RowStyles.Add(new System.Windows.Forms.RowStyle(System.Windows.Forms.SizeType.Absolute, 20F));
-			this.domainPermissionInfoPanel.RowStyles.Add(new System.Windows.Forms.RowStyle());
-			this.domainPermissionInfoPanel.RowStyles.Add(new System.Windows.Forms.RowStyle());
-			this.domainPermissionInfoPanel.RowStyles.Add(new System.Windows.Forms.RowStyle());
 			this.domainPermissionInfoPanel.RowStyles.Add(new System.Windows.Forms.RowStyle());
 			this.domainPermissionInfoPanel.RowStyles.Add(new System.Windows.Forms.RowStyle());
 			this.domainPermissionInfoPanel.RowStyles.Add(new System.Windows.Forms.RowStyle());
 			this.domainPermissionInfoPanel.RowStyles.Add(new System.Windows.Forms.RowStyle(System.Windows.Forms.SizeType.Absolute, 20F));
+			this.domainPermissionInfoPanel.RowStyles.Add(new System.Windows.Forms.RowStyle());
 			this.domainPermissionInfoPanel.RowStyles.Add(new System.Windows.Forms.RowStyle(System.Windows.Forms.SizeType.Absolute, 20F));
 			this.domainPermissionInfoPanel.RowStyles.Add(new System.Windows.Forms.RowStyle(System.Windows.Forms.SizeType.Absolute, 20F));
+			this.domainPermissionInfoPanel.RowStyles.Add(new System.Windows.Forms.RowStyle());
+			this.domainPermissionInfoPanel.RowStyles.Add(new System.Windows.Forms.RowStyle());
+			this.domainPermissionInfoPanel.RowStyles.Add(new System.Windows.Forms.RowStyle());
+			this.domainPermissionInfoPanel.RowStyles.Add(new System.Windows.Forms.RowStyle());
+			this.domainPermissionInfoPanel.RowStyles.Add(new System.Windows.Forms.RowStyle());
+			this.domainPermissionInfoPanel.RowStyles.Add(new System.Windows.Forms.RowStyle());
+			this.domainPermissionInfoPanel.RowStyles.Add(new System.Windows.Forms.RowStyle());
 			this.domainPermissionInfoPanel.Size = new System.Drawing.Size(185, 385);
 			this.domainPermissionInfoPanel.TabIndex = 0;
+			// 
+			// label1
+			// 
+			this.label1.Anchor = ((System.Windows.Forms.AnchorStyles)(((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Bottom) 
+            | System.Windows.Forms.AnchorStyles.Left)));
+			this.label1.AutoSize = true;
+			this.domainPermissionInfoPanel.SetColumnSpan(this.label1, 2);
+			this.label1.Font = new System.Drawing.Font("Microsoft Sans Serif", 8.25F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
+			this.label1.Location = new System.Drawing.Point(3, 120);
+			this.label1.Name = "label1";
+			this.label1.Size = new System.Drawing.Size(84, 27);
+			this.label1.TabIndex = 3;
+			this.label1.Text = "SecurityDomain:";
+			this.label1.TextAlign = System.Drawing.ContentAlignment.MiddleLeft;
 			// 
 			// lblDomainPermissions
 			// 
@@ -613,7 +579,7 @@
             | System.Windows.Forms.AnchorStyles.Right)));
 			this.domainPermissionInfoPanel.SetColumnSpan(this.lblDomainPermissions, 3);
 			this.lblDomainPermissions.Font = new System.Drawing.Font("Microsoft Sans Serif", 8.25F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
-			this.lblDomainPermissions.Location = new System.Drawing.Point(3, 100);
+			this.lblDomainPermissions.Location = new System.Drawing.Point(3, 167);
 			this.lblDomainPermissions.Name = "lblDomainPermissions";
 			this.lblDomainPermissions.Size = new System.Drawing.Size(179, 20);
 			this.lblDomainPermissions.TabIndex = 39;
@@ -625,7 +591,7 @@
 			this.chkModifyPresent.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Bottom)));
 			this.chkModifyPresent.AutoCheck = false;
 			this.chkModifyPresent.AutoSize = true;
-			this.chkModifyPresent.Location = new System.Drawing.Point(152, 223);
+			this.chkModifyPresent.Location = new System.Drawing.Point(152, 290);
 			this.chkModifyPresent.Name = "chkModifyPresent";
 			this.chkModifyPresent.Size = new System.Drawing.Size(15, 14);
 			this.chkModifyPresent.TabIndex = 34;
@@ -636,7 +602,7 @@
 			this.chkViewPresent.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Bottom)));
 			this.chkViewPresent.AutoCheck = false;
 			this.chkViewPresent.AutoSize = true;
-			this.chkViewPresent.Location = new System.Drawing.Point(107, 223);
+			this.chkViewPresent.Location = new System.Drawing.Point(106, 290);
 			this.chkViewPresent.Name = "chkViewPresent";
 			this.chkViewPresent.Size = new System.Drawing.Size(15, 14);
 			this.chkViewPresent.TabIndex = 33;
@@ -647,7 +613,7 @@
 			this.chkModifyData.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Bottom)));
 			this.chkModifyData.AutoCheck = false;
 			this.chkModifyData.AutoSize = true;
-			this.chkModifyData.Location = new System.Drawing.Point(152, 203);
+			this.chkModifyData.Location = new System.Drawing.Point(152, 270);
 			this.chkModifyData.Name = "chkModifyData";
 			this.chkModifyData.Size = new System.Drawing.Size(15, 14);
 			this.chkModifyData.TabIndex = 32;
@@ -658,7 +624,7 @@
 			this.chkViewData.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Bottom)));
 			this.chkViewData.AutoCheck = false;
 			this.chkViewData.AutoSize = true;
-			this.chkViewData.Location = new System.Drawing.Point(107, 203);
+			this.chkViewData.Location = new System.Drawing.Point(106, 270);
 			this.chkViewData.Name = "chkViewData";
 			this.chkViewData.Size = new System.Drawing.Size(15, 14);
 			this.chkViewData.TabIndex = 31;
@@ -669,7 +635,7 @@
 			this.chkModifyLayout.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Bottom)));
 			this.chkModifyLayout.AutoCheck = false;
 			this.chkModifyLayout.AutoSize = true;
-			this.chkModifyLayout.Location = new System.Drawing.Point(152, 183);
+			this.chkModifyLayout.Location = new System.Drawing.Point(152, 250);
 			this.chkModifyLayout.Name = "chkModifyLayout";
 			this.chkModifyLayout.Size = new System.Drawing.Size(15, 14);
 			this.chkModifyLayout.TabIndex = 30;
@@ -680,7 +646,7 @@
 			this.chkViewLayout.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Bottom)));
 			this.chkViewLayout.AutoCheck = false;
 			this.chkViewLayout.AutoSize = true;
-			this.chkViewLayout.Location = new System.Drawing.Point(107, 183);
+			this.chkViewLayout.Location = new System.Drawing.Point(106, 250);
 			this.chkViewLayout.Name = "chkViewLayout";
 			this.chkViewLayout.Size = new System.Drawing.Size(15, 14);
 			this.chkViewLayout.TabIndex = 29;
@@ -691,7 +657,7 @@
 			this.chkModifyConnect.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Bottom)));
 			this.chkModifyConnect.AutoCheck = false;
 			this.chkModifyConnect.AutoSize = true;
-			this.chkModifyConnect.Location = new System.Drawing.Point(152, 163);
+			this.chkModifyConnect.Location = new System.Drawing.Point(152, 230);
 			this.chkModifyConnect.Name = "chkModifyConnect";
 			this.chkModifyConnect.Size = new System.Drawing.Size(15, 14);
 			this.chkModifyConnect.TabIndex = 28;
@@ -702,7 +668,7 @@
 			this.chkViewConnect.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Bottom)));
 			this.chkViewConnect.AutoCheck = false;
 			this.chkViewConnect.AutoSize = true;
-			this.chkViewConnect.Location = new System.Drawing.Point(107, 163);
+			this.chkViewConnect.Location = new System.Drawing.Point(106, 230);
 			this.chkViewConnect.Name = "chkViewConnect";
 			this.chkViewConnect.Size = new System.Drawing.Size(15, 14);
 			this.chkViewConnect.TabIndex = 27;
@@ -713,7 +679,7 @@
 			this.chkModifyDelete.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Bottom)));
 			this.chkModifyDelete.AutoCheck = false;
 			this.chkModifyDelete.AutoSize = true;
-			this.chkModifyDelete.Location = new System.Drawing.Point(152, 143);
+			this.chkModifyDelete.Location = new System.Drawing.Point(152, 210);
 			this.chkModifyDelete.Name = "chkModifyDelete";
 			this.chkModifyDelete.Size = new System.Drawing.Size(15, 14);
 			this.chkModifyDelete.TabIndex = 26;
@@ -724,7 +690,7 @@
 			this.chkViewDelete.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Bottom)));
 			this.chkViewDelete.AutoCheck = false;
 			this.chkViewDelete.AutoSize = true;
-			this.chkViewDelete.Location = new System.Drawing.Point(107, 143);
+			this.chkViewDelete.Location = new System.Drawing.Point(106, 210);
 			this.chkViewDelete.Name = "chkViewDelete";
 			this.chkViewDelete.Size = new System.Drawing.Size(15, 14);
 			this.chkViewDelete.TabIndex = 25;
@@ -735,7 +701,7 @@
 			this.chkModifyInsert.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Bottom)));
 			this.chkModifyInsert.AutoCheck = false;
 			this.chkModifyInsert.AutoSize = true;
-			this.chkModifyInsert.Location = new System.Drawing.Point(152, 123);
+			this.chkModifyInsert.Location = new System.Drawing.Point(152, 190);
 			this.chkModifyInsert.Name = "chkModifyInsert";
 			this.chkModifyInsert.Size = new System.Drawing.Size(15, 14);
 			this.chkModifyInsert.TabIndex = 24;
@@ -746,7 +712,7 @@
 			this.chkViewInsert.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Bottom)));
 			this.chkViewInsert.AutoCheck = false;
 			this.chkViewInsert.AutoSize = true;
-			this.chkViewInsert.Location = new System.Drawing.Point(107, 123);
+			this.chkViewInsert.Location = new System.Drawing.Point(106, 190);
 			this.chkViewInsert.Name = "chkViewInsert";
 			this.chkViewInsert.Size = new System.Drawing.Size(15, 14);
 			this.chkViewInsert.TabIndex = 23;
@@ -768,7 +734,7 @@
 			this.chkViewTemplates.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Bottom)));
 			this.chkViewTemplates.AutoCheck = false;
 			this.chkViewTemplates.AutoSize = true;
-			this.chkViewTemplates.Location = new System.Drawing.Point(107, 83);
+			this.chkViewTemplates.Location = new System.Drawing.Point(106, 83);
 			this.chkViewTemplates.Name = "chkViewTemplates";
 			this.chkViewTemplates.Size = new System.Drawing.Size(15, 14);
 			this.chkViewTemplates.TabIndex = 21;
@@ -790,7 +756,7 @@
 			this.chkViewSecurity.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Bottom)));
 			this.chkViewSecurity.AutoCheck = false;
 			this.chkViewSecurity.AutoSize = true;
-			this.chkViewSecurity.Location = new System.Drawing.Point(107, 63);
+			this.chkViewSecurity.Location = new System.Drawing.Point(106, 63);
 			this.chkViewSecurity.Name = "chkViewSecurity";
 			this.chkViewSecurity.Size = new System.Drawing.Size(15, 14);
 			this.chkViewSecurity.TabIndex = 19;
@@ -812,7 +778,7 @@
 			this.chkViewDesigns.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Bottom)));
 			this.chkViewDesigns.AutoCheck = false;
 			this.chkViewDesigns.AutoSize = true;
-			this.chkViewDesigns.Location = new System.Drawing.Point(107, 43);
+			this.chkViewDesigns.Location = new System.Drawing.Point(106, 43);
 			this.chkViewDesigns.Name = "chkViewDesigns";
 			this.chkViewDesigns.Size = new System.Drawing.Size(15, 14);
 			this.chkViewDesigns.TabIndex = 17;
@@ -876,7 +842,7 @@
             | System.Windows.Forms.AnchorStyles.Left)));
 			this.lblPermissionPresent.AutoSize = true;
 			this.lblPermissionPresent.Font = new System.Drawing.Font("Microsoft Sans Serif", 8.25F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
-			this.lblPermissionPresent.Location = new System.Drawing.Point(3, 220);
+			this.lblPermissionPresent.Location = new System.Drawing.Point(3, 287);
 			this.lblPermissionPresent.Name = "lblPermissionPresent";
 			this.lblPermissionPresent.Size = new System.Drawing.Size(43, 20);
 			this.lblPermissionPresent.TabIndex = 5;
@@ -889,7 +855,7 @@
             | System.Windows.Forms.AnchorStyles.Left)));
 			this.lblPermissionDelete.AutoSize = true;
 			this.lblPermissionDelete.Font = new System.Drawing.Font("Microsoft Sans Serif", 8.25F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
-			this.lblPermissionDelete.Location = new System.Drawing.Point(3, 140);
+			this.lblPermissionDelete.Location = new System.Drawing.Point(3, 207);
 			this.lblPermissionDelete.Name = "lblPermissionDelete";
 			this.lblPermissionDelete.Size = new System.Drawing.Size(38, 20);
 			this.lblPermissionDelete.TabIndex = 8;
@@ -902,7 +868,7 @@
             | System.Windows.Forms.AnchorStyles.Left)));
 			this.lblPermissionInsert.AutoSize = true;
 			this.lblPermissionInsert.Font = new System.Drawing.Font("Microsoft Sans Serif", 8.25F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
-			this.lblPermissionInsert.Location = new System.Drawing.Point(3, 120);
+			this.lblPermissionInsert.Location = new System.Drawing.Point(3, 187);
 			this.lblPermissionInsert.Name = "lblPermissionInsert";
 			this.lblPermissionInsert.Size = new System.Drawing.Size(33, 20);
 			this.lblPermissionInsert.TabIndex = 7;
@@ -915,7 +881,7 @@
             | System.Windows.Forms.AnchorStyles.Left)));
 			this.lblPermissionConnect.AutoSize = true;
 			this.lblPermissionConnect.Font = new System.Drawing.Font("Microsoft Sans Serif", 8.25F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
-			this.lblPermissionConnect.Location = new System.Drawing.Point(3, 160);
+			this.lblPermissionConnect.Location = new System.Drawing.Point(3, 227);
 			this.lblPermissionConnect.Name = "lblPermissionConnect";
 			this.lblPermissionConnect.Size = new System.Drawing.Size(47, 20);
 			this.lblPermissionConnect.TabIndex = 9;
@@ -928,7 +894,7 @@
             | System.Windows.Forms.AnchorStyles.Left)));
 			this.lblPermissionLayout.AutoSize = true;
 			this.lblPermissionLayout.Font = new System.Drawing.Font("Microsoft Sans Serif", 8.25F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
-			this.lblPermissionLayout.Location = new System.Drawing.Point(3, 180);
+			this.lblPermissionLayout.Location = new System.Drawing.Point(3, 247);
 			this.lblPermissionLayout.Name = "lblPermissionLayout";
 			this.lblPermissionLayout.Size = new System.Drawing.Size(39, 20);
 			this.lblPermissionLayout.TabIndex = 4;
@@ -941,7 +907,7 @@
             | System.Windows.Forms.AnchorStyles.Left)));
 			this.lblPermissionData.AutoSize = true;
 			this.lblPermissionData.Font = new System.Drawing.Font("Microsoft Sans Serif", 8.25F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
-			this.lblPermissionData.Location = new System.Drawing.Point(3, 200);
+			this.lblPermissionData.Location = new System.Drawing.Point(3, 267);
 			this.lblPermissionData.Name = "lblPermissionData";
 			this.lblPermissionData.Size = new System.Drawing.Size(30, 20);
 			this.lblPermissionData.TabIndex = 6;
@@ -963,7 +929,7 @@
 			// 
 			this.lblModifyAccess.AutoSize = true;
 			this.lblModifyAccess.Font = new System.Drawing.Font("Microsoft Sans Serif", 8.25F, System.Drawing.FontStyle.Bold, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
-			this.lblModifyAccess.Location = new System.Drawing.Point(138, 0);
+			this.lblModifyAccess.Location = new System.Drawing.Point(137, 0);
 			this.lblModifyAccess.Name = "lblModifyAccess";
 			this.lblModifyAccess.Size = new System.Drawing.Size(44, 13);
 			this.lblModifyAccess.TabIndex = 42;
@@ -974,12 +940,52 @@
 			// 
 			this.lblViewAccess.AutoSize = true;
 			this.lblViewAccess.Font = new System.Drawing.Font("Microsoft Sans Serif", 8.25F, System.Drawing.FontStyle.Bold, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
-			this.lblViewAccess.Location = new System.Drawing.Point(98, 0);
+			this.lblViewAccess.Location = new System.Drawing.Point(97, 0);
 			this.lblViewAccess.Name = "lblViewAccess";
 			this.lblViewAccess.Size = new System.Drawing.Size(34, 13);
 			this.lblViewAccess.TabIndex = 41;
 			this.lblViewAccess.Text = "View";
 			this.lblViewAccess.TextAlign = System.Drawing.ContentAlignment.MiddleCenter;
+			// 
+			// cboDomain
+			// 
+			this.cboDomain.Anchor = ((System.Windows.Forms.AnchorStyles)(((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Bottom) 
+            | System.Windows.Forms.AnchorStyles.Right)));
+			this.cboDomain.DropDownStyle = System.Windows.Forms.ComboBoxStyle.DropDownList;
+			this.cboDomain.Font = new System.Drawing.Font("Microsoft Sans Serif", 8.25F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
+			this.cboDomain.FormattingEnabled = true;
+			this.cboDomain.Items.AddRange(new object[] {
+            "A",
+            "B",
+            "C",
+            "D",
+            "E",
+            "F",
+            "G",
+            "H",
+            "I",
+            "J",
+            "K",
+            "L",
+            "M",
+            "N",
+            "O",
+            "P",
+            "Q",
+            "R",
+            "S",
+            "T",
+            "U",
+            "V",
+            "W",
+            "X",
+            "Y",
+            "Z"});
+			this.cboDomain.Location = new System.Drawing.Point(137, 123);
+			this.cboDomain.Name = "cboDomain";
+			this.cboDomain.Size = new System.Drawing.Size(45, 21);
+			this.cboDomain.TabIndex = 43;
+			this.cboDomain.SelectedIndexChanged += new System.EventHandler(this.userOrDomainCheckBox_SelectedIndexChanged);
 			// 
 			// panel1
 			// 
@@ -1042,7 +1048,6 @@
 			this.ItemVisibilityGroupBox.ResumeLayout(false);
 			this.ItemVisibilityGroupBox.PerformLayout();
 			this.PermissionsGroupBox.ResumeLayout(false);
-			this.PermissionsGroupBox.PerformLayout();
 			this.domainPermissionInfoPanel.ResumeLayout(false);
 			this.domainPermissionInfoPanel.PerformLayout();
 			this.panel1.ResumeLayout(false);
@@ -1085,7 +1090,6 @@
 		private System.Windows.Forms.GroupBox propertiesGroupBox;
 		private System.Windows.Forms.GroupBox PermissionsGroupBox;
 		private System.Windows.Forms.Label label1;
-		private System.Windows.Forms.ComboBox cboDomain;
 		private System.Windows.Forms.ComboBox cboUser;
 		private System.Windows.Forms.TableLayoutPanel domainPermissionInfoPanel;
 		private System.Windows.Forms.Label lblDomainPermissions;
@@ -1122,6 +1126,7 @@
 		private System.Windows.Forms.Label lblModifyAccess;
 		private System.Windows.Forms.Button editPermissionsButton;
 		private System.Windows.Forms.GroupBox groupBox1;
+		private System.Windows.Forms.ComboBox cboDomain;
 	}
 }
 

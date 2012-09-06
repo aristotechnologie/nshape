@@ -187,11 +187,13 @@ namespace Dataweb.NShape.WinFormsUI {
 
 		private void okButton_Click(object sender, EventArgs e) {
 			DialogResult = DialogResult.OK;
+			if (!Modal) Close();
 		}
 
 
 		private void cancelButton_Click(object sender, EventArgs e) {
 			DialogResult = DialogResult.Cancel;
+			if (!Modal) Close();
 		}
 
 

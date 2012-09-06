@@ -565,7 +565,7 @@ namespace Database_Designer {
 		private Rectangle contentBounds = Rectangle.Empty;
 		private const int margin = 10;
 		private const int zoomStep = 5;
-		private const string fileFilter = "NShape XML Repository Files|*.xml|All Files|*.*";
+		private const string fileFilter = "NShape XML Repository Files|*.nspj;*.xml|All Files|*.*";
 		private const string defaultProjectName = "Project 1";
 
 		private DockType toolBoxWindowDockType = 0;

@@ -29,6 +29,7 @@ namespace Security_Demo {
 
 		public MainForm() {
 			InitializeComponent();
+			//SecurityManager.CurrentRole = StandardRole.Guest;
 		}
 
 
@@ -217,7 +218,7 @@ namespace Security_Demo {
 			try {
 				string dir = Path.GetDirectoryName(Path.GetDirectoryName(Application.StartupPath)) + @"\Demo Programs\Security Demo\Sample Project";
 				xmlStore.DirectoryName = dir;
-				xmlStore.FileExtension = ".xml";
+				xmlStore.FileExtension = ".nspj";
 
 				project.LibrarySearchPaths.Add(Application.StartupPath);
 				project.Name = "Security Demo Sample Project";

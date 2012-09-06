@@ -37,6 +37,15 @@ namespace Dataweb.NShape {
 	[ToolboxBitmap(typeof(XmlStore), "XmlStore.bmp")]
 	public class XmlStore : Store {
 
+		/// <ToBeCompleted></ToBeCompleted>
+		public enum BackupFileGenerationMode {
+			/// <summary>No backup file(s) will be created when saving contents to an existing XML repository file.</summary>
+			None,
+			/// <summary>Backup file(s) will be created when saving contents to an existing XML repository file.</summary>
+			BakFile 
+		}
+
+
 		/// <summary>
 		/// Initializes a new instance of <see cref="T:Dataweb.NShape.XmlStore" />.
 		/// </summary>
@@ -105,6 +114,17 @@ namespace Dataweb.NShape {
 		public string DesignFileName {
 			get { return designFileName; }
 			set { designFileName = value; }
+		}
+
+
+		/// <summary>
+		/// Specifies whether a backup for the current contents should be created when saving changes to file.
+		/// </summary>
+		[Category("NShape")]
+		[DefaultValue(BackupFileGenerationMode.BakFile)]
+		public BackupFileGenerationMode BackupGenerationMode {
+			get { return backupGenerationMode; }
+			set { backupGenerationMode = value; }
 		}
 
 
@@ -327,11 +347,21 @@ namespace Dataweb.NShape {
 				} finally {
 					imageDirectory = CalcImageDirectoryName(ProjectFilePath);
 				}
+				//
 				// Backup current project files
-				if (File.Exists(ProjectFilePath))
-					CreateBackupFiles(ProjectFilePath);
-				System.Threading.Thread.Sleep(5);
+				switch (backupGenerationMode) {
+					case BackupFileGenerationMode.None: 
+						/* Do nothing */ 
+						break;
+					case BackupFileGenerationMode.BakFile:
+						if (File.Exists(ProjectFilePath))
+							CreateBackupFiles(ProjectFilePath);
+						break;
+					default: throw new InvalidEnumArgumentException();
+				}
+				//
 				// Rename temporary files
+				System.Threading.Thread.Sleep(5);
 				Debug.Assert(File.Exists(tempProjectFilePath));
 				File.Move(tempProjectFilePath, ProjectFilePath);
 				if (Directory.Exists(tempImageDirectory))
@@ -1903,6 +1933,8 @@ namespace Dataweb.NShape {
 		private string projectName = string.Empty;
 		// File extension of project file. Maybe null.
 		private string fileExtension = ".xml";
+		// Specifies whether a backup file should be created when saving the contents to file.
+		private BackupFileGenerationMode backupGenerationMode = BackupFileGenerationMode.BakFile;
 
 		private bool isOpen;
 
@@ -1930,4 +1962,5 @@ namespace Dataweb.NShape {
 
 		#endregion
 	}
+
 }

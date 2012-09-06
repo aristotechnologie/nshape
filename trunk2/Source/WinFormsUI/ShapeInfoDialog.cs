@@ -121,6 +121,12 @@ namespace Dataweb.NShape.WinFormsUI {
 		}
 
 
+		private void okButton_Click(object sender, EventArgs e) {
+			DialogResult = DialogResult.OK;
+			if (!Modal) Close();
+		}
+
+
 		private Project project = null;
 		private Shape shape = null;
 		private Shape shapeClone = null;

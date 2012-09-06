@@ -861,6 +861,10 @@ namespace Dataweb.NShape {
 #if DEBUG_UI
 		/// <ToBeCompleted></ToBeCompleted>
 		public void DrawOccupiedCells(Graphics graphics, int x, int y, int width, int height) {
+			int maxListLength = 0;
+			int itemCnt = 0;
+			int listCnt = 0;
+
 			Point p = Point.Empty;
 			int minCellX = x / Diagram.CellSize;
 			if (x < 0) --minCellX;
@@ -870,6 +874,7 @@ namespace Dataweb.NShape {
 			int maxCellY = height / Diagram.CellSize;
 			for (p.X = minCellX; p.X <= maxCellX; ++p.X) {
 				for (p.Y = minCellY; p.Y <= maxCellY; ++p.Y) {
+					int listLength = 0;
 					foreach (Shape s in shapeMap[CalcMapHashCode(p)]) {
 						int left = p.X * Diagram.CellSize;
 						int top = p.Y * Diagram.CellSize;
@@ -877,9 +882,18 @@ namespace Dataweb.NShape {
 						   || Geometry.RectangleContainsRectangle(left, top, Diagram.CellSize, Diagram.CellSize, s.GetBoundingRectangle(false))) {
 						   graphics.FillRectangle(occupiedBrush, left, top, Diagram.CellSize, Diagram.CellSize);
 						} else graphics.FillRectangle(emptyBrush, left, top, Diagram.CellSize, Diagram.CellSize);
+						++listLength;
+					}
+					// Collect list statistics: Maximum list length and average list 
+					// length (populated lists only)
+					if (listLength > 0) {
+						if (listLength > maxListLength) maxListLength = listLength;
+						itemCnt += listLength;
+						++listCnt;
 					}
 				}
 			}
+			int avgListLength = (int)Math.Round(itemCnt / (float)listCnt, MidpointRounding.AwayFromZero);
 		}
 
 

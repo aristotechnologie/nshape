@@ -281,6 +281,7 @@ namespace Dataweb.NShape.WinFormsUI {
 
 		/// <override></override>
 		void IDiagramPresenter.Update() {
+			//Console.WriteLine("[{0}]\t Update called", DateTime.Now.ToString("HH:mm:ss.ffff"));
 			Update();
 		}
 
@@ -1534,6 +1535,7 @@ namespace Dataweb.NShape.WinFormsUI {
 		/// </summary>
 		public bool OpenDiagram(string diagramName) {
 			if (diagramName == null) throw new ArgumentNullException("diagramName");
+			if (DiagramSetController == null) throw new NShapeException("Property DiagramSetController is not set!");
 			bool result = false;
 			// Clear current selectedShapes and models
 			if (Project.Repository == null)
@@ -1560,6 +1562,7 @@ namespace Dataweb.NShape.WinFormsUI {
 		/// </summary>
 		public bool CreateDiagram(string diagramName) {
 			if (diagramName == null) throw new ArgumentNullException("diagramName");
+			if (DiagramSetController == null) throw new NShapeException("Property DiagramSetController is not set!");
 			bool result = false;
 			// Clear current selectedShapes and models
 			if (Project.Repository == null)
@@ -2233,14 +2236,17 @@ namespace Dataweb.NShape.WinFormsUI {
 
 		/// <override></override>
 		protected override void OnMouseMove(MouseEventArgs e) {
+			//Console.WriteLine("[{0}]\t OnMouseMove (Entering)", DateTime.Now.ToString("HH:mm:ss.ffff"));
 			base.OnMouseMove(e);
 			if (universalScrollEnabled)
 				PerformUniversalScroll(e.Location);
 			else {
 				if (CurrentTool != null && !ScrollBarContainsPoint(e.Location)) {
 					try {
+						//Console.WriteLine("[{0}]\t Tool.ProcessMouseEvent calling", DateTime.Now.ToString("HH:mm:ss.ffff"));
 						if (CurrentTool.ProcessMouseEvent(this, WinFormHelpers.GetMouseEventArgs(MouseEventType.MouseMove, e, DrawBounds)))
 							mouseEventWasHandled = true;
+						//Console.WriteLine("[{0}]\t Tool.ProcessMouseEvent finished", DateTime.Now.ToString("HH:mm:ss.ffff"));
 
 						if (CurrentTool.WantsAutoScroll && AutoScrollAreaContainsPoint(e.X, e.Y)) {
 							int x, y;
@@ -2256,6 +2262,7 @@ namespace Dataweb.NShape.WinFormsUI {
 				}
 			}
 			lastMousePos = e.Location;
+			//Console.WriteLine("[{0}]\t OnMouseMove (Leaving)", DateTime.Now.ToString("HH:mm:ss.ffff"));
 		}
 
 		/// <override></override>
@@ -2677,6 +2684,7 @@ namespace Dataweb.NShape.WinFormsUI {
 		protected override void OnPaint(PaintEventArgs e) {
 			try {
 #if DEBUG_UI
+				//Console.WriteLine("[{0}]\t OnPaint called", DateTime.Now.ToString("HH:mm:ss.ffff"));
 				stopWatch.Reset();
 				stopWatch.Start();
 #endif

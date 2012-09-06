@@ -115,6 +115,7 @@ namespace Dataweb.NShape.WinFormsUI {
 			this.cancelButton.TabIndex = 8;
 			this.cancelButton.Text = "Cancel";
 			this.cancelButton.UseVisualStyleBackColor = true;
+			this.cancelButton.Click += new System.EventHandler(this.cancelButton_Click);
 			// 
 			// LibraryManagementDialog
 			// 

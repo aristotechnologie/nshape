@@ -181,10 +181,10 @@ namespace Dataweb.NShape {
 
 		/// <override></override>
 		public override string ProjectName {
-			get { return ProjectName; }
+			get { return projectName; }
 			set {
-				if (value == null) throw new ArgumentNullException("ProjectName");
-				projectName = value;
+				if (value == null) projectName = string.Empty;
+				else projectName = value;
 			}
 		}
 

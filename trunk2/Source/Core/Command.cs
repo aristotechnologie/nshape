@@ -709,6 +709,39 @@ namespace Dataweb.NShape.Commands {
 	/// </summary>
 	public abstract class InsertOrRemoveShapeCommand : AutoDisconnectShapesCommand {
 
+		/// <ToBeCompleted></ToBeCompleted>
+		protected enum SortOrder {
+			/// <ToBeCompleted></ToBeCompleted>
+			Unspecified,
+			/// <ToBeCompleted></ToBeCompleted>
+			TopDown,
+			/// <ToBeCompleted></ToBeCompleted>
+			BottomUp
+		};
+
+
+		/// <ToBeCompleted></ToBeCompleted>
+		protected SortOrder GetCurrentSortOrder(IEnumerable<Shape> shapes) {
+			SortOrder result = SortOrder.Unspecified;
+			int lastZOrder = int.MinValue;
+			foreach (Shape s in shapes) {
+				if (lastZOrder == int.MinValue)
+					lastZOrder = s.ZOrder;
+				else {
+					if (s.ZOrder == lastZOrder)
+						continue;
+					else if (s.ZOrder < lastZOrder)
+						result = SortOrder.TopDown;
+					else if (s.ZOrder > lastZOrder)
+						result = SortOrder.BottomUp;
+					break;
+				}
+			}
+			if (result == SortOrder.Unspecified) 
+				result = SortOrder.TopDown;
+			return result;
+		}
+
 
 		/// <ToBeCompleted></ToBeCompleted>
 		protected InsertOrRemoveShapeCommand(Diagram diagram)
@@ -805,13 +838,13 @@ namespace Dataweb.NShape.Commands {
 
 
 		/// <ToBeCompleted></ToBeCompleted>
-		protected void SetShapes(IEnumerable<Shape> shapes, bool withModelObjects) {
-			SetShapes(shapes, withModelObjects, false);
+		protected void SetShapes(IEnumerable<Shape> shapes, SortOrder currentSortOrder, bool withModelObjects) {
+			SetShapes(shapes, withModelObjects, currentSortOrder, false);
 		}
 
 
 		/// <ToBeCompleted></ToBeCompleted>
-		protected void SetShapes(IEnumerable<Shape> shapes, bool withModelObjects, bool invertSortOrder) {
+		protected void SetShapes(IEnumerable<Shape> shapes, bool withModelObjects, SortOrder currentSortOrder, bool invertSortOrder) {
 			if (shapes == null) throw new ArgumentNullException("shapes");
 			this.Shapes.Clear();
 			if (shapeLayers == null) shapeLayers = new List<LayerIds>();
@@ -819,10 +852,11 @@ namespace Dataweb.NShape.Commands {
 
 			foreach (Shape shape in shapes) {
 				if (!this.Shapes.Contains(shape)) {
-					if (invertSortOrder) {
+					if (currentSortOrder == SortOrder.BottomUp || (currentSortOrder == SortOrder.TopDown && invertSortOrder)) {
 						this.Shapes.Insert(0, shape);
 						this.shapeLayers.Insert(0, shape.Layers);
 					} else {
+						Debug.Assert(currentSortOrder == SortOrder.TopDown || (currentSortOrder == SortOrder.BottomUp && invertSortOrder));
 						this.Shapes.Add(shape);
 						this.shapeLayers.Add(shape.Layers);
 					}
@@ -1481,7 +1515,8 @@ namespace Dataweb.NShape.Commands {
 			: base(repository, diagram) {
 			if (diagram == null) throw new ArgumentNullException("diagram");
 			if (shapes == null) throw new ArgumentNullException("shapes");
-			Construct(layerIds, shapes, deltaX, deltaY, keepZOrder, withModelObjects);
+			SortOrder currentSortOrder = SortOrder.TopDown; //GetCurrentSortOrder(shapes); 
+			Construct(layerIds, shapes, deltaX, deltaY, currentSortOrder, keepZOrder, withModelObjects);
 		}
 
 
@@ -1490,7 +1525,8 @@ namespace Dataweb.NShape.Commands {
 			: base(diagram) {
 			if (diagram == null) throw new ArgumentNullException("diagram");
 			if (shapes == null) throw new ArgumentNullException("shapes");
-			Construct(layerIds, shapes, 0, 0, keepZOrder, withModelObjects);
+			SortOrder currentSortOrder = SortOrder.TopDown; //GetCurrentSortOrder(shapes)
+			Construct(layerIds, shapes, 0, 0, currentSortOrder, keepZOrder, withModelObjects);
 		}
 
 
@@ -1537,26 +1573,40 @@ namespace Dataweb.NShape.Commands {
 
 		private void Construct(LayerIds layerIds, Shape shape, int offsetX, int offsetY, bool keepZOrder, bool withModelObjects) {
 			this.layerIds = layerIds;
-			PrepareShape(shape, offsetX, offsetY, keepZOrder);
+			PrepareShape(shape, offsetX, offsetY, keepZOrder ? shape.ZOrder : 0);
 			SetShape(shape, withModelObjects);
 			description = GetDescription(DescriptionType.Insert, shape, withModelObjects);
 		}
 
 
-		private void Construct(LayerIds layerIds, IEnumerable<Shape> shapes, int offsetX, int offsetY, bool keepZOrder, bool withModelObjects) {
+		private void Construct(LayerIds layerIds, IEnumerable<Shape> shapes, int offsetX, int offsetY, SortOrder currentSortOrder, bool keepZOrder, bool withModelObjects) {
 			this.layerIds = layerIds;
-			foreach (Shape shape in shapes)
-				PrepareShape(shape, offsetX, offsetY, keepZOrder);
-			SetShapes(shapes, withModelObjects);
+			PrepareShapes(shapes, offsetX, offsetY, currentSortOrder, keepZOrder);
+			SetShapes(shapes, currentSortOrder, withModelObjects);
 			description = GetDescription(DescriptionType.Insert, shapes, withModelObjects);
+		}
+
+
+		private void PrepareShapes(IEnumerable<Shape> shapes, int offsetX, int offsetY, SortOrder currentSortOrder, bool keepZOrder) {
+			if (currentSortOrder == SortOrder.Unspecified)
+				currentSortOrder = GetCurrentSortOrder(shapes);
+			Debug.Assert(GetCurrentSortOrder(shapes) == currentSortOrder);
+
+			int currentZOrder = 0;
+			foreach (Shape shape in shapes) {
+				PrepareShape(shape, offsetX, offsetY, keepZOrder ? shape.ZOrder : currentZOrder);
+				if (currentSortOrder == SortOrder.BottomUp)
+					++currentZOrder;
+				else --currentZOrder;
+			}
 		}
 
 
 		/// <summary>
 		/// Reset shape's ZOrder to 'Unassigned' and offset shape's position if neccessary
 		/// </summary>
-		private void PrepareShape(Shape shape, int offsetX, int offsetY, bool keepZOrder) {
-			if (!keepZOrder) shape.ZOrder = 0;
+		private void PrepareShape(Shape shape, int offsetX, int offsetY, int zOrder) {
+			if (shape.ZOrder != zOrder) shape.ZOrder = zOrder;
 			if (offsetX != 0 || offsetY != 0) {
 				// Check if the shape has glue points. 
 				// If it has, store all connections of connected glue points and disconnect the shapes
@@ -1642,7 +1692,7 @@ namespace Dataweb.NShape.Commands {
 		/// <ToBeCompleted></ToBeCompleted>
 		public DeleteShapesCommand(IRepository repository, Diagram diagram, IEnumerable<Shape> shapes, bool withModelObjects)
 			: base(repository, diagram) {
-			SetShapes(shapes, withModelObjects);
+			SetShapes(shapes, SortOrder.TopDown, withModelObjects);
 			this.description = GetDescription(DescriptionType.Delete, shapes, withModelObjects);
 			// Store "shape to model object" assignments for undo
 			foreach (Shape s in shapes) {

@@ -4,7 +4,32 @@ Known issues:
 
 - Transparent bitmap images with 8 bit color depth are not rendered correctly when compiling in 
   x64/AnyCPU configuration on x64 OS.
-  
+
+
+====================================================================================================
+Changes in 2.0.2 (Beta 3):
+====================================================================================================
+- New Sample Program: "ModelMapping Demo" that shown how to visualize states of business objects 
+  implementing the IModelObejct interface
+- Buxfix: LayerCollection.Add() inserts layer objects at the correct position if a LayerId is already set 
+  in the layer object.
+- Bugfix: Added a workaround for a strange issue concerning lines with custom line caps:
+  If a 1-segment line is drawn and the line has exactly the same length as the sum of both cap's 
+  BaseInset, an OutOfMemoryException is thrown sometimes (not always). The exception is thrown in 
+  DrawLines and all efforts to trace down the cause of this issue came to nothing.
+- BugFix: Some NShape dialogs did not close when clicking "OK" or "Cancel" if not shown modal.
+- BugFix: CircularArc added menu command "Remove Point" even if no vertex was right-clicked
+- BugFix: Display threw a NullReferenceException when calling LoadDiagram or CreateDiagram without 
+  setting a DiagramSetController first
+- New Feature: XMLStore.BackupGenerationMode allows to switch off the automatic generation of a *.bak file
+- Changed Behavior: When selecting overlapping shapes, the shapes will not enter the "Edit caption mode"
+  when an other shape is under the caption. You can still enter "Edit caption" mode by pressing F2 key.
+- Improvement: Resizing aggregated shapes now works better for shapes with resize movement restrictions
+  (such as Circles, Squares, CustomizableImageShapes, etc)
+- Improvement: NShapeDesigner will no longer ask "Save changes?" for the project created on startup
+- Improvement: NShapeDesigner (XML) projects have "*.nspj" as file extension by default now. 
+  Documentation and sample code was updated accordingly.
+
 
 ====================================================================================================
 Changes in 2.0.1 (Beta 2):

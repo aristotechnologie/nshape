@@ -411,6 +411,7 @@ namespace Dataweb.NShape.Advanced {
 
 		#endregion
 
+		
 		/// <override></override>
 		protected override void ProcessExecModelPropertyChange(IModelMapping propertyMapping) {
 			switch (propertyMapping.ShapePropertyId) {
@@ -495,6 +496,7 @@ namespace Dataweb.NShape.Advanced {
 		private bool imageGrayScale = false;
 		private byte compressionQuality = 100;
 		private Color transparentColor = Color.Empty;
+		
 		#endregion
 	}
 
@@ -1323,6 +1325,9 @@ namespace Dataweb.NShape.Advanced {
 		}
 
 
+		[Obsolete]
+		// This does not work with x64/AnyCPU binaries on x64 systems any more due to breaking changes:
+		// See https://connect.microsoft.com/VisualStudio/feedback/details/523540/metafile-playrecord-does-not-play-all-emf-records-as-expected
 		private bool ReplaceBrushCallbackProc(EmfPlusRecordType recordType, int flags, int dataSize, IntPtr data, PlayRecordCallback callbackData) {
 			try {
 				if (data == IntPtr.Zero)
@@ -1476,12 +1481,6 @@ namespace Dataweb.NShape.Advanced {
 		}
 
 
-		// Buffers used for replacing solid brushes in EMF files (not used any longer, see comment on CreateImage())
-		//private Graphics.EnumerateMetafileProc replaceBrushCallback;
-		//private Metafile bufferImage;
-		//private bool brushReplaced;
-
-		// Buffers for replacing colors via color remap table
 		private Graphics.EnumerateMetafileProc findReplaceColorCallback;
 		private bool replaceColorFound;
 		private Color privateReplaceColor = Color.Empty;

@@ -29,6 +29,7 @@ namespace BasicTutorial {
 				// Set path to the sample diagram and the sample diagram name
 				string dir = Path.Combine(GetBasicTutorialPath(), "Sample Project");
 				xmlStore1.DirectoryName = dir;
+				xmlStore1.FileExtension = "nspj";
 				project1.Name = "Circles";
 				// Add path to the NShape shape library assemblies to the search paths
 				string programFilesDir = Environment.GetEnvironmentVariable(string.Format("ProgramFiles{0}", (IntPtr.Size == sizeof(long)) ? "(x86)" : ""));

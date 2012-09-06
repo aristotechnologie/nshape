@@ -195,8 +195,14 @@ namespace Dataweb.NShape.WinFormsUI {
 					MessageBox.Show(this, exc.Message, "Cannot add Library", MessageBoxButtons.OK, MessageBoxIcon.Warning);
 				}
 			}
-
 			DialogResult = DialogResult.OK;
+			if (!Modal) Close();
+		}
+
+
+		private void cancelButton_Click(object sender, EventArgs e) {
+			DialogResult = DialogResult.Cancel;
+			if (!Modal) Close();
 		}
 
 

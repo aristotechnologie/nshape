@@ -2020,7 +2020,7 @@ namespace Dataweb.NShape {
 		/// </summary>
 		private Action DetermineMouseDownAction(IDiagramPresenter diagramPresenter, MouseState mouseState) {
 			if (mouseState.IsButtonDown(MouseButtonsDg.Left)) {
-				if (!selectedShapeAtCursorInfo.IsEmpty
+				if (!selectedShapeAtCursorInfo.IsEmpty 
 					&& IsEditCaptionFeasible(diagramPresenter, mouseState, selectedShapeAtCursorInfo)) {
 					// If the cursor is not over a caption of a selected shape when clicking left mouse button, 
 					// we assume the user wants to select something
@@ -3308,6 +3308,12 @@ namespace Dataweb.NShape {
 				return false;
 			if (!shapeAtCursorInfo.IsCursorAtCaption)
 				return false;
+			else {
+				// If there is another shape under the caption, prefer the "Select" action over the "EditCaption" action
+				Shape s = diagramPresenter.Diagram.Shapes.FindShape(mouseState.X, mouseState.Y, ControlPointCapabilities.None, 0, shapeAtCursorInfo.Shape);
+				if (s != shapeAtCursorInfo.Shape && s.ContainsPoint(mouseState.X, mouseState.Y))
+					return false;
+			}
 			// Not necessary any more: Edit caption is triggered on MouseUp event and only of the mouse was not moved.
 			//if (mouseState.IsKeyPressed(KeysDg.Control) || mouseState.IsKeyPressed(KeysDg.Shift))
 			//    return false;

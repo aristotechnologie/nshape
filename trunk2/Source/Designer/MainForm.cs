@@ -499,24 +499,81 @@ namespace Dataweb.NShape.Designer {
 
 
 		private void MaintainRecentProjects() {
-			bool modified = false, remove = false;
+			// Check existence of all recently opened (XML) projects 
+			List<int> missingProjects = null;
 			for (int i = recentProjects.Count - 1; i >= 0; --i) {
-				remove = false;
 				if (recentProjects[i].typeName == RepositoryInfo.SqlServerStoreTypeName)
 					continue;
 				else if (recentProjects[i].typeName == RepositoryInfo.XmlStoreTypeName) {
 					if (!File.Exists(recentProjects[i].location)) {
-						string msgFormat = "The file or folder '{0}' cannot be opened. Do you want to remove it from the 'Recently opened projects' list?";
-						remove = (MessageBox.Show(this, string.Format(msgFormat, recentProjects[i].location), "File not found", MessageBoxButtons.YesNo, MessageBoxIcon.Question) == DialogResult.Yes);
+						// Add all indexes of missing projects, decide later what to to
+						if (missingProjects == null) missingProjects = new List<int>();
+						missingProjects.Insert(0, i);
 					}
 				}
-				if (remove) {
-					recentProjects.RemoveAt(i);
-					modified = true;
+			}
+			// If projects are missing, let the user decide what to do
+			if (missingProjects != null) {
+				Debug.Assert(missingProjects.Count > 0);
+				// We use the DialogResult as decision for the 'remove all?' question:
+				// Yes = Ask for each missing project
+				// No = Remove all
+				// Cancel = Remove none
+				DialogResult res = DialogResult.Cancel;
+				if (missingProjects.Count > 1) {
+					const string msgText = "{0} recently opened project files were not found:{1}{2}{1}Do you want to decide for each project whether to remove it from the 'Recently opened projects' list?";
+					string projectList = string.Empty;
+					foreach (int i in missingProjects)
+						projectList += recentProjects[i].location + Environment.NewLine;
+					res = MessageBox.Show(this, string.Format(msgText, missingProjects.Count, Environment.NewLine, projectList), "File not found", MessageBoxButtons.YesNoCancel, MessageBoxIcon.Question, MessageBoxDefaultButton.Button1);
+				} else {
+					// Preselect "Ask for each missin project" if only one project is missing
+					res = DialogResult.Yes;
+				}
+
+				if (res != DialogResult.Cancel) {
+					if (res == DialogResult.Yes) {
+						// Ask for each missing projects if it should be removed
+						string msgFormat = "A recently opened project file was not found:{0}{1}{0}{0}Do you want to remove it from the 'Recently opened projects' list?";
+						for (int i = missingProjects.Count - 1; i >= 0; --i) {
+							int prjIdx = missingProjects[i];
+							res = MessageBox.Show(this, string.Format(msgFormat, Environment.NewLine, recentProjects[prjIdx].location), "File not found", MessageBoxButtons.YesNo, MessageBoxIcon.Question);
+							if (res == DialogResult.No) 
+								missingProjects.RemoveAt(i);
+						}
+					}
+					// Remove all (remaining) missing projects
+					if (missingProjects.Count > 0) {
+						for (int i = missingProjects.Count - 1; i >= 0; --i)
+							recentProjects.RemoveAt(missingProjects[i]);
+						SaveConfigFile();
+					}
 				}
 			}
-			if (modified) SaveConfigFile();
 		}
+
+		
+		// Old version:
+		//private void MaintainRecentProjects() {
+		//    bool modified = false, remove = false;
+		//    for (int i = recentProjects.Count - 1; i >= 0; --i) {
+		//        remove = false;
+		//        if (recentProjects[i].typeName == RepositoryInfo.SqlServerStoreTypeName)
+		//            continue;
+		//        else if (recentProjects[i].typeName == RepositoryInfo.XmlStoreTypeName) {
+		//            if (!File.Exists(recentProjects[i].location)) {
+		//                string msgFormat = "The file or folder '{0}' cannot be opened. Do you want to remove it from the 'Recently opened projects' list?";
+		//                remove = (MessageBox.Show(this, string.Format(msgFormat, recentProjects[i].location), "File not found", MessageBoxButtons.YesNo, MessageBoxIcon.Question) == DialogResult.Yes);
+		//            }
+		//        }
+		//        if (remove) {
+		//            recentProjects.RemoveAt(i);
+		//            modified = true;
+		//        }
+		//    }
+		//    if (modified) SaveConfigFile();
+		//}
+
 
 
 		private void ReplaceRepository(string projectName, Store repository) {
@@ -741,34 +798,31 @@ namespace Dataweb.NShape.Designer {
 
 		private bool CloseProject() {
 			bool result = true;
-			if (project.Repository.IsModified) {
-				bool isEmptyProject = false;
-				// ToDo: Determine if the project was modified after startup (where a new project is created)
-
-				if (!isEmptyProject) {
-					string msg = string.Format("Do you want to save the current project '{0}' before closing it?", project.Name);
-					DialogResult dlgResult = MessageBox.Show(this, msg, "Save changes", MessageBoxButtons.YesNoCancel, MessageBoxIcon.Question);
-					switch (dlgResult) {
-						case DialogResult.Yes:
-							if (project.Repository.Exists())
-								SaveProject();
-							else SaveProjectAs();
-							break;
-						case DialogResult.No:
-							// do nothing
-							break;
-						case DialogResult.Cancel:
-							result = false;
-							break;
-					}
+			// We check not only the Repository's IsModified property but also the projectIsModified field
+			// in order to suppress the "Save changes?" question when closing a new project with loaded 
+			// libraries (which modify the repository)
+			if (projectIsModified && project.Repository.IsModified) {
+				string msg = string.Format("Do you want to save the current project '{0}' before closing it?", project.Name);
+				DialogResult dlgResult = MessageBox.Show(this, msg, "Save changes", MessageBoxButtons.YesNoCancel, MessageBoxIcon.Question);
+				switch (dlgResult) {
+					case DialogResult.Yes:
+						if (project.Repository.Exists())
+							SaveProject();
+						else SaveProjectAs();
+						break;
+					case DialogResult.No:
+						// do nothing
+						break;
+					case DialogResult.Cancel:
+						result = false;
+						break;
 				}
 			}
 
 			if (result) {
 				project.Close();
 				projectSaved = false;
-
-				// clear all displays and diagramControllers
+				// Clear all displays and diagramControllers
 				for (int i = displayTabControl.TabPages.Count - 1; i >= 0; --i) {
 					if (displayTabControl.TabPages[i].Controls.Count > 0) {
 						Display display = (Display)displayTabControl.TabPages[i].Controls[0];
@@ -1033,22 +1087,77 @@ namespace Dataweb.NShape.Designer {
 
 		private void RegisterRepositoryEvents() {
 			if (project.Repository != null) {
+				// Diagram events
 				project.Repository.DiagramInserted += repository_DiagramInserted;
 				project.Repository.DiagramUpdated += repository_DiagramUpdated;
 				project.Repository.DiagramDeleted += repository_DiagramDeleted;
+				// ModelObject events
 				project.Repository.ModelObjectsInserted += repository_ModelObjectsInsertedOrDeleted;
 				project.Repository.ModelObjectsDeleted += repository_ModelObjectsInsertedOrDeleted;
+
+				// Event handlers used for detecting changes
+				project.Repository.ConnectionDeleted += Repository_ConnectionModified;
+				project.Repository.ConnectionInserted += Repository_ConnectionModified;
+				project.Repository.DesignDeleted += Repository_DesignModified;
+				project.Repository.DesignInserted += Repository_DesignModified;
+				project.Repository.DesignUpdated += Repository_DesignModified;
+				project.Repository.ModelDeleted += Repository_ModelModified;
+				project.Repository.ModelInserted += Repository_ModelModified;
+				project.Repository.ModelUpdated += Repository_ModelModified;
+				project.Repository.ModelMappingsDeleted += Repository_ModelMappingsModified;
+				project.Repository.ModelMappingsInserted += Repository_ModelMappingsModified;
+				project.Repository.ModelMappingsUpdated += Repository_ModelMappingsModified;
+				project.Repository.ModelObjectsUpdated += Repository_ModelObjectsModified;
+				project.Repository.ProjectUpdated += Repository_ProjectModified;
+				project.Repository.ShapesDeleted += Repository_ShapesModified;
+				project.Repository.ShapesInserted += Repository_ShapesModified;
+				project.Repository.ShapesUpdated += Repository_ShapesModified;
+				project.Repository.StyleDeleted += Repository_StyleModified;
+				project.Repository.StyleInserted += Repository_StyleModified;
+				project.Repository.StyleUpdated += Repository_StyleModified;
+				project.Repository.TemplateDeleted += Repository_TemplateModified;
+				project.Repository.TemplateInserted += Repository_TemplateModified;
+				project.Repository.TemplateShapeReplaced += Repository_TemplateModified;
+				project.Repository.TemplateUpdated += Repository_TemplateModified;
 			}
 		}
 
 
 		private void UnregisterRepositoryEvents() {
 			if (project.Repository != null) {
+				// Diagram events
 				project.Repository.DiagramInserted -= repository_DiagramInserted;
 				project.Repository.DiagramUpdated -= repository_DiagramUpdated;
 				project.Repository.DiagramDeleted -= repository_DiagramDeleted;
+				
+				// ModelObject events
 				project.Repository.ModelObjectsInserted -= repository_ModelObjectsInsertedOrDeleted;
 				project.Repository.ModelObjectsDeleted -= repository_ModelObjectsInsertedOrDeleted;
+				
+				// Event handlers used for detecting changes
+				project.Repository.ConnectionDeleted += Repository_ConnectionModified;
+				project.Repository.ConnectionInserted += Repository_ConnectionModified;
+				project.Repository.DesignDeleted += Repository_DesignModified;
+				project.Repository.DesignInserted += Repository_DesignModified;
+				project.Repository.DesignUpdated += Repository_DesignModified;
+				project.Repository.ModelDeleted += Repository_ModelModified;
+				project.Repository.ModelInserted += Repository_ModelModified;
+				project.Repository.ModelUpdated += Repository_ModelModified;
+				project.Repository.ModelMappingsDeleted += Repository_ModelMappingsModified;
+				project.Repository.ModelMappingsInserted += Repository_ModelMappingsModified;
+				project.Repository.ModelMappingsUpdated += Repository_ModelMappingsModified;
+				project.Repository.ModelObjectsUpdated += Repository_ModelObjectsModified;
+				project.Repository.ProjectUpdated += Repository_ProjectModified;
+				project.Repository.ShapesDeleted += Repository_ShapesModified;
+				project.Repository.ShapesInserted += Repository_ShapesModified;
+				project.Repository.ShapesUpdated += Repository_ShapesModified;
+				project.Repository.StyleDeleted += Repository_StyleModified;
+				project.Repository.StyleInserted += Repository_StyleModified;
+				project.Repository.StyleUpdated += Repository_StyleModified;
+				project.Repository.TemplateDeleted += Repository_TemplateModified;
+				project.Repository.TemplateInserted += Repository_TemplateModified;
+				project.Repository.TemplateShapeReplaced += Repository_TemplateModified;
+				project.Repository.TemplateUpdated += Repository_TemplateModified;
 			}
 		}
 
@@ -1157,6 +1266,7 @@ namespace Dataweb.NShape.Designer {
 
 		private void repository_DiagramDeleted(object sender, RepositoryDiagramEventArgs e) {
 			RemoveDisplayOfDiagram(e.Diagram);
+			projectIsModified = true;
 		}
 
 
@@ -1164,6 +1274,7 @@ namespace Dataweb.NShape.Designer {
 			TabPage tabPage = FindDisplayTabPage(e.Diagram);
 			if (tabPage != null) tabPage.Text = e.Diagram.Title;
 			UpdateStatusInfo();
+			projectIsModified = true;
 		}
 
 
@@ -1172,6 +1283,7 @@ namespace Dataweb.NShape.Designer {
 			if (tabPage == null)
 				displayTabControl.TabPages.Add(CreateDiagramTabPage(e.Diagram, false));
 			UpdateAllMenuItems();
+			projectIsModified = true;
 		}
 
 
@@ -1182,6 +1294,52 @@ namespace Dataweb.NShape.Designer {
 				break;
 			}
 			UpdateModelComponentsVisibility(modelExists);
+			projectIsModified = true;
+		}
+
+
+		private void Repository_TemplateModified(object sender, RepositoryTemplateEventArgs e) {
+			projectIsModified = true;
+		}
+
+
+		private void Repository_StyleModified(object sender, RepositoryStyleEventArgs e) {
+			projectIsModified = true;
+		}
+
+
+		private void Repository_ShapesModified(object sender, RepositoryShapesEventArgs e) {
+			projectIsModified = true;
+		}
+
+
+		private void Repository_ProjectModified(object sender, RepositoryProjectEventArgs e) {
+			projectIsModified = true;
+		}
+
+
+		private void Repository_ModelObjectsModified(object sender, RepositoryModelObjectsEventArgs e) {
+			projectIsModified = true;
+		}
+
+
+		private void Repository_ModelMappingsModified(object sender, RepositoryTemplateEventArgs e) {
+			projectIsModified = true;
+		}
+
+
+		private void Repository_ModelModified(object sender, RepositoryModelEventArgs e) {
+			projectIsModified = true;
+		}
+
+
+		private void Repository_DesignModified(object sender, RepositoryDesignEventArgs e) {
+			projectIsModified = true;
+		}
+
+
+		private void Repository_ConnectionModified(object sender, RepositoryShapeConnectionEventArgs e) {
+			projectIsModified = true;
 		}
 
 		#endregion
@@ -1383,6 +1541,7 @@ namespace Dataweb.NShape.Designer {
 					//project.AddLibraryByFilePath("Dataweb.NShape.GeneralModelObjects.dll");
 #endif
 					// Mark project as "Not modified" in order to suppress the "Do you want to save changes" question
+					projectIsModified = false;
 				}
 
 				UpdateAllMenuItems();
@@ -1595,7 +1754,7 @@ namespace Dataweb.NShape.Designer {
 					else xmlStoreDirectory = Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments);
 				}
 
-				XmlStore store = new XmlStore(xmlStoreDirectory, ".xml");
+				XmlStore store = new XmlStore(xmlStoreDirectory, ProjectFileExtension);
 				CreateProject(NewProjectName, store, askUserLoadLibraries);
 			}
 		}
@@ -2357,7 +2516,8 @@ namespace Dataweb.NShape.Designer {
 		private const string DefaultDatabaseName = "NShape";
 		private const string DefaultServerName = ".\\SQLEXPRESS";
 		private const string ConfigFileName = "Config.cfg";
-		private const string FileFilterXmlRepository = "XML Repository Files|*.xml|All Files|*.*";
+		private const string ProjectFileExtension = ".nspj";
+		private const string FileFilterXmlRepository = "NShape Designer Files|*.nspj;*.xml|XML Repository Files|*.xml|All Files|*.*";
 
 		private const string NewProjectName = "New NShape Project";
 		private const string DefaultDiagramNameFmt = "Diagram {0}";
@@ -2432,6 +2592,7 @@ namespace Dataweb.NShape.Designer {
 
 		private List<RepositoryInfo> recentProjects = new List<RepositoryInfo>(recentProjectsItemCount);
 		private bool loadToolStripLayoutOnStartup = true;
+		private bool projectIsModified = false;
 
 #if TdbRepository
 		private const string fileFilterAllRepositories = "NShape Repository Files|*.xml;*.tdbd|XML Repository Files|*.xml|TurboDB Repository Databases|*.tdbd|All Files|*.*";
