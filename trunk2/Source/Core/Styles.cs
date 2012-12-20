@@ -2364,7 +2364,7 @@ namespace Dataweb.NShape {
 		/// <override></override>
 		public override void LoadFields(IRepositoryReader reader, int version) {
 			base.LoadFields(reader, version);
-			Alignment = (ContentAlignment)reader.ReadByte();
+			Alignment = (ContentAlignment)reader.ReadInt16();
 			Trimming = (StringTrimming)reader.ReadByte();
 			Padding = new TextPadding(reader.ReadInt32(), reader.ReadInt32(), reader.ReadInt32(), reader.ReadInt32());
 			WordWrap = reader.ReadBool();
@@ -2374,7 +2374,7 @@ namespace Dataweb.NShape {
 		/// <override></override>
 		public override void SaveFields(IRepositoryWriter writer, int version) {
 			base.SaveFields(writer, version);
-			writer.WriteByte((byte)alignment);
+			writer.WriteInt16((short)alignment);
 			writer.WriteByte((byte)trimming);
 			writer.WriteInt32(padding.Left);
 			writer.WriteInt32(padding.Top);
@@ -2398,7 +2398,7 @@ namespace Dataweb.NShape {
 		public static new IEnumerable<EntityPropertyDefinition> GetPropertyDefinitions(int version) {
 			foreach (EntityPropertyDefinition pi in Style.GetPropertyDefinitions(version))
 				yield return pi;
-			yield return new EntityFieldDefinition("Alignment", typeof(byte));
+			yield return new EntityFieldDefinition("Alignment", typeof(short));
 			yield return new EntityFieldDefinition("Trimming", typeof(byte));
 			yield return new EntityFieldDefinition("PaddingLeft", typeof(int));
 			yield return new EntityFieldDefinition("PaddingTop", typeof(int));

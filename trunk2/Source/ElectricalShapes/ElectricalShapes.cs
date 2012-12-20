@@ -230,7 +230,8 @@ namespace Dataweb.NShape.ElectricalShapes {
 
 		/// <override></override>
 		public override Shape Clone() {
-			Shape result = new DisconnectorSymbol(Type, (Template)null);
+			//Shape result = new DisconnectorSymbol(Type, (Template)null);
+			Shape result = new DisconnectorSymbol(Type, this.Template);
 			result.CopyFrom(this);
 			return result;
 		}
@@ -266,7 +267,8 @@ namespace Dataweb.NShape.ElectricalShapes {
 
 		/// <override></override>
 		public override Shape Clone() {
-			Shape result = new AutoDisconnectorSymbol(Type, (Template)null);
+			//Shape result = new AutoDisconnectorSymbol(Type, (Template)null);
+			Shape result = new AutoDisconnectorSymbol(Type, this.Template);
 			result.CopyFrom(this);
 			return result;
 		}
@@ -329,7 +331,8 @@ namespace Dataweb.NShape.ElectricalShapes {
 
 		/// <override></override>
 		public override Shape Clone() {
-			Shape result = new AutoSwitchSymbol(Type, (Template)null);
+			//Shape result = new AutoSwitchSymbol(Type, (Template)null);
+			Shape result = new AutoSwitchSymbol(Type, this.Template);
 			result.CopyFrom(this);
 			return result;
 		}
@@ -414,7 +417,8 @@ namespace Dataweb.NShape.ElectricalShapes {
 
 		/// <override></override>
 		public override Shape Clone() {
-			Shape result = new SwitchSymbol(Type, (Template)null);
+			//Shape result = new SwitchSymbol(Type, (Template)null);
+			Shape result = new SwitchSymbol(Type, this.Template);
 			result.CopyFrom(this);
 			return result;
 		}
@@ -461,7 +465,8 @@ namespace Dataweb.NShape.ElectricalShapes {
 
 		/// <override></override>
 		public override Shape Clone() {
-			Shape result = new BusBarSymbol(Type, (Template)null);
+			//Shape result = new BusBarSymbol(Type, (Template)null);
+			Shape result = new BusBarSymbol(Type, this.Template);
 			result.CopyFrom(this);
 			return result;
 		}
@@ -514,7 +519,8 @@ namespace Dataweb.NShape.ElectricalShapes {
 
 		/// <override></override>
 		public override Shape Clone() {
-			Shape result = new TransformerSymbol(Type, (Template)null);
+			//Shape result = new TransformerSymbol(Type, (Template)null);
+			Shape result = new TransformerSymbol(Type, this.Template);
 			result.CopyFrom(this);
 			return result;
 		}
@@ -688,7 +694,8 @@ namespace Dataweb.NShape.ElectricalShapes {
 
 		/// <override></override>
 		public override Shape Clone() {
-			Shape result = new EarthSymbol(Type, (Template)null);
+			//Shape result = new EarthSymbol(Type, (Template)null);
+			Shape result = new EarthSymbol(Type, this.Template);
 			result.CopyFrom(this);
 			return result;
 		}
@@ -881,7 +888,8 @@ namespace Dataweb.NShape.ElectricalShapes {
 
 		/// <override></override>
 		public override Shape Clone() {
-			Shape result = new FeederSymbol(Type, (Template)null);
+			//Shape result = new FeederSymbol(Type, (Template)null);
+			Shape result = new FeederSymbol(Type, this.Template);
 			result.CopyFrom(this);
 			return result;
 		}
@@ -902,7 +910,8 @@ namespace Dataweb.NShape.ElectricalShapes {
 
 		/// <override></override>
 		public override Shape Clone() {
-			Shape result = new RectifierSymbol(Type, (Template)null);
+			//Shape result = new RectifierSymbol(Type, (Template)null);
+			Shape result = new RectifierSymbol(Type, this.Template);
 			result.CopyFrom(this);
 			return result;
 		}
@@ -983,7 +992,8 @@ namespace Dataweb.NShape.ElectricalShapes {
 
 		/// <override></override>
 		public override Shape Clone() {
-			Shape result = new DisconnectingPoint(Type, (Template)null);
+			//Shape result = new DisconnectingPoint(Type, (Template)null);
+			Shape result = new DisconnectingPoint(Type, this.Template);
 			result.CopyFrom(this);
 			return result;
 		}

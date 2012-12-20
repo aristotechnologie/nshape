@@ -26,7 +26,8 @@ namespace Dataweb.NShape.GeneralShapes {
 
 		/// <override></override>
 		public override Shape Clone() {
-			Shape result = new IsoscelesTriangle(Type, (Template)null);
+			//Shape result = new IsoscelesTriangle(Type, (Template)null);
+			Shape result = new IsoscelesTriangle(Type, this.Template);
 			result.CopyFrom(this);
 			return result;
 		}
@@ -52,7 +53,8 @@ namespace Dataweb.NShape.GeneralShapes {
 
 
 		public override Shape Clone() {
-			Shape result = new FreeTriangle(Type, (Template)null);
+			//Shape result = new FreeTriangle(Type, (Template)null);
+			Shape result = new FreeTriangle(Type, this.Template);
 			result.CopyFrom(this);
 			return result;
 		}

@@ -7,6 +7,53 @@ Known issues:
 
 
 ====================================================================================================
+Changes in 2.0.3 (Beta 4):
+====================================================================================================
+- Changed Implementation Rule: The implementation rule for the Shape.Clone() method has changed. The 
+  shape clone has to instantiated using the source shape's Template.
+  See documentation for sample code.
+
+- Changed Behavior: When calling ToolSetController.Clear(), a ToolSelected event is raised (with
+  the eventArgs.Tool set to null/Nothing). Removed ArgumentNullExceptions when assigning null/Nothing 
+  to the SelectedTool property or calling SelectTool(null).
+- Changed Behavior: Exceptions thrown in the OnMouseXXX and OnKeyXXX methods of the display will no 
+  longer be swallowed silently but re-thrown (after canceling the current tool action).
+- Changed Behavior / New Feature: Selected shapes can be moved with the arrow keys. If no shapes are 
+  selected, the diagram will scroll. Shift key is used to speed up movement.
+- Changed Bahavior / New Feature: Deselection of selected shapes using a selection frame: If all 
+  shapes inside the frame are already selected, they will be deselected.
+- BugFix: The shape's template was not copied when calling Shape.Clone() (see changed implementation 
+  rule) 
+- BugFix: The ModelObject got lost when cutting and pasting the shape using DiagramSetController.Cut
+  and DiagramSetController.Paste, the appropriate context menu commands or keyboard shortcuts.
+- BugFix: Improved workaround for the strange GDI+ issue concerning lines with custom line caps
+- BugFix: When clicking or double clicking on overlapping shapes, a ShapeClick / ShapeDoubleClick 
+  event was raised for all shapes containing the clicked coordinate.
+  The event will now be raised for the selected shape at the clicked coordinates (if there is any)
+  or the topmost of the overlapping shapes.
+- BugFix: When deleting shapes, the event args of the ShapesRemoved event did not contain any shapes.
+- BugFix: When clearing the tools of the ToolSetController, the selected tool and the default tool's 
+  properties were not cleared, containing still a reference to the old tool (supposed to be deleted).
+  The DiagramSetController.ActiveTool also referenced the tool supposed to be deleted.
+- BugFix: When adding a new Tool to the ToolSetController as "default tool", the linked 
+  DiagramSetController's ActiveTool property will be updated.
+- BugFix: A NullReferenceException was sometimes thrown when selecting shapes (with caption)
+- BugFix: An OverflowException was caused when saving/loading ParagraphStyle with Alignment 
+  "BottomCenter". 
+  Changed PropertyDefinition of ParagraphStyle.Alignment from Byte to Short in order to avoid this
+  issue. 
+- BugFix: Shapes were not invalidated after changing their template if they were grouped.
+- BugFix: OnScroll messages sent to the directly to the display control (as some touchpad drivers do
+  when scrolling with finger gestures) are now handled correctly. 
+- BugFix: Fixed bug in CircularArc while recalculating radius point position (while connected shape-
+  to-shape)
+- Improvement: Removed assertion failure when trying to connect a line to a grouped shape.
+- Improvement: Adding multiple Layers will no longer cause the LayerListView to redraw after each 
+  added item.
+- Improvement: Added Tooltips for the status bar controls.
+
+
+====================================================================================================
 Changes in 2.0.2 (Beta 3):
 ====================================================================================================
 - New Sample Program: "ModelMapping Demo" that shown how to visualize states of business objects 

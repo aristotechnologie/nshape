@@ -240,7 +240,8 @@ namespace Dataweb.NShape.SoftwareArchitectureShapes {
 
 		/// <override></override>
 		public override Shape Clone() {
-			Shape result = new EntitySymbol(Type, (Template)null);
+			//Shape result = new EntitySymbol(Type, (Template)null);
+			Shape result = new EntitySymbol(Type, this.Template);
 			result.CopyFrom(this);
 			return result;
 		}
@@ -1112,7 +1113,8 @@ namespace Dataweb.NShape.SoftwareArchitectureShapes {
 
 		/// <override></override>
 		public override Shape Clone() {
-			Shape result = new AnnotationSymbol(Type, (Template)null);
+			//Shape result = new AnnotationSymbol(Type, (Template)null);
+			Shape result = new AnnotationSymbol(Type, this.Template);
 			result.CopyFrom(this);
 			return result;
 		}
@@ -1260,7 +1262,8 @@ namespace Dataweb.NShape.SoftwareArchitectureShapes {
 
 		/// <override></override>
 		public override Shape Clone() {
-			Shape result = new CloudSymbol(Type, (Template)null);
+			//Shape result = new CloudSymbol(Type, (Template)null);
+			Shape result = new CloudSymbol(Type, this.Template);
 			result.CopyFrom(this);
 			return result;
 		}
@@ -1491,7 +1494,8 @@ namespace Dataweb.NShape.SoftwareArchitectureShapes {
 
 		/// <override></override>
 		public override Shape Clone() {
-			Shape result = new DatabaseSymbol(Type, (Template)null);
+			//Shape result = new DatabaseSymbol(Type, (Template)null);
+			Shape result = new DatabaseSymbol(Type, this.Template);
 			result.CopyFrom(this);
 			return result;
 		}
@@ -1622,7 +1626,8 @@ namespace Dataweb.NShape.SoftwareArchitectureShapes {
 
 		/// <override></override>
 		public override Shape Clone() {
-			Shape result = new ClassSymbol(Type, (Template)null);
+			//Shape result = new ClassSymbol(Type, (Template)null);
+			Shape result = new ClassSymbol(Type, this.Template);
 			result.CopyFrom(this);
 			return result;
 		}
@@ -1646,7 +1651,8 @@ namespace Dataweb.NShape.SoftwareArchitectureShapes {
 
 		/// <override></override>
 		public override Shape Clone() {
-			Shape result = new ComponentSymbol(Type, (Template)null);
+			//Shape result = new ComponentSymbol(Type, (Template)null);
+			Shape result = new ComponentSymbol(Type, this.Template);
 			result.CopyFrom(this);
 			return result;
 		}
@@ -1875,7 +1881,8 @@ namespace Dataweb.NShape.SoftwareArchitectureShapes {
 
 		/// <override></override>
 		public override Shape Clone() {
-			Shape result = new DocumentSymbol(Type, (Template)null);
+			//Shape result = new DocumentSymbol(Type, (Template)null);
+			Shape result = new DocumentSymbol(Type, this.Template);
 			result.CopyFrom(this);
 			return result;
 		}
@@ -1963,7 +1970,8 @@ namespace Dataweb.NShape.SoftwareArchitectureShapes {
 
 		/// <override></override>
 		public override Shape Clone() {
-			Shape result = new DataFlowArrow(Type, (Template)null);
+			//Shape result = new DataFlowArrow(Type, (Template)null);
+			Shape result = new DataFlowArrow(Type, this.Template);
 			result.CopyFrom(this);
 			return result;
 		}
@@ -2009,7 +2017,8 @@ namespace Dataweb.NShape.SoftwareArchitectureShapes {
 
 		/// <override></override>
 		public override Shape Clone() {
-			Shape result = new DependencyArrow(Type, (Template)null);
+			//Shape result = new DependencyArrow(Type, (Template)null);
+			Shape result = new DependencyArrow(Type, this.Template);
 			result.CopyFrom(this);
 			return result;
 		}
@@ -2056,7 +2065,8 @@ namespace Dataweb.NShape.SoftwareArchitectureShapes {
 
 		/// <override></override>
 		public override Shape Clone() {
-			InterfaceUsageSymbol result = new InterfaceUsageSymbol(Type, (Template)null);
+			//InterfaceUsageSymbol result = new InterfaceUsageSymbol(Type, (Template)null);
+			InterfaceUsageSymbol result = new InterfaceUsageSymbol(Type, this.Template);
 			result.CopyFrom(this);
 			return result;
 		}
@@ -2085,7 +2095,8 @@ namespace Dataweb.NShape.SoftwareArchitectureShapes {
 
 		/// <override></override>
 		public override Shape Clone() {
-			Shape result = new InterfaceSymbol(Type, (Template)null);
+			//Shape result = new InterfaceSymbol(Type, (Template)null);
+			Shape result = new InterfaceSymbol(Type, this.Template);
 			result.CopyFrom(this);
 			return result;
 		}
@@ -2120,7 +2131,8 @@ namespace Dataweb.NShape.SoftwareArchitectureShapes {
 
 		/// <override></override>
 		public override Shape Clone() {
-			Shape result = new VectorImage(Type, (Template)null, resourceName, resourceAssembly);
+			//Shape result = new VectorImage(Type, (Template)null, resourceName, resourceAssembly);
+			Shape result = new VectorImage(Type, this.Template, resourceName, resourceAssembly);
 			result.CopyFrom(this);
 			return result;
 		}

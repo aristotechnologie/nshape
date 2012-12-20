@@ -23,7 +23,7 @@ using Dataweb.NShape.Controllers;
 
 
 namespace Dataweb.NShape.WinFormsUI {
-	
+
 	/// <summary>
 	/// ListView component implementing the ILayerView interface.
 	/// </summary>
@@ -106,10 +106,11 @@ namespace Dataweb.NShape.WinFormsUI {
 
 
 		void ILayerView.EndUpdate() {
-		   ResumeLayout();
+			ResumeLayout();
+			Invalidate();
 		}
 
-		
+
 		void ILayerView.Clear() {
 			ClearColumnsAndItems();
 		}
@@ -136,10 +137,7 @@ namespace Dataweb.NShape.WinFormsUI {
 			}
 			item.Text = layer.Name;
 			item.Tag = new LayerInfo(layer, isActive, isVisible);
-
 			Items.Add(item);
-			Refresh();
-			//return Items.IndexOf(item);
 		}
 
 
@@ -212,7 +210,7 @@ namespace Dataweb.NShape.WinFormsUI {
 
 		/// <override></override>
 		void ILayerView.Invalidate() {
-		   Invalidate();
+			Invalidate();
 		}
 
 		#endregion
@@ -254,7 +252,7 @@ namespace Dataweb.NShape.WinFormsUI {
 		/// <override></override>
 		protected override void OnMouseDown(MouseEventArgs e) {
 			base.OnMouseDown(e);
-			if (LayerViewMouseDown != null) 
+			if (LayerViewMouseDown != null)
 				LayerViewMouseDown(this, GetMouseEventArgs(MouseEventType.MouseDown, e));
 		}
 
@@ -270,7 +268,7 @@ namespace Dataweb.NShape.WinFormsUI {
 		/// <override></override>
 		protected override void OnMouseUp(MouseEventArgs e) {
 			base.OnMouseUp(e);
-			if (LayerViewMouseUp!= null)
+			if (LayerViewMouseUp != null)
 				LayerViewMouseUp(this, GetMouseEventArgs(MouseEventType.MouseUp, e));
 			// If the selected item was changed, LabelEdit was deactivated so we have to reactivate it here
 			if (!LabelEdit) LabelEdit = true;
@@ -328,10 +326,10 @@ namespace Dataweb.NShape.WinFormsUI {
 
 			if (e.ItemIndex % 2 == 0)
 				backgroundBrush = Brushes.AliceBlue;
-			else 
+			else
 				backgroundBrush = Brushes.White;
 			e.Graphics.FillRectangle(backgroundBrush, lineBounds);
-			
+
 			// This is a workaround for the disappearing subitems
 			// ToDo: Find out why subitems keep disappearing and find a better solution than this
 			for (int i = 0; i < e.Item.SubItems.Count; ++i)
@@ -359,7 +357,7 @@ namespace Dataweb.NShape.WinFormsUI {
 				string txt;
 				if (layerInfo.layer.LowerZoomThreshold == int.MinValue)
 					txt = float.NegativeInfinity.ToString();
-				else txt = string.Format("{0:D1} %",layerInfo.layer.LowerZoomThreshold);
+				else txt = string.Format("{0:D1} %", layerInfo.layer.LowerZoomThreshold);
 				e.Graphics.DrawString(txt, Font, textBrush, e.SubItem.Bounds);
 			} else if (e.ColumnIndex == idxColumnUpperZoomBound) {
 				string txt;
@@ -417,7 +415,7 @@ namespace Dataweb.NShape.WinFormsUI {
 		private ListViewItem FindItem(Layer layer) {
 			ListViewItem result = null;
 			for (int i = 0; i < Items.Count; ++i) {
-				if (layer  == ((LayerInfo)Items[i].Tag).layer) {
+				if (layer == ((LayerInfo)Items[i].Tag).layer) {
 					result = Items[i];
 					break;
 				}
@@ -504,7 +502,7 @@ namespace Dataweb.NShape.WinFormsUI {
 			if (sender is NumericUpDown) {
 				NumericUpDown upDown = (NumericUpDown)sender;
 				Layer layer = (Layer)upDown.Tag;
-				
+
 				upDown.Tag = null;
 				upDown.Leave -= upDown_Leave;
 				upDown.ValueChanged -= upDown_ValueChanged;
@@ -521,7 +519,7 @@ namespace Dataweb.NShape.WinFormsUI {
 			} else { }
 		}
 
-		
+
 		private void upDown_ValueChanged(object sender, EventArgs e) {
 			//
 		}
@@ -571,7 +569,7 @@ namespace Dataweb.NShape.WinFormsUI {
 
 			protected internal LayerListViewMouseEventArgs()
 				: base() { }
-		
+
 
 			protected internal void SetMouseEvent(Layer layer, LayerItem item, MouseEventType eventType, MouseEventArgs eventArgs) {
 				this.SetMouseEvent(eventType, (MouseButtonsDg)eventArgs.Button, eventArgs.Clicks, eventArgs.Delta, eventArgs.Location, (KeysDg)Control.ModifierKeys);

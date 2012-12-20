@@ -69,11 +69,19 @@ namespace Dataweb.NShape {
 		/// <summary>
 		/// Creates a clone, which owns clones of all composite objects in the shape.
 		/// </summary>
+		/// <remarks>
+		/// If the cloned shape has a template, the clone (and its child shapes) reference the template(s) of the source shape(s), too.
+		/// If the cloned shape has no template, the child shapes are cloned without templates, too.
+		/// </remarks>
 		public abstract Shape Clone();
 
 		/// <summary>
 		/// Copies as many properties as possible from the source shape.
 		/// </summary>
+		/// <remarks>
+		/// The Template will not be copied. 
+		/// If the template should be copied, create the new shape instance with the source's template or clone it.
+		/// </remarks>
 		public abstract void CopyFrom(Shape source);
 
 		/// <summary>

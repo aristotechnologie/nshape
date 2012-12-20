@@ -1438,9 +1438,13 @@ namespace Dataweb.NShape.WinFormsUI {
 			if (shapes == null) throw new ArgumentNullException("shapes");
 			if (!addToSelection)
 				ClearSelection();
-			foreach (Shape shape in shapes) {
-				Debug.Assert(Diagram.Shapes.Contains(shape));
-				DoSelectShape(shape, true);
+			if (SelectedShapes.ContainsAll(shapes))
+				SelectedShapes.RemoveRange(shapes);
+			else {
+				foreach (Shape shape in shapes) {
+					Debug.Assert(Diagram.Shapes.Contains(shape));
+					DoSelectShape(shape, true);
+				}
 			}
 			PerformSelectionNotifications();
 		}
@@ -2196,7 +2200,8 @@ namespace Dataweb.NShape.WinFormsUI {
 							mouseEventWasHandled = true;
 					} catch (Exception exc) {
 						CurrentTool.Cancel();
-						Debug.Fail(GetFailMessage(exc));
+						Debug.Print(GetFailMessage(exc));
+						throw;
 					}
 				}
 			}
@@ -2216,7 +2221,8 @@ namespace Dataweb.NShape.WinFormsUI {
 					CurrentTool.EnterDisplay(this);
 				} catch (Exception exc) {
 					CurrentTool.Cancel();
-					Debug.Fail(GetFailMessage(exc));
+					Debug.Print(GetFailMessage(exc));
+					throw;
 				}
 			}
 		}
@@ -2229,7 +2235,8 @@ namespace Dataweb.NShape.WinFormsUI {
 					CurrentTool.LeaveDisplay(this);
 				} catch (Exception exc) {
 					CurrentTool.Cancel();
-					Debug.Fail(GetFailMessage(exc));
+					Debug.Print(GetFailMessage(exc));
+					throw;
 				}
 			}
 		}
@@ -2257,7 +2264,8 @@ namespace Dataweb.NShape.WinFormsUI {
 							autoScrollTimer.Enabled = false;
 					} catch (Exception exc) {
 						CurrentTool.Cancel();
-						Debug.Fail(GetFailMessage(exc));
+						Debug.Print(GetFailMessage(exc));
+						throw;
 					}
 				}
 			}
@@ -2275,7 +2283,8 @@ namespace Dataweb.NShape.WinFormsUI {
 						mouseEventWasHandled = true;
 				} catch (Exception exc) {
 					CurrentTool.Cancel();
-					Debug.Fail(GetFailMessage(exc));
+					Debug.Print(GetFailMessage(exc));
+					throw;
 				}
 			}
 
@@ -2334,8 +2343,9 @@ namespace Dataweb.NShape.WinFormsUI {
 				try {
 					CurrentTool.ProcessKeyEvent(this, WinFormHelpers.GetKeyEventArgs(e));
 				} catch (Exception exc) {
-					Debug.Print(exc.Message);
+					Debug.Print(GetFailMessage(exc));
 					CurrentTool.Cancel();
+					throw;
 				}
 			}
 		}
@@ -2349,6 +2359,7 @@ namespace Dataweb.NShape.WinFormsUI {
 				} catch (Exception exc) {
 					Debug.Print(exc.Message);
 					CurrentTool.Cancel();
+					throw;
 				}
 
 				if (!e.Handled) {
@@ -2369,22 +2380,46 @@ namespace Dataweb.NShape.WinFormsUI {
 							case Keys.Right:
 							case Keys.Up:
 							case Keys.Down:
-								int newHValue = scrollBarH.Value;
-								int newVValue = scrollBarV.Value;
-								if (HScrollBarVisible) {
-									if (e.KeyCode == Keys.Left)
-										newHValue -= scrollBarH.SmallChange;
-									else if (e.KeyCode == Keys.Right)
-										newHValue += scrollBarH.SmallChange;
+								if (SelectedShapes.Count == 0) {
+									int newHValue = scrollBarH.Value;
+									if (HScrollBarVisible) {
+										int deltaH = e.Shift ? scrollBarH.LargeChange : scrollBarH.SmallChange;
+										if (e.KeyCode == Keys.Left)
+											newHValue -= deltaH;
+										else if (e.KeyCode == Keys.Right)
+											newHValue += deltaH;
+									}
+									int newVValue = scrollBarV.Value;
+									if (VScrollBarVisible) {
+										int deltaV = e.Shift ? scrollBarV.LargeChange : scrollBarV.SmallChange;
+										if (e.KeyCode == Keys.Up)
+											newVValue -= deltaV;
+										else if (e.KeyCode == Keys.Down)
+											newVValue += deltaV;
+									}
+									ScrollTo(newHValue, newVValue);
+									e.Handled = true;
+								} else {
+									int deltaX = 0, deltaY = 0;
+									switch (e.KeyCode) {
+										case Keys.Left:
+										case Keys.Right:
+											deltaX = e.Shift ? GridSize : 1;
+											if (e.KeyCode == Keys.Left) 
+												deltaX = -deltaX;
+											break;
+										case Keys.Up:
+										case Keys.Down:
+											deltaY = e.Shift ? GridSize : 1;
+											if (e.KeyCode == Keys.Up)
+												deltaY = -deltaY;
+											break;
+									}
+									if (DiagramSetController.CanMoveShapes(Diagram, SelectedShapes)) {
+										DiagramSetController.MoveShapes(Diagram, SelectedShapes, deltaX, deltaY);
+										e.Handled = true;
+									}
 								}
-								if (VScrollBarVisible) {
-									if (e.KeyCode == Keys.Up)
-										newVValue -= scrollBarV.SmallChange;
-									else if (e.KeyCode == Keys.Down)
-										newVValue += scrollBarV.SmallChange;
-								}
-								ScrollTo(newHValue, newVValue);
-								e.Handled = true;
 								break;
 
 							// Delete / Cut
@@ -2629,7 +2664,45 @@ namespace Dataweb.NShape.WinFormsUI {
 
 		/// <override></override>
 		protected override void OnScroll(ScrollEventArgs se) {
-			base.OnScroll(se);
+			// Do not call base.OnScroll() here!
+			// Base implementation will be called in SetScrollPos()
+			//
+			bool isHScroll = (se.ScrollOrientation == ScrollOrientation.HorizontalScroll);
+			if ((isHScroll && !scrollBarHVisible) || (!isHScroll && !scrollBarVVisible))
+				return;
+
+			// Handle scroll messages sent directly to the control, e.g. by touch pads of notebooks.
+			switch (se.Type) {
+				case ScrollEventType.First:
+					ScrollTo(se.ScrollOrientation, isHScroll ? scrollBarH.Minimum : scrollBarV.Minimum);
+					break;
+				case ScrollEventType.Last:
+					ScrollTo(se.ScrollOrientation, isHScroll ? scrollBarH.Maximum : scrollBarV.Maximum);
+					break;
+				case ScrollEventType.LargeDecrement:
+				case ScrollEventType.LargeIncrement:
+					// Scroll by 1/4 of LargeChange because the LargeChange (== Display width/height) value 
+					// would be too big for smooth scrolling
+					int largeValue = (isHScroll ? scrollBarH.LargeChange : scrollBarV.LargeChange) / 4;
+					ScrollBy(se.ScrollOrientation, (se.Type == ScrollEventType.SmallIncrement) ? largeValue : -largeValue);
+					break;
+				case ScrollEventType.SmallDecrement:
+				case ScrollEventType.SmallIncrement:
+					int smallValue = isHScroll ? scrollBarH.SmallChange : scrollBarV.SmallChange;
+					ScrollBy(se.ScrollOrientation, (se.Type == ScrollEventType.SmallIncrement) ? smallValue : -smallValue);
+					break;
+
+				case ScrollEventType.EndScroll:
+				case ScrollEventType.ThumbPosition:
+				case ScrollEventType.ThumbTrack:
+					// Nothing to do here because we cannot determine the correct scroll position anyway
+					break;
+				default:
+					Debug.Fail(string.Format("Unhandled {0}.Type value: {1}", typeof(ScrollEventArgs).Name, se.Type));
+					break;
+			}
+			// Avoid scrolling by the inherited AutoScroll mechanism
+			AutoScrollPosition = Point.Empty;
 		}
 
 		/// <override></override>
@@ -4226,6 +4299,20 @@ namespace Dataweb.NShape.WinFormsUI {
 		}
 
 
+		private void ScrollBy(ScrollOrientation orientation, int delta) {
+			if (orientation == ScrollOrientation.HorizontalScroll)
+				ScrollTo(scrollPosX + delta, scrollPosY);
+			else ScrollTo(scrollPosX, scrollPosY + delta);
+		}
+
+
+		private void ScrollTo(ScrollOrientation orientation, int value) {
+			if (orientation == ScrollOrientation.HorizontalScroll)
+				ScrollTo(value, scrollPosY);
+			else ScrollTo(scrollPosX, value);
+		}
+
+
 		private void ScrollTo(int x, int y) {
 			if (HScrollBarVisible) {
 				if (x < scrollBarH.Minimum)
@@ -4266,7 +4353,7 @@ namespace Dataweb.NShape.WinFormsUI {
 			scrollBarH.Value = newValue;
 			scrollPosX = newValue;
 
-			OnScroll(e);
+			base.OnScroll(e);
 		}
 
 
@@ -4283,7 +4370,7 @@ namespace Dataweb.NShape.WinFormsUI {
 			scrollBarV.Value = newValue;
 			scrollPosY = newValue;
 
-			OnScroll(e);
+			base.OnScroll(e);
 		}
 
 		#endregion
@@ -4436,18 +4523,24 @@ namespace Dataweb.NShape.WinFormsUI {
 			if (!ScrollBarContainsPoint(eventArgs.Location) && Diagram != null) {
 				int mouseX, mouseY;
 				ControlToDiagram(eventArgs.X, eventArgs.Y, out mouseX, out mouseY);
-
-				// FindShapes can return duplicates, so we have to check if the 
-				// ShapeClick event was already raised for a found shape
-				shapeBuffer.Clear();
-				foreach (Shape clickedShape in Diagram.Shapes.FindShapes(mouseX, mouseY, ControlPointCapabilities.All, GripSize)) {
-					if (!shapeBuffer.Contains(clickedShape)) {
-						shapeBuffer.Add(clickedShape);
-						// Raise ShapeClick-Events if a shape has been clicked
-						if (isDoubleClickEvent)
-							OnShapeDoubleClick(new DiagramPresenterShapeClickEventArgs(clickedShape, WinFormHelpers.GetMouseEventArgs(MouseEventType.MouseUp, eventArgs)));
-						else OnShapeClick(new DiagramPresenterShapeClickEventArgs(clickedShape, WinFormHelpers.GetMouseEventArgs(MouseEventType.MouseUp, eventArgs)));
+				// If a selected shape was clicked, the event will be raised for the selected shape (even if it is behind other shapes)...
+				Shape clickedShape = null;
+				foreach (Shape s in selectedShapes.FindShapes(mouseX, mouseY, ControlPointCapabilities.None, 0)) {
+					clickedShape = s;
+					break;
+				}
+				// ... otherwise, the event will be raised for the topmost shape containing the clicked coordinates
+				if (clickedShape == null) {
+					foreach (Shape s in Diagram.Shapes.FindShapes(mouseX, mouseY, ControlPointCapabilities.None, 0)) {
+						clickedShape = s;
+						break;
 					}
+				}
+				// Raise event (if a clicked shape was found)
+				if (clickedShape != null) {
+					if (isDoubleClickEvent)
+						OnShapeDoubleClick(new DiagramPresenterShapeClickEventArgs(clickedShape, WinFormHelpers.GetMouseEventArgs(MouseEventType.MouseUp, eventArgs)));
+					else OnShapeClick(new DiagramPresenterShapeClickEventArgs(clickedShape, WinFormHelpers.GetMouseEventArgs(MouseEventType.MouseUp, eventArgs)));
 				}
 			}
 		}
@@ -5038,10 +5131,12 @@ namespace Dataweb.NShape.WinFormsUI {
 
 
 		private void PerformDelete(Diagram diagram, IEnumerable<Shape> shapes, bool withModelObjects) {
-			diagramSetController.DeleteShapes(diagram, shapes, withModelObjects);
+			DiagramPresenterShapesEventArgs e = new DiagramPresenterShapesEventArgs(shapes);
+			
+			UnselectShapes(e.Shapes);
+			diagramSetController.DeleteShapes(diagram, e.Shapes, withModelObjects);
 
-			OnShapesRemoved(new DiagramPresenterShapesEventArgs(shapes));
-			UnselectShapes(shapes);
+			OnShapesRemoved(e);
 		}
 
 

@@ -33,7 +33,8 @@ namespace Dataweb.NShape.GeneralShapes {
 
 		/// <override></override>
 		public override Shape Clone() {
-			Shape result = new Polyline(Type, (Template)null);
+			//Shape result = new Polyline(Type, (Template)null);
+			Shape result = new Polyline(Type, this.Template);
 			result.CopyFrom(this);
 			return result;
 		}
@@ -98,7 +99,8 @@ namespace Dataweb.NShape.GeneralShapes {
 
 		/// <override></override>
 		public override Shape Clone() {
-			Shape result = new RectangularLine(Type, (Template)null);
+			//Shape result = new RectangularLine(Type, (Template)null);
+			Shape result = new RectangularLine(Type, this.Template);
 			result.CopyFrom(this);
 			return result;
 		}
@@ -164,7 +166,8 @@ namespace Dataweb.NShape.GeneralShapes {
 
 		/// <override></override>
 		public override Shape Clone() {
-			Shape result = new CircularArc(Type, (Template)null);
+			//Shape result = new CircularArc(Type, (Template)null);
+			Shape result = new CircularArc(Type, this.Template);
 			result.CopyFrom(this);
 			return result;
 		}

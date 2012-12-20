@@ -18,6 +18,7 @@ using System.Reflection;
 using System.Windows.Forms;
 
 using Dataweb.NShape.WinFormsUI;
+using System.Diagnostics;
 
 
 namespace Dataweb.NShape.Designer {
@@ -47,7 +48,22 @@ namespace Dataweb.NShape.Designer {
 
 
 		private void linkLabel1_LinkClicked(object sender, LinkLabelLinkClickedEventArgs e) {
-			System.Diagnostics.Process.Start("http://www.dataweb.de");
+			Process.Start("http://www.dataweb.de");
+		}
+
+
+		private void linkLabel4_LinkClicked(object sender, LinkLabelLinkClickedEventArgs e) {
+			Process.Start("http://www.dataweb.de/en/support/nshapefeedback.html");
+		}
+
+
+		private void linkLabel2_LinkClicked(object sender, LinkLabelLinkClickedEventArgs e) {
+			Process.Start("http://nshape.codeplex.com");
+		}
+
+
+		private void linkLabel3_LinkClicked(object sender, LinkLabelLinkClickedEventArgs e) {
+			Process.Start("http://nshape.googlecode.com");
 		}
 
 

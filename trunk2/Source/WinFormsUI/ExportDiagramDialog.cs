@@ -417,13 +417,13 @@ namespace Dataweb.NShape.WinFormsUI {
 				value = -1;
 			} else {
 				if (previewCheckBox.Checked) {
-					// Deaactivate preview if image would be very large
+					// Deactivate preview if image would be very large
 					// ToDo: Create image with a worker thread
 					Graphics infoGfx = diagramPresenter.Diagram.DisplayService.InfoGraphics;
 					int imgWidth = (int)Math.Round((value / infoGfx.DpiX) * diagramPresenter.Diagram.Width);
 					int imgHeight = (int)Math.Round((value / infoGfx.DpiY) * diagramPresenter.Diagram.Height);
 					if (Math.Max(imgWidth, imgHeight) > deactivatePreviewDimension) {
-						string msg = string.Format("The resulting image will have {0}x{1} pixels and drawing a preview of this image might be slow.\nDo you wand to deactivate the preview option?", 
+						string msg = string.Format("The resulting image will have {0}x{1} pixels and drawing a preview of this image might be slow on some machines.\nDo you wand to deactivate the preview option?", 
 															imgWidth, imgHeight);
 						DialogResult result = MessageBox.Show(this, msg, "Deactivate preview?", MessageBoxButtons.YesNoCancel, MessageBoxIcon.Question, MessageBoxDefaultButton.Button1);
 						switch (result) {
@@ -589,6 +589,7 @@ namespace Dataweb.NShape.WinFormsUI {
 				+ "Creates a compressed bitmap image file. The Jpg file format does not support transparency. It provides an adjustable (lossy) compression.";
 			bmpDescription = "Bitmap (*" + fileExtBMP + ")" + Environment.NewLine
 				+ "Creates an uncompressed bitmap image file. The Bmp file format does not support transparency.";
+			deactivatePreviewDimension = 3000;
 		}
 
 
@@ -608,6 +609,9 @@ namespace Dataweb.NShape.WinFormsUI {
 		private static readonly string pngDescription;
 		private static readonly string jpgDescription;
 		private static readonly string bmpDescription;
+		
+		// Store in static field in order to preserve the decision as long as the application is running
+		private static int deactivatePreviewDimension;
 
 		// Rendering stuff
 		private const ImageLayoutMode imageLayout = ImageLayoutMode.Fit;
@@ -619,7 +623,7 @@ namespace Dataweb.NShape.WinFormsUI {
 		private int dpi;
 		private Color backgroundColor = Color.Transparent;
 		private IEnumerable<Shape> shapes;
-		private int deactivatePreviewDimension = 3000;
+		//private int deactivatePreviewDimension = 3000;
 
 		// Export stuff
 		private ImageFileFormat imageFormat;

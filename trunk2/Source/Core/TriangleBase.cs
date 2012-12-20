@@ -39,7 +39,8 @@ namespace Dataweb.NShape.Advanced {
 
 		/// <override></override>
 		public override Shape Clone() {
-			Shape result = new TriangleBase(Type, (Template)null);
+			//Shape result = new TriangleBase(Type, (Template)null);
+			Shape result = new TriangleBase(Type, this.Template);
 			result.CopyFrom(this);
 			return result;
 		}

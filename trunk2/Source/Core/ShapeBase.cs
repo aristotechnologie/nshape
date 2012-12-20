@@ -64,7 +64,14 @@ namespace Dataweb.NShape.Advanced {
 			// Delete all cached graphical objects and structures
 			InvalidateDrawCache();
 
-			// Original
+			// Do *not* copy the template!
+			// If a template is needed, create the new shape instance with the source's template.
+			// If the template would be copied, all templates created from shapes would be dependent 
+			// on the template of the original shape.
+			// Instead of copying the template here, we've changed the implementations of the Clone
+			// method: It will now create a shape instance with the source shape's template.
+			//
+			// Old version:
 			// Copy template only if the shape has no template yet.
 			//if (template == null) template = source.Template;
 
@@ -1296,6 +1303,7 @@ namespace Dataweb.NShape.Advanced {
 			if (movedPointId == ControlPointId.Reference)
 				newGluePtPos = CalcGluePoint(gluePointId, connectedShape);
 			else newGluePtPos = connectedShape.GetControlPointPosition(movedPointId);
+			//Debug.Print("New GLuePoint position: {0}", newGluePtPos);
 
 			// If calculating a new position failed, do not move the glue point.
 			if (Geometry.IsValid(newGluePtPos)) {

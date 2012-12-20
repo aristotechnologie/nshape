@@ -426,8 +426,9 @@ namespace Dataweb.NShape {
 
 
 		/// <summary>
-		/// Ends a tool's action. Crears the start position for the action and the display used for the action.
+		/// Ends a tool's action. Clears the start position for the action and the display used for the action.
 		/// </summary>
+		/// <remarks>When overriding this method, the call to the base implementation has to be called at last.</remarks>
 		protected virtual void EndToolAction() {
 			if (pendingActions.Count <= 0) throw new InvalidOperationException("No tool actions pending.");
 			IDiagramPresenter diagramPresenter = pendingActions.Peek().DiagramPresenter;
@@ -1032,20 +1033,27 @@ namespace Dataweb.NShape {
 					if (s.ZOrder < resultZOrder) continue;
 					// If the shape is already connected to the found shape via point-to-shape connection
 					if (shape != null) {
-						if(!CanConnectTo(shape, gluePointId, s)) continue;
+						if (!CanConnectTo(shape, gluePointId, s)) continue;
 						if (!CanConnectTo(diagramPresenter, shape,
 							(gluePointId == ControlPointId.FirstVertex) ? ControlPointId.LastVertex : ControlPointId.FirstVertex,
 							gluePointId, onlyUnselected)) continue;
 					}
 					// Skip selected shapes (if not wanted)
 					if (onlyUnselected && diagramPresenter.SelectedShapes.Contains(s)) continue;
+
+					// In case a group is under the mouse, use an appropriate child shape of the group
+					Shape target = null;
+					if (s is IShapeGroup)
+						target = s.Children.FindShape(x, y, ControlPointCapabilities.Connect, range, null);
+					else target = s;
+
 					// Perform a HitTest on the shape
-					ControlPointId pointId = s.HitTest(x, y, ControlPointCapabilities.Connect, range);
+					ControlPointId pointId = target.HitTest(x, y, ControlPointCapabilities.Connect, range);
 					if (pointId != ControlPointId.None) {
-						if (s.HasControlPointCapability(pointId, ControlPointCapabilities.Glue)) continue;
-						result.Shape = s;
+						if (target.HasControlPointCapability(pointId, ControlPointCapabilities.Glue)) continue;
+						result.Shape = target;
 						result.ControlPointId = pointId;
-						resultZOrder = s.ZOrder;
+						resultZOrder = target.ZOrder;
 						// If the found connection point is a dedicated connection point, take it. If the found connection point is 
 						// the reference point of a shape, continue searching for a dedicated connection point.
 						if (result.ControlPointId != ControlPointId.Reference)
@@ -3217,9 +3225,9 @@ namespace Dataweb.NShape {
 				return false;
 			if (!shapeAtCursorInfo.Shape.ContainsPoint(mouseState.X, mouseState.Y))
 				return false;
+			// 
 			if (shapeAtCursorInfo.Shape.HasControlPointCapability(ControlPointId.Reference, ControlPointCapabilities.Glue))
 				if (shapeAtCursorInfo.Shape.IsConnected(ControlPointId.Reference, null) != ControlPointId.None) return false;
-
 			// Check if the shape is connected to other shapes with its glue points
 			if (diagramPresenter.SelectedShapes.Count == 0) {
 				// Check if the non-selected shape at cursor (which will be selected) owns glue points connected to other shapes
@@ -3311,7 +3319,7 @@ namespace Dataweb.NShape {
 			else {
 				// If there is another shape under the caption, prefer the "Select" action over the "EditCaption" action
 				Shape s = diagramPresenter.Diagram.Shapes.FindShape(mouseState.X, mouseState.Y, ControlPointCapabilities.None, 0, shapeAtCursorInfo.Shape);
-				if (s != shapeAtCursorInfo.Shape && s.ContainsPoint(mouseState.X, mouseState.Y))
+				if (s == null || s != shapeAtCursorInfo.Shape && s.ContainsPoint(mouseState.X, mouseState.Y))
 					return false;
 			}
 			// Not necessary any more: Edit caption is triggered on MouseUp event and only of the mouse was not moved.

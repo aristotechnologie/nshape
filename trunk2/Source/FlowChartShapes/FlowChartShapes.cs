@@ -276,7 +276,8 @@ namespace Dataweb.NShape.FlowChartShapes {
 
 		/// <override></override>
 		public override Shape Clone() {
-			Shape result = new TerminatorSymbol(Type, (Template)null);
+			//Shape result = new TerminatorSymbol(Type, (Template)null);
+			Shape result = new TerminatorSymbol(Type, this.Template);
 			result.CopyFrom(this);
 			return result;
 		}
@@ -388,7 +389,8 @@ namespace Dataweb.NShape.FlowChartShapes {
 
 		/// <override></override>
 		public override Shape Clone() {
-			Shape result = new ProcessSymbol(Type, (Template)null);
+			//Shape result = new ProcessSymbol(Type, (Template)null);
+			Shape result = new ProcessSymbol(Type, this.Template);
 			result.CopyFrom(this);
 			return result;
 		}
@@ -478,7 +480,8 @@ namespace Dataweb.NShape.FlowChartShapes {
 
 		/// <override></override>
 		public override Shape Clone() {
-			Shape result = new PredefinedProcessSymbol(Type, (Template)null);
+			//Shape result = new PredefinedProcessSymbol(Type, (Template)null);
+			Shape result = new PredefinedProcessSymbol(Type, this.Template);
 			result.CopyFrom(this);
 			return result;
 		}
@@ -539,7 +542,8 @@ namespace Dataweb.NShape.FlowChartShapes {
 
 		/// <override></override>
 		public override Shape Clone() {
-			Shape result = new DecisionSymbol(Type, (Template)null);
+			//Shape result = new DecisionSymbol(Type, (Template)null);
+			Shape result = new DecisionSymbol(Type, this.Template);
 			result.CopyFrom(this);
 			return result;
 		}
@@ -567,7 +571,8 @@ namespace Dataweb.NShape.FlowChartShapes {
 
 		/// <override></override>
 		public override Shape Clone() {
-			Shape result = new InputOutputSymbol(Type, (Template)null);
+			//Shape result = new InputOutputSymbol(Type, (Template)null);
+			Shape result = new InputOutputSymbol(Type, this.Template);
 			result.CopyFrom(this);
 			return result;
 		}
@@ -700,7 +705,8 @@ namespace Dataweb.NShape.FlowChartShapes {
 
 		/// <override></override>
 		public override Shape Clone() {
-			Shape result = new DocumentSymbol(Type, (Template)null);
+			//Shape result = new DocumentSymbol(Type, (Template)null);
+			Shape result = new DocumentSymbol(Type, this.Template);
 			result.CopyFrom(this);
 			return result;
 		}
@@ -767,7 +773,8 @@ namespace Dataweb.NShape.FlowChartShapes {
 
 		/// <override></override>
 		public override Shape Clone() {
-			Shape result = new ConnectorSymbol(Type, (Template)null);
+			//Shape result = new ConnectorSymbol(Type, (Template)null);
+			Shape result = new ConnectorSymbol(Type, this.Template);
 			result.CopyFrom(this);
 			return result;
 		}
@@ -804,7 +811,8 @@ namespace Dataweb.NShape.FlowChartShapes {
 
 		/// <override></override>
 		public override Shape Clone() {
-			Shape result = new OffpageConnectorSymbol(Type, (Template)null);
+			//Shape result = new OffpageConnectorSymbol(Type, (Template)null);
+			Shape result = new OffpageConnectorSymbol(Type, this.Template);
 			result.CopyFrom(this);
 			return result;
 		}
@@ -980,7 +988,8 @@ namespace Dataweb.NShape.FlowChartShapes {
 
 		/// <override></override>
 		public override Shape Clone() {
-			Shape result = new ExtractSymbol(Type, (Template)null);
+			//Shape result = new ExtractSymbol(Type, (Template)null);
+			Shape result = new ExtractSymbol(Type, this.Template);
 			result.CopyFrom(this);
 			return result;
 		}
@@ -1051,7 +1060,8 @@ namespace Dataweb.NShape.FlowChartShapes {
 
 		/// <override></override>
 		public override Shape Clone() {
-			Shape result = new MergeSymbol(Type, (Template)null);
+			//Shape result = new MergeSymbol(Type, (Template)null);
+			Shape result = new MergeSymbol(Type, this.Template);
 			result.CopyFrom(this);
 			return result;
 		}
@@ -1232,7 +1242,8 @@ namespace Dataweb.NShape.FlowChartShapes {
 
 		/// <override></override>
 		public override Shape Clone() {
-			Shape result = new OnlineStorageSymbol(Type, (Template)null);
+			//Shape result = new OnlineStorageSymbol(Type, (Template)null);
+			Shape result = new OnlineStorageSymbol(Type, this.Template);
 			result.CopyFrom(this);
 			return result;
 		}
@@ -1327,7 +1338,8 @@ namespace Dataweb.NShape.FlowChartShapes {
 
 		/// <override></override>
 		public override Shape Clone() {
-			Shape result = new OfflineStorageSymbol(Type, (Template)null);
+			//Shape result = new OfflineStorageSymbol(Type, (Template)null);
+			Shape result = new OfflineStorageSymbol(Type, this.Template);
 			result.CopyFrom(this);
 			return result;
 		}
@@ -1385,7 +1397,8 @@ namespace Dataweb.NShape.FlowChartShapes {
 
 		/// <override></override>
 		public override Shape Clone() {
-			Shape result = new DrumStorageSymbol(Type, (Template)null);
+			//Shape result = new DrumStorageSymbol(Type, (Template)null);
+			Shape result = new DrumStorageSymbol(Type, this.Template);
 			result.CopyFrom(this);
 			return result;
 		}
@@ -1477,7 +1490,8 @@ namespace Dataweb.NShape.FlowChartShapes {
 
 		/// <override></override>
 		public override Shape Clone() {
-			Shape result = new DiskStorageSymbol(Type, (Template)null);
+			//Shape result = new DiskStorageSymbol(Type, (Template)null);
+			Shape result = new DiskStorageSymbol(Type, this.Template);
 			result.CopyFrom(this);
 			return result;
 		}
@@ -1587,7 +1601,8 @@ namespace Dataweb.NShape.FlowChartShapes {
 
 		/// <override></override>
 		public override Shape Clone() {
-			Shape result = new TapeStorageSymbol(Type, (Template)null);
+			//Shape result = new TapeStorageSymbol(Type, (Template)null);
+			Shape result = new TapeStorageSymbol(Type, this.Template);
 			result.CopyFrom(this);
 			return result;
 		}
@@ -1662,7 +1677,8 @@ namespace Dataweb.NShape.FlowChartShapes {
 
 		/// <override></override>
 		public override Shape Clone() {
-			Shape result = new PreparationSymbol(Type, (Template)null);
+			//Shape result = new PreparationSymbol(Type, (Template)null);
+			Shape result = new PreparationSymbol(Type, this.Template);
 			result.CopyFrom(this);
 			return result;
 		}
@@ -1778,7 +1794,8 @@ namespace Dataweb.NShape.FlowChartShapes {
 
 		/// <override></override>
 		public override Shape Clone() {
-			Shape result = new ManualInputSymbol(Type, (Template)null);
+			//Shape result = new ManualInputSymbol(Type, (Template)null);
+			Shape result = new ManualInputSymbol(Type, this.Template);
 			result.CopyFrom(this);
 			return result;
 		}
@@ -1852,7 +1869,8 @@ namespace Dataweb.NShape.FlowChartShapes {
 
 		/// <override></override>
 		public override Shape Clone() {
-			Shape result = new CoreSymbol(Type, (Template)null);
+			//Shape result = new CoreSymbol(Type, (Template)null);
+			Shape result = new CoreSymbol(Type, this.Template);
 			result.CopyFrom(this);
 			return result;
 		}
@@ -1907,7 +1925,8 @@ namespace Dataweb.NShape.FlowChartShapes {
 
 		/// <override></override>
 		public override Shape Clone() {
-			Shape result = new DisplaySymbol(Type, (Template)null);
+			//Shape result = new DisplaySymbol(Type, (Template)null);
+			Shape result = new DisplaySymbol(Type, this.Template);
 			result.CopyFrom(this);
 			return result;
 		}
@@ -2008,7 +2027,8 @@ namespace Dataweb.NShape.FlowChartShapes {
 
 		/// <override></override>
 		public override Shape Clone() {
-			Shape result = new TapeSymbol(Type, (Template)null);
+			//Shape result = new TapeSymbol(Type, (Template)null);
+			Shape result = new TapeSymbol(Type, this.Template);
 			result.CopyFrom(this);
 			return result;
 		}
@@ -2080,7 +2100,8 @@ namespace Dataweb.NShape.FlowChartShapes {
 
 		/// <override></override>
 		public override Shape Clone() {
-			Shape result = new ManualOperationSymbol(Type, (Template)null);
+			//Shape result = new ManualOperationSymbol(Type, (Template)null);
+			Shape result = new ManualOperationSymbol(Type, this.Template);
 			result.CopyFrom(this);
 			return result;
 		}
@@ -2162,7 +2183,8 @@ namespace Dataweb.NShape.FlowChartShapes {
 
 		/// <override></override>
 		public override Shape Clone() {
-			Shape result = new SortSymbol(Type, (Template)null);
+			//Shape result = new SortSymbol(Type, (Template)null);
+			Shape result = new SortSymbol(Type, this.Template);
 			result.CopyFrom(this);
 			return result;
 		}
@@ -2225,7 +2247,8 @@ namespace Dataweb.NShape.FlowChartShapes {
 
 		/// <override></override>
 		public override Shape Clone() {
-			Shape result = new CollateSymbol(Type, (Template)null);
+			//Shape result = new CollateSymbol(Type, (Template)null);
+			Shape result = new CollateSymbol(Type, this.Template);
 			result.CopyFrom(this);
 			return result;
 		}
@@ -2304,7 +2327,8 @@ namespace Dataweb.NShape.FlowChartShapes {
 
 		/// <override></override>
 		public override Shape Clone() {
-			Shape result = new CardSymbol(Type, (Template)null);
+			//Shape result = new CardSymbol(Type, (Template)null);
+			Shape result = new CardSymbol(Type, this.Template);
 			result.CopyFrom(this);
 			return result;
 		}
@@ -2376,7 +2400,8 @@ namespace Dataweb.NShape.FlowChartShapes {
 
 		/// <override></override>
 		public override Shape Clone() {
-			Shape result = new CommLinkSymbol(Type, (Template)null);
+			//Shape result = new CommLinkSymbol(Type, (Template)null);
+			Shape result = new CommLinkSymbol(Type, this.Template);
 			result.CopyFrom(this);
 			return result;
 		}

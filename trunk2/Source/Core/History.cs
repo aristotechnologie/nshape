@@ -137,10 +137,6 @@ namespace Dataweb.NShape.Advanced {
 		public event EventHandler<CommandEventArgs> CommandAdded;
 
 
-		///// <ToBeCompleted></ToBeCompleted>
-		//public event EventHandler<CommandEventArgs> CommandExecuted;
-
-
 		/// <ToBeCompleted></ToBeCompleted>
 		public event EventHandler<CommandsEventArgs> CommandsExecuted;
 

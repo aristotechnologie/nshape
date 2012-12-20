@@ -983,7 +983,13 @@ namespace Dataweb.NShape.Advanced {
 					Geometry.CalcPerpendicularBisector(movedPtPos.X, movedPtPos.Y, otherGluePtPos.X, otherGluePtPos.Y, out aPb, out bPb, out cPb);
 					Geometry.CalcLine(movedPtPos.X, movedPtPos.Y, hX, hY, out aR, out bR, out cR);
 
-					Point newPos = Geometry.IntersectLines(aPb, bPb, cPb, aR, bR, cR);
+					Point newPos = Geometry.InvalidPoint;
+					if (radiusPtAngle % 90 == 0) {
+						// Lines are parallel or equal
+						Point newCenterPt = Geometry.VectorLinearInterpolation(movedPtPos, otherGluePtPos, 0.5f);
+						newPos = Geometry.RotatePoint(newCenterPt, radiusPtAngle, otherGluePtPos);
+					} else 
+						newPos = Geometry.IntersectLines(aPb, bPb, cPb, aR, bR, cR);
 					Debug.Assert(Geometry.IsValid(newPos));
 					if (Geometry.IsValid(newPos))
 						GetControlPoint(radPointIdx).SetPosition(newPos);

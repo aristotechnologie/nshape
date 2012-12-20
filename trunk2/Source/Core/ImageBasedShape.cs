@@ -145,7 +145,8 @@ namespace Dataweb.NShape.Advanced {
 
 		/// <override></override>
 		public override Shape Clone() {
-			Shape result = new PictureBase(Type, (Template)null);
+			//Shape result = new PictureBase(Type, (Template)null);
+			Shape result = new PictureBase(Type, this.Template);
 			result.CopyFrom(this);
 			return result;
 		}
@@ -572,7 +573,8 @@ namespace Dataweb.NShape.Advanced {
 
 		/// <override></override>
 		public override Shape Clone() {
-			Shape result = new ImageBasedShape(Type, (Template)null, resourceName, resourceAssembly);
+			//Shape result = new ImageBasedShape(Type, (Template)null, resourceName, resourceAssembly);
+			Shape result = new ImageBasedShape(Type, this.Template, resourceName, resourceAssembly);
 			result.CopyFrom(this);
 			return result;
 		}
@@ -1215,7 +1217,8 @@ namespace Dataweb.NShape.Advanced {
 
 		/// <override></override>
 		public override Shape Clone() {
-			Shape result = new CustomizableMetaFile(Type, (Template)null, resourceName, resourceAssembly);
+			//Shape result = new CustomizableMetaFile(Type, (Template)null, resourceName, resourceAssembly);
+			Shape result = new CustomizableMetaFile(Type, this.Template, resourceName, resourceAssembly);
 			result.CopyFrom(this);
 			return result;
 		}

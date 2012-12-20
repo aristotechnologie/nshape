@@ -62,7 +62,8 @@ namespace Dataweb.NShape.Advanced {
 
 		/// <override></override>
 		public override Shape Clone() {
-			Shape result = new RegularPolygoneBase(Type, (Template)null);
+			//Shape result = new RegularPolygoneBase(Type, (Template)null);
+			Shape result = new RegularPolygoneBase(Type, this.Template);
 			result.CopyFrom(this);
 			return result;
 		}

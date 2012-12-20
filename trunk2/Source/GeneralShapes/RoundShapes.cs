@@ -27,7 +27,8 @@ namespace Dataweb.NShape.GeneralShapes {
 
 		/// <override></override>
 		public override Shape Clone() {
-			Shape result = new Circle(Type, (Template)null);
+			//Shape result = new Circle(Type, (Template)null);
+			Shape result = new Circle(Type, this.Template);
 			result.CopyFrom(this);
 			return result;
 		}
@@ -67,7 +68,8 @@ namespace Dataweb.NShape.GeneralShapes {
 
 		/// <override></override>
 		public override Shape Clone() {
-			Shape result = new Ellipse(Type, (Template)null);
+			//Shape result = new Ellipse(Type, (Template)null);
+			Shape result = new Ellipse(Type, this.Template);
 			result.CopyFrom(this);
 			return result;
 		}

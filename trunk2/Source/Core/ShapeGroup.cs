@@ -710,7 +710,8 @@ namespace Dataweb.NShape.Advanced {
 
 		/// <override></override>
 		public override Shape Clone() {
-			Shape result = new ShapeGroup(Type, (Template)null);
+			//Shape result = new ShapeGroup(Type, (Template)null);
+			Shape result = new ShapeGroup(Type, this.Template);
 			result.CopyFrom(this);
 			return result;
 		}

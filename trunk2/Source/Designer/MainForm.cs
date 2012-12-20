@@ -42,6 +42,10 @@ namespace Dataweb.NShape.Designer {
 			Icon = Icon.ExtractAssociatedIcon(Application.ExecutablePath);
 			runtimeModeComboBox.SelectedIndex = 0;
 			Visible = false;
+			
+			// Set texts for status bar tool tips
+			SetToolTipTexts();
+
 #if !DEBUG_UI
 			historyTrackBar.Visible = false;
 			toolStripContainer.TopToolStripPanel.Controls.Remove(debugToolStrip);
@@ -289,6 +293,24 @@ namespace Dataweb.NShape.Designer {
 					MessageBox.Show(this, msg, "Assembly Version Mismatch", MessageBoxButtons.OK, MessageBoxIcon.Warning);
 				}
 			}
+		}
+
+
+		private void SetToolTipTexts() {
+			statusStrip.ShowItemToolTips = true;
+			
+			statusLabelMessage.ToolTipText = "";
+
+			toolStripStatusLabelDiagram.ToolTipText =
+			statusLabelShapeCount.ToolTipText = "Number of shapes in the current diagram";
+			
+			toolStripStatusLabelSelection.ToolTipText = "Position and size of the current selection";
+			statusLabelMousePosition.ToolTipText = "Mouse position in diagram coordinates";
+			statusLabelSelectionSize.ToolTipText = "The size of the current selection in diagram coordinates";
+
+			toolStripStatusLabelDisplayArea.ToolTipText = "The currently displayed area in diagram coordinates";
+			statusLabelTopLeft.ToolTipText = "The top left corner of currently displayed area in diagram coordinates";
+			statusLabelBottomRight.ToolTipText = "The bottom right corner of currently displayed area in diagram coordinates";
 		}
 
 
@@ -1625,7 +1647,6 @@ namespace Dataweb.NShape.Designer {
 				return "Model";
 			else return (type != null) ? type.Name : string.Empty;
 		}
-
 
 
 		private void detailsToolStripMenuItem_Click(object sender, EventArgs e) {

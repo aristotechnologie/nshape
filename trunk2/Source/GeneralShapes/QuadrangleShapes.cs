@@ -28,7 +28,8 @@ namespace Dataweb.NShape.GeneralShapes {
 
 		/// <override></override>
 		public override Shape Clone() {
-			Shape result = new Square(Type, (Template)null);
+			//Shape result = new Square(Type, (Template)null);
+			Shape result = new Square(Type, this.Template);
 			result.CopyFrom(this);
 			return result;
 		}
@@ -79,7 +80,8 @@ namespace Dataweb.NShape.GeneralShapes {
 
 		/// <override></override>
 		public override Shape Clone() {
-			Shape result = new Box(Type, (Template)null);
+			//Shape result = new Box(Type, (Template)null);
+			Shape result = new Box(Type, this.Template);
 			result.CopyFrom(this);
 			return result;
 		}
@@ -123,7 +125,8 @@ namespace Dataweb.NShape.GeneralShapes {
 
 		/// <override></override>
 		public override Shape Clone() {
-			Shape result = new RoundedBox(Type, (Template)null);
+			//Shape result = new RoundedBox(Type, (Template)null);
+			Shape result = new RoundedBox(Type, this.Template);
 			result.CopyFrom(this);
 			return result;
 		}
@@ -283,7 +286,8 @@ namespace Dataweb.NShape.GeneralShapes {
 
 		/// <override></override>
 		public override Shape Clone() {
-			Shape result = new Diamond(Type, (Template)null);
+			//Shape result = new Diamond(Type, (Template)null);
+			Shape result = new Diamond(Type, this.Template);
 			result.CopyFrom(this);
 			return result;
 		}

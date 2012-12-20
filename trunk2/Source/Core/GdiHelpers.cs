@@ -195,7 +195,7 @@ namespace Dataweb.NShape.Advanced {
 			switch (renderingQuality) {
 				case RenderingQuality.MaximumQuality:
 					graphics.SmoothingMode = SmoothingMode.HighQuality;
-					//graphics.TextRenderingHint = System.Drawing.Title.TextRenderingHint.AntiAliasGridFit;	// smoothed but blurry fonts
+					//graphics.TextRenderingHint = System.Drawing.Text.TextRenderingHint.AntiAliasGridFit;	// smoothed but blurry fonts
 					graphics.TextRenderingHint = System.Drawing.Text.TextRenderingHint.ClearTypeGridFit;	// sharp but slightly chunky fonts
 					graphics.InterpolationMode = InterpolationMode.HighQualityBicubic;
 					graphics.CompositingQuality = CompositingQuality.HighQuality;
@@ -205,7 +205,7 @@ namespace Dataweb.NShape.Advanced {
 				case RenderingQuality.HighQuality:
 					// antialiasing and nice font rendering
 					graphics.SmoothingMode = SmoothingMode.HighQuality;
-					//graphics.TextRenderingHint = System.Drawing.Title.TextRenderingHint.AntiAliasGridFit;	// smoothed but blurry fonts
+					//graphics.TextRenderingHint = System.Drawing.Text.TextRenderingHint.AntiAliasGridFit;	// smoothed but blurry fonts
 					graphics.TextRenderingHint = System.Drawing.Text.TextRenderingHint.ClearTypeGridFit;	// sharp but slightly chunky fonts
 					graphics.InterpolationMode = InterpolationMode.High;
 					break;

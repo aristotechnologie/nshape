@@ -324,25 +324,44 @@ namespace Dataweb.NShape.Advanced {
 			if (graphics == null) throw new ArgumentNullException("graphics");
 			if (pen == null) throw new ArgumentNullException("pen");
 
-			// Workaround for a very strange problem:
-			// If a 1-segment line with custom line caps is drawn and the line has exactly the same 
-			// length as the sum of both cap's BaseInset, an OutOfMemoryException is thrown sometimes 
-			// (not always). The exception is thrown in DrawLines and all efforts to trace down the 
-			// cause of this issue came to nothing.
-			if (shapePoints.Length == 2 && pen.StartCap == LineCap.Custom && pen.EndCap == LineCap.Custom
-				&& (pen.Width * pen.CustomStartCap.BaseInset + pen.Width * pen.CustomEndCap.BaseInset) == Geometry.DistancePointPoint(shapePoints[0], shapePoints[1])) {
-				// Draw line a little bit longer in order to avoid the issue described above
-				const float delta = 0.001f;
-				PointF p1 = shapePoints[0];
-				PointF p2 = shapePoints[1];
-				if (p1.X == p2.X) p2.Y += delta;
-				else p2.X += delta;
-				graphics.DrawLine(pen, p1, p2);
-			} else {
-				// Draw line
-				graphics.DrawLines(pen, shapePoints);
+			try {
+				// Workaround for a very strange problem:
+				// If a 1-segment line with (at least one) custom line cap(s) is drawn and the line has exactly 
+				// the same length as the sum of both cap's BaseInsets, an OutOfMemoryException is thrown sometimes 
+				// (not always), mostly when zooming (scale-transforming) the graphics object. 
+				// The exception is thrown in the native implementation of DrawLine/DrawLines and all efforts to 
+				// trace down the cause of this issue came to nothing.
+				const float delta = 0.1f;
+				if (shapePoints.Length == 2
+					&& (Math.Abs(GetCapInset(pen, true) + GetCapInset(pen, false)) - Geometry.DistancePointPoint(shapePoints[0], shapePoints[1])) <= delta) {
+					// Draw the line a little bit longer in order to avoid the issue described above
+					PointF p1 = shapePoints[0];
+					PointF p2 = shapePoints[1];
+					if (p1.X == p2.X) p2.Y += delta;
+					else p2.X += delta;
+					graphics.DrawLine(pen, p1, p2);
+				} else {
+					// Draw line
+					graphics.DrawLines(pen, shapePoints);
+				}
+			} catch (OutOfMemoryException exc) {
+				Debug.Print(exc.Message);
+				throw;
 			}
 			base.DrawOutline(graphics, pen);
+		}
+
+
+		private float GetCapInset(Pen pen, bool isStartCap) {
+			float result = 0;
+			if (isStartCap) {
+				if (pen.StartCap == LineCap.Custom)
+					result = pen.Width * pen.CustomStartCap.BaseInset;
+			} else {
+				if (pen.EndCap == LineCap.Custom)
+					result = pen.Width * pen.CustomEndCap.BaseInset;
+			}
+			return result;
 		}
 
 

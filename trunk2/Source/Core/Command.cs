@@ -1532,7 +1532,6 @@ namespace Dataweb.NShape.Commands {
 
 		/// <override></override>
 		public override void Execute() {
-			//InsertShapes(layerIds);
 			InsertShapesAndModels(layerIds);
 			if (connectionsToRestore != null) {
 				foreach (KeyValuePair<Shape, List<ShapeConnectionInfo>> item in connectionsToRestore) {
@@ -1545,7 +1544,6 @@ namespace Dataweb.NShape.Commands {
 
 		/// <override></override>
 		public override void Revert() {
-			//RemoveShapes();
 			if (connectionsToRestore != null) {
 				foreach (KeyValuePair<Shape, List<ShapeConnectionInfo>> item in connectionsToRestore) {
 					for (int i = item.Value.Count - 1; i >= 0; --i)
@@ -1727,6 +1725,7 @@ namespace Dataweb.NShape.Commands {
 		}
 
 
+		// A dictionary used to store the original relationsships between shapes and model objects
 		private Dictionary<Shape, IModelObject> modelObjectAssignments;
 	}
 
@@ -3514,7 +3513,7 @@ namespace Dataweb.NShape.Commands {
 					else Repository.Insert(modelMapping, originalTemplate);
 				}
 			}
-			InvalidateTemplateShapes();
+			InvalidateShapesOfTemplate(originalTemplate);
 		}
 
 
@@ -3527,15 +3526,21 @@ namespace Dataweb.NShape.Commands {
 		}
 
 
-		private void InvalidateTemplateShapes() {
+		private void InvalidateShapesOfTemplate(Template template) {
 			// Invalidate all changed selectedShapes
 			if (Repository != null) {
-				foreach (Diagram diagram in Repository.GetDiagrams()) {
-					foreach (Shape shape in diagram.Shapes) {
-						if (originalTemplate == shape.Template)
-							shape.NotifyStyleChanged(null);
-					}
-				}
+				foreach (Diagram diagram in Repository.GetDiagrams())
+					InvalidateShapesOfTemplate(template, diagram.Shapes);
+			}
+		}
+
+		
+		private void InvalidateShapesOfTemplate(Template template, IEnumerable<Shape> shapes) {
+			foreach (Shape shape in shapes) {
+				if (shape.Template == template)
+					shape.NotifyStyleChanged(null);
+				if (shape.Children.Count > 0)
+					InvalidateShapesOfTemplate(template, shape.Children);
 			}
 		}
 

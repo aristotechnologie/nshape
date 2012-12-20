@@ -245,6 +245,14 @@ namespace Dataweb.NShape.Controllers {
 		}
 
 
+		internal void MoveShapes(Diagram diagram, IEnumerable<Shape> shapes, int deltaX, int deltaY) {
+			if (diagram == null) throw new ArgumentNullException("diagram");
+			if (shapes == null) throw new ArgumentNullException("shapes");
+			ICommand cmd = new MoveShapeByCommand(shapes, deltaX, deltaY);
+			Project.ExecuteCommand(cmd);
+		}
+
+
 		/// <ToBeCompleted></ToBeCompleted>
 		public void Copy(Diagram source, IEnumerable<Shape> shapes, bool withModelObjects) {
 			Copy(source, shapes, withModelObjects, Geometry.InvalidPoint);
@@ -281,14 +289,21 @@ namespace Dataweb.NShape.Controllers {
 		public void Cut(Diagram source, IEnumerable<Shape> shapes, bool withModelObjects, Point startPos) {
 			if (source == null) throw new ArgumentNullException("source");
 			if (shapes == null) throw new ArgumentNullException("shapes");
+			Dictionary<Shape, IModelObject> cutModelObjects = null;
 
 			editBuffer.Clear();
 			editBuffer.action = EditAction.Cut;
 			editBuffer.withModelObjects = withModelObjects;
 			editBuffer.initialMousePos = startPos;
 			editBuffer.shapes.AddRange(shapes);
-			// Store all connections of *active* shapes to other shapes that were also cut
+			// Store model objects and shape connections
 			foreach (Shape s in editBuffer.shapes) {
+				// Store model objects before they will be deleted
+				if (withModelObjects && s.ModelObject != null) {
+					if (cutModelObjects == null) cutModelObjects = new Dictionary<Shape, IModelObject>();
+					cutModelObjects.Add(s, s.ModelObject);
+				}
+				// Store all connections of *active* shapes to other shapes that were also cut
 				foreach (ShapeConnectionInfo ci in s.GetConnectionInfos(ControlPointId.Any, null)) {
 					// Skip shapes that are not the active shapes
 					if (s.HasControlPointCapability(ci.OwnPointId, ControlPointCapabilities.Glue)) continue;
@@ -306,6 +321,10 @@ namespace Dataweb.NShape.Controllers {
 
 			ICommand cmd = new DeleteShapesCommand(source, editBuffer.shapes, withModelObjects);
 			project.ExecuteCommand(cmd);
+
+			// Restore deleted model objects so they are available for pasting (one or more times)
+			foreach (KeyValuePair<Shape, IModelObject> item in cutModelObjects)
+				item.Key.ModelObject = item.Value;
 		}
 
 
@@ -349,7 +368,6 @@ namespace Dataweb.NShape.Controllers {
 					// with their connections, so we can empty the buffer here.
 					editBuffer.connections.Clear();
 				}
-
 				// Create command
 				ICommand cmd = new CreateShapesCommand(
 					destination,
@@ -545,6 +563,21 @@ namespace Dataweb.NShape.Controllers {
 		}
 
 
+		internal bool CanMoveShapes(Diagram diagram, IEnumerable<Shape> shapes) {
+			if (!Project.SecurityManager.IsGranted(Permission.Layout, shapes))
+				return false;
+			else {
+				foreach (Shape s in shapes) {
+					// Check if the non-selected shape at cursor (which will be selected) owns glue points connected to other shapes
+					foreach (ControlPointId id in s.GetControlPointIds(ControlPointCapabilities.Glue))
+						if (s.IsConnected(id, null) != ControlPointId.None) 
+							return false;
+				}
+				return true;
+			}
+		}
+
+
 		/// <ToBeCompleted></ToBeCompleted>
 		public bool CanCut(Diagram diagram, IEnumerable<Shape> shapes) {
 			if (diagram == null) throw new ArgumentNullException("diagram");
@@ -724,6 +757,7 @@ namespace Dataweb.NShape.Controllers {
 
 			public bool withModelObjects;
 
+			// ShapeCollection in "IList" mode without spatial index
 			public ShapeCollection shapes;
 
 			public List<ShapeConnection> connections;

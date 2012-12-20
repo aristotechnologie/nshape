@@ -623,7 +623,7 @@ namespace Dataweb.NShape.Advanced {
 
 
 		/// <summary>
-		/// Calculates the untransformed area in which the caption's text is layouted.
+		/// Calculates the untransformed area in which the caption's text is layouted.GetCaptionBounds
 		/// </summary>
 		/// <remarks> The caller has to rotate and offset the rectangle around/by X|Y before using it.</remarks>
 		protected abstract void CalcCaptionBounds(int index, out Rectangle captionBounds);
@@ -633,11 +633,13 @@ namespace Dataweb.NShape.Advanced {
 		protected override bool CalculatePath() {
 			if (caption == null) return true;
 			bool result = false;
+			// Calculate the bounds for the text (defines location and size)
 			Rectangle layoutRectangle = Rectangle.Empty;
 			CalcCaptionBounds(0, out layoutRectangle);
+			// Based on the calculated layout rectangle, calculate the text's graphics path
 			result = caption.CalculatePath(layoutRectangle.X, layoutRectangle.Y, layoutRectangle.Width, layoutRectangle.Height, CharacterStyle, ParagraphStyle);
 			if (maintainTextAngle && Angle > 900 && Angle < 2700) {
-				// Flip text in order to maintain its orientation
+				// Flip text in order to maintain its orientation (we don't want the text to be drawn upside down)
 				Matrix.Reset();
 				PointF rotationCenter = PointF.Empty;
 				rotationCenter.X = layoutRectangle.X + (layoutRectangle.Width / 2f);

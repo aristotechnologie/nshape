@@ -173,8 +173,15 @@ namespace Dataweb.NShape.Controllers {
 		/// Removes all tools.
 		/// </summary>
 		public void Clear() {
-			for (int i = tools.Count - 1; i >= 0; --i)
+			// Clear selected and default tool
+			DoSelectTool(null, true, false);
+			defaultTool = null;
+			for (int i = tools.Count - 1; i >= 0; --i) {
+				//// Remove the diagramSetController's ActiveTool
+				//if (diagramSetController != null && diagramSetController.ActiveTool == tools[i])
+				//    diagramSetController.ActiveTool = null;
 				tools[i].Dispose();
+			}
 			tools.Clear();
 			toolBoxInitialized = false;
 			if (Cleared != null) Cleared(this, EventArgs.Empty);
@@ -251,7 +258,11 @@ namespace Dataweb.NShape.Controllers {
 			if (tool is TemplateTool)
 				((TemplateTool)tool).Template.Shape.DisplayService = this;
 			tool.RefreshIcons();
-			if (isDefaultTool) defaultTool = tool;
+			if (isDefaultTool) {
+				defaultTool = tool;
+				// Select the new default tool in order to refresh the DiagramController's ActiveTool
+				SelectTool(defaultTool, true);
+			}
 			//
 			if (ToolAdded != null) {
 				toolEventArgs.Tool = tool;
@@ -282,7 +293,6 @@ namespace Dataweb.NShape.Controllers {
 		///  Sets the given tool as the selected tool.
 		/// </summary>
 		public void SelectTool(Tool tool) {
-			if (tool == null) throw new ArgumentNullException("tool");
 			SelectTool(tool, false);
 		}
 
@@ -293,7 +303,6 @@ namespace Dataweb.NShape.Controllers {
 		/// <param name="tool">Tool to select.</param>
 		/// <param name="multiUse">If false, the default tool will be selected after executing the tool.</param>
 		public void SelectTool(Tool tool, bool multiUse) {
-			if (tool == null) throw new ArgumentNullException("tool");
 			// If the tool to select equals the currently selected tool, skip tool selection
 			if (tool != selectedTool) {
 				// CurrentTool.Cancel would normally select the default tool.

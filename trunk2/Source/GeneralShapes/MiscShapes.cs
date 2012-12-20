@@ -47,7 +47,8 @@ namespace Dataweb.NShape.GeneralShapes {
 
 		/// <override></override>
 		public override Shape Clone() {
-			Shape result = new ThickArrow(Type, (Template)null);
+			//Shape result = new ThickArrow(Type, (Template)null);
+			Shape result = new ThickArrow(Type, this.Template);
 			result.CopyFrom(this);
 			return result;
 		}
@@ -471,7 +472,8 @@ namespace Dataweb.NShape.GeneralShapes {
 
 		/// <override></override>
 		public override Shape Clone() {
-			Shape result = new Picture(Type, (Template)null);
+			//Shape result = new Picture(Type, (Template)null);
+			Shape result = new Picture(Type, this.Template);
 			result.CopyFrom(this);
 			return result;
 		}
@@ -505,7 +507,8 @@ namespace Dataweb.NShape.GeneralShapes {
 
 
 		public override Shape Clone() {
-			Shape result = new RegularPolygone(Type, (Template)null);
+			//Shape result = new RegularPolygone(Type, (Template)null);
+			Shape result = new RegularPolygone(Type, this.Template);
 			result.CopyFrom(this);
 			return result;
 		}
