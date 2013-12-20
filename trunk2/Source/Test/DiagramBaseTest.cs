@@ -1,5 +1,5 @@
 ﻿/******************************************************************************
-  Copyright 2009-2012 dataweb GmbH
+  Copyright 2009-2013 dataweb GmbH
   This file is part of the NShape framework.
   NShape is free software: you can redistribute it and/or modify it under the 
   terms of the GNU General Public License as published by the Free Software 
@@ -677,6 +677,48 @@ namespace NShapeTest {
 
 
 		[TestMethod]
+		public void RelativePositionTest() {
+			// -- Create a project --
+			Project project = new Project();
+			project.AutoLoadLibraries = true;
+			project.Name = "RelativePositionTest";
+			project.Repository = new CachedRepository();
+			((CachedRepository)project.Repository).Store = new XmlStore(@"C:\Temp", ".xml");
+			project.Repository.Erase();
+			project.Create();
+
+			// Add Libraries:
+			// GeneralShapes
+			project.AddLibrary(typeof(Dataweb.NShape.GeneralShapes.Circle).Assembly, true);
+			// ElectricalShapes
+			project.AddLibrary(typeof(Dataweb.NShape.ElectricalShapes.AutoDisconnectorSymbol).Assembly, true);
+			// FlowChartShapes
+			project.AddLibrary(typeof(Dataweb.NShape.FlowChartShapes.ProcessSymbol).Assembly, true);
+			// SoftwareArchitectureShapes
+			project.AddLibrary(typeof(Dataweb.NShape.SoftwareArchitectureShapes.CloudSymbol).Assembly, true);
+
+			//
+			Diagram diagram = new Diagram("All Shapes");
+			diagram.Width = 500;
+			diagram.Height = 500;
+			project.Repository.InsertAll(diagram);
+			int shapeCount = 0;
+			foreach (ShapeType st in project.ShapeTypes) {
+				Shape s = st.CreateInstance();
+				diagram.Shapes.Add(s, shapeCount + 1);
+				project.Repository.InsertAll(s, diagram);
+				++shapeCount;
+			}
+
+			RelativePositionTestCore(diagram.Shapes, 0, 0, 0, ResizeModifiers.None);
+			RelativePositionTestCore(diagram.Shapes, 0, 500, 300, ResizeModifiers.None);
+			RelativePositionTestCore(diagram.Shapes, -100, -200, 600, ResizeModifiers.None);
+
+			project.Close();
+		}
+
+
+		[TestMethod]
 		public void ExportToImageTest() {
 			// -- Create a project --
 			Project project = new Project();
@@ -736,7 +778,7 @@ namespace NShapeTest {
 		#endregion
 
 
-		#region Test core methods
+		#region [Private] Test core methods
 
 		private void BoundingRectangleTestCore(IShapeCollection shapes, int shapePos, int shapeSize, int shapeAngle, ResizeModifiers resizeModifier) {
 			foreach (Shape s in shapes) {
@@ -804,10 +846,51 @@ namespace NShapeTest {
 			}
 		}
 
+
+		private void RelativePositionTestCore(IShapeCollection shapes, int shapePosX, int shapePosY, int shapeAngle, ResizeModifiers resizeModifier) {
+			foreach (Shape s in shapes) {
+				// Move shape
+				s.MoveTo(shapePosX, shapePosY);
+
+				// Rotate shape
+				s.Rotate(shapeAngle, s.X, s.Y);
+
+				// Perform calcutate relative and absolute position and compare with given position:
+				//
+				// The most basic test
+				RelativePositionCalculationCore(s, s.X, s.Y);
+				if (s is CircularArc) continue;		// CircularArc only supports points on the shape's outline.
+				if (s is RectangularLine) continue;		// RectangularLine only supports points on the shape's outline.
+
+				// Points inside the shape
+				RelativePositionCalculationCore(s, s.X - 5, s.Y -5 );
+				RelativePositionCalculationCore(s, s.X + 5, s.Y - 5);
+				RelativePositionCalculationCore(s, s.X - 5, s.Y + 5);
+				RelativePositionCalculationCore(s, s.X + 5, s.Y + 5);
+
+				// Points outside of the shape 
+				// As not all shapes support calculating external points, we skip these shape types.
+				if (s is FreeTriangle) continue;
+				RelativePositionCalculationCore(s, 0, 0);
+				RelativePositionCalculationCore(s, 1000, 100);
+				RelativePositionCalculationCore(s, 1, 0);
+			}
+		}
+
+
+		private void RelativePositionCalculationCore(Shape s, int ptX, int ptY) {
+			RelativePosition relPos = s.CalculateRelativePosition(ptX, ptY);
+			Point absPos = s.CalculateAbsolutePosition(relPos);
+			float distance = Geometry.DistancePointPoint(ptX, ptY, absPos.X, absPos.Y);
+			if (distance > MaxDistanceOnePixel)
+				Assert.Fail(string.Format("{0} failed to calculate a correct absolute position: Position = {1}, RelPos = {2}, AbsPos = {3}", 
+					s.Type.FullName, new Point(ptX, ptY), relPos, absPos));
+		}
+
 		#endregion
 
 
-		#region ModelMappingTest helper methods
+		#region [Private] ModelMappingTest helper methods
 
 		private object[] CreateFloatTestData() {
 			object[] result = new object[16];
@@ -1194,6 +1277,8 @@ namespace NShapeTest {
 
 
 		private TestContext testContextInstance;
+
+		private double MaxDistanceOnePixel = Math.Sqrt(2);
 
 		// Stuff for ModelMapping Test
 		private const string modelMappingFormatPrefix = "Property Value = '";

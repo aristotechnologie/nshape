@@ -1,5 +1,5 @@
 /******************************************************************************
-  Copyright 2009-2012 dataweb GmbH
+  Copyright 2009-2013 dataweb GmbH
   This file is part of the NShape framework.
   NShape is free software: you can redistribute it and/or modify it under the 
   terms of the GNU General Public License as published by the Free Software 
@@ -505,7 +505,7 @@ namespace Dataweb.NShape.Controllers {
 			switch (pageIndex) {
 				case 0: selectedObjectsList = selectedPrimaryObjects; break;
 				case 1: selectedObjectsList = selectedSecondaryObjects; break;
-				default: throw new IndexOutOfRangeException();
+				default: throw new ArgumentOutOfRangeException("pageIndex");
 			}
 		}
 
@@ -830,14 +830,16 @@ namespace Dataweb.NShape.Controllers {
 		private void SetCommonType() {
 			// get Type of modifiedObjects
 			commonType = null;
-			for (int i = objects.Count - 1; i >= 0; --i) {
-				if (objects[i] == null) continue;
+			foreach (Object obj in objects) {
+				if (obj == null) continue;
 				if (commonType == null) {
-					if (objects[i] is Shape) commonType = typeof(Shape);
-					else if (objects[i] is IModelObject) commonType = typeof(IModelObject);
-					else commonType = objects[i].GetType();
-				} else if (!objects[i].GetType().IsSubclassOf(commonType)
-							&& objects[i].GetType().GetInterface(commonType.Name) == null) {
+					if (obj is Shape) 
+						commonType = typeof(Shape);
+					else if (obj is IModelObject) 
+						commonType = typeof(IModelObject);
+					else commonType = obj.GetType();
+				} else if (!obj.GetType().IsSubclassOf(commonType)
+							&& obj.GetType().GetInterface(commonType.Name) == null) {
 					commonType = null;
 					break;
 				}

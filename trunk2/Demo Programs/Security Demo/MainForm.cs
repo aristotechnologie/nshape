@@ -224,7 +224,7 @@ namespace Security_Demo {
 				project.Name = "Security Demo Sample Project";
 				project.Open();
 
-				display1.CurrentTool = toolSetController.DefaultTool;
+				display1.ActiveTool = toolSetController.DefaultTool;
 				display1.LoadDiagram("Simple Circuit");
 
 				chkHideMenuItems.Checked = true;

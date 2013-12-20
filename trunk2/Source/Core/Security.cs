@@ -1,5 +1,5 @@
 ﻿/******************************************************************************
-  Copyright 2009-2012 dataweb GmbH
+  Copyright 2009-2013 dataweb GmbH
   This file is part of the NShape framework.
   NShape is free software: you can redistribute it and/or modify it under the 
   terms of the GNU General Public License as published by the Free Software 
@@ -50,7 +50,7 @@ namespace Dataweb.NShape {
 		/// <summary>Edit, insert and delete designs. This permission is security domain independent.</summary>
 		Designs = 0x0100,
 		/// <summary>All available permissions are granted.</summary>
-		All = 0xffff
+		All = int.MaxValue
 	}
 
 
@@ -69,7 +69,7 @@ namespace Dataweb.NShape {
 	/// Specifies the set of <see cref="T:Dataweb.NShape.Permission" /> required for changing a property.
 	/// </summary>
 	[AttributeUsage((AttributeTargets.Method | AttributeTargets.Property | AttributeTargets.Field), AllowMultiple = true, Inherited = true)]
-	public class RequiredPermissionAttribute : Attribute {
+	public sealed class RequiredPermissionAttribute : Attribute {
 		
 		/// <summary>
 		/// Initializes a new instance of <see cref="T:Dataweb.NShape.RequiredPermissionAttribute" />.

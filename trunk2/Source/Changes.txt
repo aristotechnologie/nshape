@@ -7,6 +7,130 @@ Known issues:
 
 
 ====================================================================================================
+Changes in 2.1:
+====================================================================================================
+- Interface Change: Classes PropertyMappingIdAttribute and RequiredPermissionAttribute have been sealed
+- Interface Change: 
+    protected Point[] PlanarShapeBase.controlPoints is now private
+	protected void PlanarShapeBase.ResizeControlPoints(int length) has been added
+  You can resize the control points array using the new method and access its points using the 
+  public property ControlPoints. This addresses the problem that controlPoints and ControlPoints did only 
+  differ in casing, making it impossible for VB.NET programmers to implement their own PathBasedShapes 
+  without changing the source code.
+- Extended Interface: Added a new method to the Dataweb.NShape.Shape interface base class and a default 
+  implementation to the ShapeBase class:
+	public abstract bool CanConnect(ControlPointId ownPointId, Shape otherShape, ControlPointId otherPointId);
+  This method can be used for implementing custom connection behavior like accepting a limited number of 
+  connections or accepting only connections of a certain shape type.
+- Extended Interface: Added string property "Data" to the Dataweb.NShape.Shape interface class. It can be 
+  used for storing user defined string data that will be saved to and loaded from the repository (in 
+  contrast to the Tag property).
+- Extended Interface: Added string property "Description" to the Dataweb.NShape.Project class.
+  saved to and loaded from the repository (in contrast to the Tag property).
+- Extended Interface: Added a new method to the shape collection interface:
+	public interface IShapeCollection 
+		int GetZOrder(Shape shape)
+- Extended Interface: Added an overloaded version of Project.IsValidLibrary(...) that returns the reason 
+  why the assembly is considered as invalid library assembly (as out parameter).
+- Extended Interface: Access modifiers of the following members of the SelectionTool class changed:
+	SelectionTool.FindPreviewOfShape(Shape shape) is now public
+	SelectionTool.FindShapeOfPreview(Shape previewShape) is now public
+	SelectionTool.Action is now a protected enum.
+- Extended Interface: Published constants for the control point ids of most planar shape classes 
+  through the nested class ControlPointIds that provides all suitable constants.
+  Derived shapes that change the number of available ControlPoints or their id's have to override this
+  class.
+- Extended Interface: Display.EnsureVisible now has an overloaded version that accepts a margin
+- Extended Interface: IDiagramPresenter.AcitveTool gives access to the currently used Tool of the diagram 
+  presenter
+
+- Property Rename: Display.ShowGrid was renamed to Display.IsGridVisible (ShowGrid is still available but  
+  marked as obsolete)
+- Property Rename: Display.CurrentTool was renamed to Display.ActiveTool (CurrentTool is still available but 
+  marked as obsolete)
+
+- Changed behavior: FreeTriangle shapes throw an ArgumentException in CalculateRelativePosition in case
+  the given point is not part of the shape. This shape type does not support points outside the shape bounds
+- ChangedBehavior: Methods taking an index parameter as argument will no longer throw an 
+  "IndexOutOfRangeException" but an "ArgumentOutOfRangeException" (except the style collection's indexer)
+- ChangedBehavior: Backup files created by the XmlStore component now preserve the original file extension 
+  by adding the backup file extension instead of replacing it.
+- ChangedBehavior: IDiagramPresenter.EnsureVisible no longer add a margin to the given parameters.
+  There are new overloaded versions of these methods in the Display control offering a margin parameter.
+
+- New Feature: The SelectionTool provides a new property "OverlappingShapesAction" that specifies
+  the action when clicking on overlapping shapes. The default value is "Cycle" so the default behavior 
+  does not change. Alternative values: Do not change the selection ("None") or select the topmost 
+  shape ("Topmost").
+- New Property: The XmlStore now has a string property BackupFileExtension which allows to customize 
+  the file extension of automatically created backup files.
+- New Property: Display.IsSheetVisible allows to hide the diagram sheet (including its shadow).
+  
+- Improvement: ImageBasedShape has now (very basic) implementations of CalculateRelativePosition and 
+  CalculateAbsolutePosition
+- Improvement: Connected linear shapes can now be rotated.
+- Improvement: Resizing multi segment polylines in "MaintainAspect" mode improved (also affects connected
+  multi segment lines).
+- Improvement: Setup now allows to specify the installation path for the source code
+
+- Bugfix: Corrected an error in AutoDisconnectShapesCommand that occured when deleting a shape with 
+  model object.
+- Bugfix: Geometry.LineIntersectsLine() returned true for parallel lines with opposing direction 
+  vectors
+- Bugfix: DoubleClick with SelectionTool on overlapping shapes no longer results in selecting the 
+  shape below the double-clicked shape.
+- Bugfix: Display.DiagramChanging event is now raised *before* bounds and layers are reset to defaults
+- Bugfix: Methods UnselectShape() and UnselectAll() do not raise any longer a Display.ShapesSelected 
+  event if no shapes are selected.
+- Bugfix: Display.ShapesInserted is now raised before Display.ShapesSelected.
+- Bugfix: AggregatedCommand caused endless self-recursion if a necessecary permission was not granted.
+- Bugfix: When inserting a shape into the repository, the display component fired the ShapesSelected 
+  event before the ShapesInserted event.
+- Bugfix: Pasting a shape fired multiple ShapesSelected events 
+- Bugfix: Removed a Debug Assertion when copying diagrams as metafile to the clipboard. This assertion 
+  failed when copying larger diagrams or diagrams with complex graphics due to timing problems of
+  asynchroneous calls.
+- Bugfix: NShapeDesigner's "Select All" menu items now use Display.SelectAll() instead of 
+  Display.SelectShapes(Display.Diagram.Shapes, false)
+- Bugfix: LabelBase did not calculate the correct number of cells for the diagram's spatial index when
+  connected. This caused "Entity Not Found in Repository" exceptions when trying to delete these 
+  labels in case the glue point was in another spatial index cell as the label's body.
+- Bugfix: LineShapeBase did not check whether the cap's shape points were calculated before performing
+  an intersection calcuation in StartCapIntersectsWith and EndCapIntersectsWith which resulted in an 
+  ArgumentNullException.
+- Bugfix: Events Display.KeyDown, Display.KeyUp and Display.KeyPress now take EventArgs.Handled into
+  account correctly.
+- Bugfix: The following shape classes did not calculate the correct relative and/or absolute position:
+    * ShapeGroup
+    * RegularPolygon
+    * ImageBasedShape
+- Bugfix: Connections between grouped (or aggregated) shapes were not stored to XML
+- Bugfix: Connected shapes inside groups or composite shapes were moved to the wrong positions when
+  moving, rotating or resizing the group/composite shape
+- Bugfix: Hit test did not work correctly when clicking a line cap of type "OpenArrow"
+- Bugfix: Trying to open LayerPresenter's content menu caused a ArgumentNullException when the attached 
+  display had no diagram.
+- Bugfix: When creating the SelectionTool, the ToolBoxController no longer raises the ToolSelected event 
+  before the ToolAdded event.
+- Bugfix: Corrected example in documentation "Programmer Tasks > Customizing Context Menus > Integrate 
+  NShape Commands in your Own Context Menus": The code of the lambda expression now extracts the 
+  MenuItemDef from the context menu item and executes it.
+- BugFix: SoftwareArchitecture.EntityShape now handles deleting items of string array property 
+  "ColumnNames" correctly when assigning an other string array to this property. Throws an exception if 
+  connected control points should be removed.
+- BugFix: A PolyLine connected to the center point of a RegularPolygone did not calculate the preview
+  shape's position correctly.
+- BugFix: XmlStore now deletes the existing (old) XML file (and its image directory) when setting
+  XmlStore.BackupGenerationMode to BackupFileGenerationMode.None.
+- BugFix: Moving connected lines that are grouped or selected together with their partner shapes will no 
+  longer move their vertices to strange positions (REQ 20411)
+- BugFix: When deleting a Shape without its attached model object (delete shape only), the model object
+  will now be correctly detached from the shape.
+- BugFix: When trying to save a new project over an existing one, there is no longer an "already exists"
+  error message 
+
+
+====================================================================================================
 Changes in 2.0.3 (Beta 4):
 ====================================================================================================
 - Changed Implementation Rule: The implementation rule for the Shape.Clone() method has changed. The 
@@ -22,30 +146,30 @@ Changes in 2.0.3 (Beta 4):
   selected, the diagram will scroll. Shift key is used to speed up movement.
 - Changed Bahavior / New Feature: Deselection of selected shapes using a selection frame: If all 
   shapes inside the frame are already selected, they will be deselected.
-- BugFix: The shape's template was not copied when calling Shape.Clone() (see changed implementation 
+- Bugfix: The shape's template was not copied when calling Shape.Clone() (see changed implementation 
   rule) 
-- BugFix: The ModelObject got lost when cutting and pasting the shape using DiagramSetController.Cut
+- Bugfix: The ModelObject got lost when cutting and pasting the shape using DiagramSetController.Cut
   and DiagramSetController.Paste, the appropriate context menu commands or keyboard shortcuts.
-- BugFix: Improved workaround for the strange GDI+ issue concerning lines with custom line caps
-- BugFix: When clicking or double clicking on overlapping shapes, a ShapeClick / ShapeDoubleClick 
+- Bugfix: Improved workaround for the strange GDI+ issue concerning lines with custom line caps
+- Bugfix: When clicking or double clicking on overlapping shapes, a ShapeClick / ShapeDoubleClick 
   event was raised for all shapes containing the clicked coordinate.
   The event will now be raised for the selected shape at the clicked coordinates (if there is any)
   or the topmost of the overlapping shapes.
-- BugFix: When deleting shapes, the event args of the ShapesRemoved event did not contain any shapes.
-- BugFix: When clearing the tools of the ToolSetController, the selected tool and the default tool's 
+- Bugfix: When deleting shapes, the event args of the ShapesRemoved event did not contain any shapes.
+- Bugfix: When clearing the tools of the ToolSetController, the selected tool and the default tool's 
   properties were not cleared, containing still a reference to the old tool (supposed to be deleted).
   The DiagramSetController.ActiveTool also referenced the tool supposed to be deleted.
-- BugFix: When adding a new Tool to the ToolSetController as "default tool", the linked 
+- Bugfix: When adding a new Tool to the ToolSetController as "default tool", the linked 
   DiagramSetController's ActiveTool property will be updated.
-- BugFix: A NullReferenceException was sometimes thrown when selecting shapes (with caption)
-- BugFix: An OverflowException was caused when saving/loading ParagraphStyle with Alignment 
+- Bugfix: A NullReferenceException was sometimes thrown when selecting shapes (with caption)
+- Bugfix: An OverflowException was caused when saving/loading ParagraphStyle with Alignment 
   "BottomCenter". 
   Changed PropertyDefinition of ParagraphStyle.Alignment from Byte to Short in order to avoid this
   issue. 
-- BugFix: Shapes were not invalidated after changing their template if they were grouped.
-- BugFix: OnScroll messages sent to the directly to the display control (as some touchpad drivers do
+- Bugfix: Shapes were not invalidated after changing their template if they were grouped.
+- Bugfix: OnScroll messages sent to the directly to the display control (as some touchpad drivers do
   when scrolling with finger gestures) are now handled correctly. 
-- BugFix: Fixed bug in CircularArc while recalculating radius point position (while connected shape-
+- Bugfix: Fixed bug in CircularArc while recalculating radius point position (while connected shape-
   to-shape)
 - Improvement: Removed assertion failure when trying to connect a line to a grouped shape.
 - Improvement: Adding multiple Layers will no longer cause the LayerListView to redraw after each 
@@ -64,9 +188,9 @@ Changes in 2.0.2 (Beta 3):
   If a 1-segment line is drawn and the line has exactly the same length as the sum of both cap's 
   BaseInset, an OutOfMemoryException is thrown sometimes (not always). The exception is thrown in 
   DrawLines and all efforts to trace down the cause of this issue came to nothing.
-- BugFix: Some NShape dialogs did not close when clicking "OK" or "Cancel" if not shown modal.
-- BugFix: CircularArc added menu command "Remove Point" even if no vertex was right-clicked
-- BugFix: Display threw a NullReferenceException when calling LoadDiagram or CreateDiagram without 
+- Bugfix: Some NShape dialogs did not close when clicking "OK" or "Cancel" if not shown modal.
+- Bugfix: CircularArc added menu command "Remove Point" even if no vertex was right-clicked
+- Bugfix: Display threw a NullReferenceException when calling LoadDiagram or CreateDiagram without 
   setting a DiagramSetController first
 - New Feature: XMLStore.BackupGenerationMode allows to switch off the automatic generation of a *.bak file
 - Changed Behavior: When selecting overlapping shapes, the shapes will not enter the "Edit caption mode"
@@ -83,7 +207,7 @@ Changes in 2.0.1 (Beta 2):
 ====================================================================================================
 - Buxfix: IRepository.Insert(Shape shape) and IRepository.Insert(IEnumerable<Shape> shapes) no longer
   insert shape connections.
-- Bugfix: Several context menu items did display although the required permission was not granted
+- Bugfix: Several context menu items did show up although the required permission was not granted
 - Bugfix: Display did not reset the visible and active layers when changing the diagram
 - Bugfix: NullReferenceException when pressing Del key and no shape was selected
 - Changed Behavior: LayerCollection.Find("") no longer throws an exception.
@@ -227,7 +351,7 @@ Improvements:
   SetPermission(). Granting a Permission with SecurityAccess.View means that the property is displayed 
   as readonly. See documentation for details.
 
-BugFixes:
+Bugfixes:
 - Display no longer throws an exception when beeing placed on a control with transparent background 
   color, as it was the case with TabControl pages.
 - When using more than one design, the design editor did not display the correct styles in 
@@ -328,7 +452,7 @@ Changes in 1.0.7:
 - Fixed several issues with the column commands of the shape SoftwareArchitectureShapes.EntitySymbol
 - Improvement: Display now supports Ctrl+A shortcut for "Select all shapes"
 - Marked class "DefaultSecurity" as [Obsolete]. It will be removed in the next version.
-- BugFix: Moving the mouse over a shape with text, selecting it and deleting it with "Del" did not 
+- Bugfix: Moving the mouse over a shape with text, selecting it and deleting it with "Del" did not 
   remove the highlighted caption bounds.
 - Changed project structure (directory hierarchy) and build paths
 - Bugfix: Events IDiagramPresenter.DiagramChanging and IDiagramPresenter.DiagramChanged were not 
@@ -373,7 +497,7 @@ Changes in 1.0.7:
 	  Diagram.Title is now "General" instead of "Identification"
 	  Diagram.Id is now "General" instead of "Identification"
 - Property CaptionedShapeBase.CaptionCount is not visible in PropertyGrid any longer
-- BugFix: Orientation of Captions's text is corrected only for shape angle >90° and <270° instead 
+- Bugfix: Orientation of Captions's text is corrected only for shape angle >90° and <270° instead 
   of >90° and <=270°
 - Changed value of LayerIds.All from int.MinValue to int.MaxValue.
 - Bugfix: Display.CreateImage() no longer throws a NullReferenceException if no DisplayService is assigned

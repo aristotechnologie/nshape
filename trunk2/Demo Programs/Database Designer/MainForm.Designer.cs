@@ -119,7 +119,7 @@
 			this.display.SelectionInactiveColor = System.Drawing.Color.Gray;
 			this.display.SelectionInteriorColor = System.Drawing.Color.WhiteSmoke;
 			this.display.SelectionNormalColor = System.Drawing.Color.DarkGreen;
-			this.display.ShowGrid = false;
+			this.display.IsGridVisible = false;
 			this.display.Size = new System.Drawing.Size(884, 515);
 			this.display.SnapToGrid = false;
 			this.display.TabIndex = 4;

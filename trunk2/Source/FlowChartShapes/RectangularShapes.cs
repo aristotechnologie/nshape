@@ -1,5 +1,5 @@
-/******************************************************************************
-  Copyright 2009-2012 dataweb GmbH
+﻿/******************************************************************************
+  Copyright 2009-2013 dataweb GmbH
   This file is part of the NShape framework.
   NShape is free software: you can redistribute it and/or modify it under the 
   terms of the GNU General Public License as published by the Free Software 
@@ -17,266 +17,15 @@ using System.Drawing;
 using System.Drawing.Drawing2D;
 
 using Dataweb.NShape.Advanced;
+using System.Diagnostics;
 
 
 namespace Dataweb.NShape.FlowChartShapes {
-
-	public abstract class FlowChartRectangleBase : RectangleBase {
-
-		/// <override></override>
-		protected override int ControlPointCount { get { return 9; } }
-
-
-		/// <override></override>
-		public override bool HasControlPointCapability(ControlPointId controlPointId, ControlPointCapabilities controlPointCapability) {
-			switch (controlPointId) {
-				case TopCenterControlPoint:
-				case MiddleLeftControlPoint:
-				case MiddleRightControlPoint:
-				case BottomCenterControlPoint:
-					return ((controlPointCapability & ControlPointCapabilities.Resize) != 0
-						|| (controlPointCapability & ControlPointCapabilities.Connect) != 0 && IsConnectionPointEnabled(controlPointId));
-				case TopLeftControlPoint:
-				case TopRightControlPoint:
-				case BottomLeftControlPoint:
-				case BottomRightControlPoint:
-					return ((controlPointCapability & ControlPointCapabilities.Resize) != 0);
-				case MiddleCenterControlPoint:
-					return ((controlPointCapability & ControlPointCapabilities.Rotate) != 0 || (controlPointCapability & ControlPointCapabilities.Reference) != 0);
-				default:
-					return base.HasControlPointCapability(controlPointId, controlPointCapability);
-			}
-		}
-
-
-		protected internal FlowChartRectangleBase(ShapeType shapeType, Template template)
-			: base(shapeType, template) {
-		}
-
-
-		protected internal FlowChartRectangleBase(ShapeType shapeType, IStyleSet styleSet)
-			: base(shapeType, styleSet) {
-		}
-
-
-		// ControlPoint Id Constants
-		private const int TopLeftControlPoint = 1;
-		private const int TopCenterControlPoint = 2;
-		private const int TopRightControlPoint = 3;
-		private const int MiddleLeftControlPoint = 4;
-		private const int MiddleRightControlPoint = 5;
-		private const int BottomLeftControlPoint = 6;
-		private const int BottomCenterControlPoint = 7;
-		private const int BottomRightControlPoint = 8;
-		private const int MiddleCenterControlPoint = 9;
-	}
-
-
-	public abstract class FlowChartSquareBase : SquareBase {
-
-		/// <override></override>
-		public override bool HasControlPointCapability(ControlPointId controlPointId, ControlPointCapabilities controlPointCapability) {
-			switch (controlPointId) {
-				case TopCenterControlPoint:
-				case MiddleLeftControlPoint:
-				case MiddleRightControlPoint:
-				case BottomCenterControlPoint:
-					return ((controlPointCapability & ControlPointCapabilities.Resize) != 0 || ((controlPointCapability & ControlPointCapabilities.Connect) != 0 && IsConnectionPointEnabled(controlPointId)));
-				default:
-					return base.HasControlPointCapability(controlPointId, controlPointCapability);
-			}
-		}
-
-
-		/// <override></override>
-		protected override int ControlPointCount { get { return 9; } }
-
-
-		protected internal FlowChartSquareBase(ShapeType shapeType, Template template)
-			: base(shapeType, template) {
-		}
-
-
-		protected internal FlowChartSquareBase(ShapeType shapeType, IStyleSet styleSet)
-			: base(shapeType, styleSet) {
-		}
-
-
-		// ControlPoint Id Constants
-		private const int TopCenterControlPoint = 2;
-		private const int MiddleLeftControlPoint = 4;
-		private const int MiddleRightControlPoint = 5;
-		private const int BottomCenterControlPoint = 7;
-	}
-
-
-	public abstract class FlowChartEllipseBase : EllipseBase {
-
-		/// <override></override>
-		public override bool HasControlPointCapability(ControlPointId controlPointId, ControlPointCapabilities controlPointCapability) {
-			switch (controlPointId) {
-				case TopCenterControlPoint:
-				case MiddleLeftControlPoint:
-				case MiddleRightControlPoint:
-				case BottomCenterControlPoint:
-					return (controlPointCapability & ControlPointCapabilities.Resize) != 0 && (IsConnectionPointEnabled(controlPointId));
-				default:
-					return base.HasControlPointCapability(controlPointId, controlPointCapability);
-			}
-		}
-
-
-		/// <override></override>
-		protected override int ControlPointCount { get { return 9; } }
-
-
-		protected internal FlowChartEllipseBase(ShapeType shapeType, Template template)
-			: base(shapeType, template) {
-		}
-
-
-		protected internal FlowChartEllipseBase(ShapeType shapeType, IStyleSet styleSet)
-			: base(shapeType, styleSet) {
-		}
-
-
-		// ControlPoint Id Constants
-		private const int TopCenterControlPoint = 2;
-		private const int MiddleLeftControlPoint = 4;
-		private const int MiddleRightControlPoint = 5;
-		private const int BottomCenterControlPoint = 7;
-	}
-
-
-	public abstract class FlowChartCircleBase : CircleBase {
-
-		/// <override></override>
-		public override bool HasControlPointCapability(ControlPointId controlPointId, ControlPointCapabilities controlPointCapability) {
-			switch (controlPointId) {
-				case TopLeftControlPoint:
-				case TopRightControlPoint:
-				case BottomLeftControlPoint:
-				case BottomRightControlPoint:
-					return ((controlPointCapability & ControlPointCapabilities.Resize) != 0);
-				default:
-					return base.HasControlPointCapability(controlPointId, controlPointCapability);
-			}
-		}
-
-
-		/// <override></override>
-		protected override int ControlPointCount { get { return 9; } }
-
-
-		protected internal FlowChartCircleBase(ShapeType shapeType, Template template)
-			: base(shapeType, template) {
-		}
-
-
-		protected internal FlowChartCircleBase(ShapeType shapeType, IStyleSet styleSet)
-			: base(shapeType, styleSet) {
-		}
-
-
-		// ControlPoint Id Constants
-		private const int TopLeftControlPoint = 1;
-		private const int TopRightControlPoint = 3;
-		private const int BottomLeftControlPoint = 6;
-		private const int BottomRightControlPoint = 8;
-	}
-
-
-	public abstract class FlowChartDiamondBase : DiamondBase {
-
-		/// <override></override>
-		public override bool HasControlPointCapability(ControlPointId controlPointId, ControlPointCapabilities controlPointCapability) {
-			switch (controlPointId) {
-				case TopCenterControlPoint:
-				case MiddleLeftControlPoint:
-				case MiddleRightControlPoint:
-				case BottomCenterControlPoint:
-					return ((controlPointCapability & ControlPointCapabilities.Resize) != 0 || (controlPointCapability & ControlPointCapabilities.Connect) != 0 && IsConnectionPointEnabled(controlPointId));
-				case MiddleCenterControlPoint:
-					return ((controlPointCapability & ControlPointCapabilities.Rotate) != 0 || (controlPointCapability & ControlPointCapabilities.Reference) != 0);
-				default:
-					return base.HasControlPointCapability(controlPointId, controlPointCapability);
-			}
-		}
-
-
-		/// <override></override>
-		protected override int ControlPointCount {
-			get { return 9; }
-		}
-
-
-		protected internal FlowChartDiamondBase(ShapeType shapeType, Template template)
-			: base(shapeType, template) {
-		}
-
-
-		protected internal FlowChartDiamondBase(ShapeType shapeType, IStyleSet styleSet)
-			: base(shapeType, styleSet) {
-		}
-
-
-		// ControlPoint Id Constants
-		private const int TopCenterControlPoint = 2;
-		private const int MiddleLeftControlPoint = 4;
-		private const int MiddleRightControlPoint = 5;
-		private const int BottomCenterControlPoint = 7;
-		private const int MiddleCenterControlPoint = 9;
-	}
-
-
-	public abstract class FlowChartTriangleBase : IsoscelesTriangleBase {
-
-		/// <override></override>
-		public override bool HasControlPointCapability(ControlPointId controlPointId, ControlPointCapabilities controlPointCapability) {
-			switch (controlPointId) {
-				case ControlPointId.Reference:
-				case MiddleCenterControlPoint:
-					return base.HasControlPointCapability(controlPointId, controlPointCapability);
-				case BottomCenterControlPoint:
-				case TopCenterControlPoint:
-					return ((controlPointCapability & ControlPointCapabilities.Resize) != 0 || (controlPointCapability & ControlPointCapabilities.Connect) != 0);
-				default:
-					return base.HasControlPointCapability(controlPointId, controlPointCapability);
-				//return (controlPointCapability & ControlPointCapabilities.Resize) != 0;
-			}
-		}
-
-
-		/// <override></override>
-		protected override int ControlPointCount { get { return 5; } }
-
-
-		protected internal FlowChartTriangleBase(ShapeType shapeType, Template template)
-			: base(shapeType, template) {
-		}
-
-
-		protected internal FlowChartTriangleBase(ShapeType shapeType, IStyleSet styleSet)
-			: base(shapeType, styleSet) {
-		}
-
-
-		// ControlPoint Id Constants
-		private const int TopCenterControlPoint = 1;
-		private const int BottomLeftControlPoint = 2;
-		private const int BottomCenterControlPoint = 3;
-		private const int BottomRightControlPoint = 4;
-		private const int MiddleCenterControlPoint = 5;
-		private const int LeftConnectionPoint = 6;
-		private const int RightConnectionPoint = 7;
-	}
-
 
 	public class TerminatorSymbol : FlowChartRectangleBase {
 
 		/// <override></override>
 		public override Shape Clone() {
-			//Shape result = new TerminatorSymbol(Type, (Template)null);
 			Shape result = new TerminatorSymbol(Type, this.Template);
 			result.CopyFrom(this);
 			return result;
@@ -332,7 +81,7 @@ namespace Dataweb.NShape.FlowChartShapes {
 
 		/// <override></override>
 		protected override void CalcCaptionBounds(int index, out Rectangle captionBounds) {
-			if (index != 0) throw new IndexOutOfRangeException();
+			if (index != 0) throw new ArgumentOutOfRangeException("index");
 			int left = (int)Math.Round(-Width / 2f);
 			int top = (int)Math.Round(-Height / 2f);
 			captionBounds = Rectangle.Empty;
@@ -366,10 +115,10 @@ namespace Dataweb.NShape.FlowChartShapes {
 						Path.AddLine(right - arcRadius, bottom, left + arcRadius, bottom);
 				} else {
 					Path.AddArc(left, top, ArcDiameter, ArcDiameter, startAngle, sweepAngle);
-					if (Height > ArcDiameter) 
+					if (Height > ArcDiameter)
 						Path.AddLine(right, top + arcRadius, right, bottom - arcRadius);
 					Path.AddArc(left, bottom - ArcDiameter, ArcDiameter, ArcDiameter, 180 + startAngle, sweepAngle);
-					if (Height > ArcDiameter) 
+					if (Height > ArcDiameter)
 						Path.AddLine(left, bottom - arcRadius, left, top + arcRadius);
 				}
 				Path.CloseFigure();
@@ -387,9 +136,41 @@ namespace Dataweb.NShape.FlowChartShapes {
 
 	public class ProcessSymbol : FlowChartRectangleBase {
 
+		/// <summary>
+		/// Provides constants for the control point id's of the shape.
+		/// </summary>
+		new public class ControlPointIds {
+			/// <summary>ControlPointId of the top left control point.</summary>
+			public const int TopLeftControlPoint = 1;
+			/// <summary>ControlPointId of the top center control point.</summary>
+			public const int TopCenterControlPoint = 2;
+			/// <summary>ControlPointId of the top right control point.</summary>
+			public const int TopRightControlPoint = 3;
+			/// <summary>ControlPointId of the middle left control point.</summary>
+			public const int MiddleLeftControlPoint = 4;
+			/// <summary>ControlPointId of the middle right control point.</summary>
+			public const int MiddleRightControlPoint = 5;
+			/// <summary>ControlPointId of the bottom left control point.</summary>
+			public const int BottomLeftControlPoint = 6;
+			/// <summary>ControlPointId of the bottom center control point.</summary>
+			public const int BottomCenterControlPoint = 7;
+			/// <summary>ControlPointId of the bottom right control point.</summary>
+			public const int BottomRightControlPoint = 8;
+			/// <summary>ControlPointId of the center control point.</summary>
+			public const int MiddleCenterControlPoint = 9;
+			/// <summary>ControlPointId of the top left connection point.</summary>
+			public const int TopLeftConnectionPoint = 10;
+			/// <summary>ControlPointId of the top right connection point.</summary>
+			public const int TopRightConnectionPoint = 11;
+			/// <summary>ControlPointId of the bottom left connection point.</summary>
+			public const int BottomLeftConnectionPoint = 12;
+			/// <summary>ControlPointId of the bottom right connection point.</summary>
+			public const int BottomRightConnectionPoint = 13;
+		}
+
+
 		/// <override></override>
 		public override Shape Clone() {
-			//Shape result = new ProcessSymbol(Type, (Template)null);
 			Shape result = new ProcessSymbol(Type, this.Template);
 			result.CopyFrom(this);
 			return result;
@@ -397,16 +178,20 @@ namespace Dataweb.NShape.FlowChartShapes {
 
 
 		/// <override></override>
-		protected override int ControlPointCount { get { return base.ControlPointCount + 4; } }
+		protected override int ControlPointCount {
+			get { return 13; }
+		}
 
 
 		/// <override></override>
 		public override bool HasControlPointCapability(ControlPointId controlPointId, ControlPointCapabilities controlPointCapability) {
+			// Customize control point capabilities
 			switch (controlPointId) {
-				case TopLeftConnectionPoint:
-				case TopRightConnectionPoint:
-				case BottomLeftConnectionPoint:
-				case BottomRightConnectionPoint:
+				case ControlPointIds.TopLeftConnectionPoint:
+				case ControlPointIds.TopRightConnectionPoint:
+				case ControlPointIds.BottomLeftConnectionPoint:
+				case ControlPointIds.BottomRightConnectionPoint:
+					// Add connection point functionality to the additional points
 					return ((controlPointCapability & ControlPointCapabilities.Connect) != 0 && IsConnectionPointEnabled(controlPointId));
 				default:
 					return base.HasControlPointCapability(controlPointId, controlPointCapability);
@@ -466,13 +251,7 @@ namespace Dataweb.NShape.FlowChartShapes {
 		}
 
 
-		#region Fields
-		private const int TopLeftConnectionPoint = 10;
-		private const int TopRightConnectionPoint = 11;
-		private const int BottomLeftConnectionPoint = 12;
-		private const int BottomRightConnectionPoint = 13;
 		Rectangle shapeRect;
-		#endregion
 	}
 
 
@@ -480,7 +259,6 @@ namespace Dataweb.NShape.FlowChartShapes {
 
 		/// <override></override>
 		public override Shape Clone() {
-			//Shape result = new PredefinedProcessSymbol(Type, (Template)null);
 			Shape result = new PredefinedProcessSymbol(Type, this.Template);
 			result.CopyFrom(this);
 			return result;
@@ -501,7 +279,7 @@ namespace Dataweb.NShape.FlowChartShapes {
 
 		/// <override></override>
 		protected override void CalcCaptionBounds(int index, out Rectangle captionBounds) {
-			if (index != 0) throw new IndexOutOfRangeException();
+			if (index != 0) throw new ArgumentOutOfRangeException("index");
 			base.CalcCaptionBounds(index, out captionBounds);
 			captionBounds.X = (int)Math.Round(-(Width / 2f) + (Width / 8f));
 			captionBounds.Width = Width - (Width / 4);
@@ -538,40 +316,10 @@ namespace Dataweb.NShape.FlowChartShapes {
 	}
 
 
-	public class DecisionSymbol : FlowChartDiamondBase {
-
-		/// <override></override>
-		public override Shape Clone() {
-			//Shape result = new DecisionSymbol(Type, (Template)null);
-			Shape result = new DecisionSymbol(Type, this.Template);
-			result.CopyFrom(this);
-			return result;
-		}
-
-
-		/// <override></override>
-		protected internal DecisionSymbol(ShapeType shapeType, Template template)
-			: base(shapeType, template) {
-		}
-
-
-		/// <override></override>
-		protected internal DecisionSymbol(ShapeType shapeType, IStyleSet styleSet)
-			: base(shapeType, styleSet) {
-		}
-
-
-		#region Fields
-		Point[] shapeBuffer = new Point[4];
-		#endregion
-	}
-
-
 	public class InputOutputSymbol : FlowChartRectangleBase {
 
 		/// <override></override>
 		public override Shape Clone() {
-			//Shape result = new InputOutputSymbol(Type, (Template)null);
 			Shape result = new InputOutputSymbol(Type, this.Template);
 			result.CopyFrom(this);
 			return result;
@@ -653,7 +401,7 @@ namespace Dataweb.NShape.FlowChartShapes {
 
 		/// <override></override>
 		protected override void CalcCaptionBounds(int index, out Rectangle captionBounds) {
-			if (index != 0) throw new IndexOutOfRangeException();
+			if (index != 0) throw new ArgumentOutOfRangeException("index");
 			base.CalcCaptionBounds(index, out captionBounds);
 		}
 
@@ -705,7 +453,6 @@ namespace Dataweb.NShape.FlowChartShapes {
 
 		/// <override></override>
 		public override Shape Clone() {
-			//Shape result = new DocumentSymbol(Type, (Template)null);
 			Shape result = new DocumentSymbol(Type, this.Template);
 			result.CopyFrom(this);
 			return result;
@@ -714,7 +461,9 @@ namespace Dataweb.NShape.FlowChartShapes {
 
 		/// <override></override>
 		public override bool HasControlPointCapability(ControlPointId controlPointId, ControlPointCapabilities controlPointCapability) {
-			if (controlPointId == BottomCenterControlPoint && (controlPointCapability == ControlPointCapabilities.Connect))
+			// Customize control point capabilities:
+			// Remove connection capability from the bottom center control point
+			if (controlPointId == ControlPointIds.BottomCenterControlPoint && (controlPointCapability & ControlPointCapabilities.Connect) != 0)
 				return false;
 			else return base.HasControlPointCapability(controlPointId, controlPointCapability);
 		}
@@ -734,7 +483,7 @@ namespace Dataweb.NShape.FlowChartShapes {
 
 		/// <override></override>
 		protected override void CalcCaptionBounds(int index, out Rectangle captionBounds) {
-			if (index != 0) throw new IndexOutOfRangeException();
+			if (index != 0) throw new ArgumentOutOfRangeException("index");
 			base.CalcCaptionBounds(index, out captionBounds);
 			captionBounds.Height -= (2 * CalcTearOffHeight());
 		}
@@ -763,55 +512,35 @@ namespace Dataweb.NShape.FlowChartShapes {
 
 		private int CalcTearOffHeight() { return (int)Math.Round(Math.Min(20, Height / 8f)); }
 
-
-		// ControlPoint Id Constants
-		private const int BottomCenterControlPoint = 7;
-	}
-
-
-	public class ConnectorSymbol : FlowChartCircleBase {
-
-		/// <override></override>
-		public override Shape Clone() {
-			//Shape result = new ConnectorSymbol(Type, (Template)null);
-			Shape result = new ConnectorSymbol(Type, this.Template);
-			result.CopyFrom(this);
-			return result;
-		}
-
-
-		/// <override></override>
-		protected internal ConnectorSymbol(ShapeType shapeType, Template template)
-			: base(shapeType, template) {
-		}
-
-
-		/// <override></override>
-		protected internal ConnectorSymbol(ShapeType shapeType, IStyleSet styleSet)
-			: base(shapeType, styleSet) {
-		}
-
-
-		/// <override></override>
-		protected override bool CalculatePath() {
-			if (base.CalculatePath()) {
-				Path.Reset();
-				int left = (int)Math.Round(-Diameter / 2f);
-				int top = (int)Math.Round(-Diameter / 2f);
-				Path.StartFigure();
-				Path.AddEllipse(left, top, Diameter, Diameter);
-				Path.CloseFigure();
-				return true;
-			} else return false;
-		}
 	}
 
 
 	public class OffpageConnectorSymbol : FlowChartRectangleBase {
 
+
+		/// <summary>
+		/// Provides constants for the control point id's of the shape.
+		/// </summary>
+		new public class ControlPointIds {
+			/// <summary>ControlPointId of the top left control point.</summary>
+			public const int TopLeftControlPoint = 1;
+			/// <summary>ControlPointId of the top center control point.</summary>
+			public const int TopCenterControlPoint = 2;
+			/// <summary>ControlPointId of the middle left control point.</summary>
+			public const int MiddleLeftControlPoint = 4;
+			/// <summary>ControlPointId of the middle right control point.</summary>
+			public const int MiddleRightControlPoint = 5;
+			/// <summary>ControlPointId of the bottom left control point.</summary>
+			public const int BottomLeftControlPoint = 6;
+			/// <summary>ControlPointId of the bottom center control point.</summary>
+			public const int BottomCenterControlPoint = 7;
+			/// <summary>ControlPointId of the bottom right control point.</summary>
+			public const int MiddleCenterControlPoint = 9;
+		}
+
+
 		/// <override></override>
 		public override Shape Clone() {
-			//Shape result = new OffpageConnectorSymbol(Type, (Template)null);
 			Shape result = new OffpageConnectorSymbol(Type, this.Template);
 			result.CopyFrom(this);
 			return result;
@@ -837,22 +566,21 @@ namespace Dataweb.NShape.FlowChartShapes {
 
 		/// <override></override>
 		public override bool HasControlPointCapability(ControlPointId controlPointId, ControlPointCapabilities controlPointCapability) {
-			if (controlPointId == MiddleCenterControlPoint) {
-				if ((controlPointCapability & ControlPointCapabilities.Connect) != 0
-					|| (controlPointCapability & ControlPointCapabilities.Reference) != 0
-					|| (controlPointCapability & ControlPointCapabilities.Rotate) != 0)
-					return true;
-			} else if ((controlPointCapability & ControlPointCapabilities.Connect) != 0
-				 || (controlPointCapability & ControlPointCapabilities.Resize) != 0)
-				return IsConnectionPointEnabled(controlPointId);
-			if ((controlPointCapability & ControlPointCapabilities.Glue) != 0)
-				return false;
-			return false;
+			// Customize control point capabilities
+			switch (controlPointId) {
+				case FlowChartRectangleBase.ControlPointIds.TopRightControlPoint:
+				case FlowChartRectangleBase.ControlPointIds.BottomRightControlPoint:
+					// These control points are not supported by this shape
+					throw new ArgumentException("controlPointId");
+				default: 
+					return base.HasControlPointCapability(controlPointId, controlPointCapability);
+			}
 		}
 
 
 		/// <override></override>
 		protected override int ControlPointCount {
+			// Remove unwanted control points
 			get { return 7; }
 		}
 
@@ -900,13 +628,13 @@ namespace Dataweb.NShape.FlowChartShapes {
 
 		protected override ControlPointId GetControlPointId(int index) {
 			switch (index) {
-				case 0: return TopLeftControlPoint;
-				case 1: return TopCenterControlPoint;
-				case 2: return MiddleLeftControlPoint;
-				case 3: return MiddleRightControlPoint;
-				case 4: return BottomLeftControlPoint;
-				case 5: return BottomCenterControlPoint;
-				case 6: return MiddleCenterControlPoint;
+				case 0: return ControlPointIds.TopLeftControlPoint;
+				case 1: return ControlPointIds.TopCenterControlPoint;
+				case 2: return ControlPointIds.MiddleLeftControlPoint;
+				case 3: return ControlPointIds.MiddleRightControlPoint;
+				case 4: return ControlPointIds.BottomLeftControlPoint;
+				case 5: return ControlPointIds.BottomCenterControlPoint;
+				case 6: return ControlPointIds.MiddleCenterControlPoint;
 				default: return ControlPointId.None;
 			}
 		}
@@ -914,13 +642,13 @@ namespace Dataweb.NShape.FlowChartShapes {
 
 		protected override int GetControlPointIndex(ControlPointId id) {
 			switch (id) {
-				case TopLeftControlPoint: return 0;
-				case TopCenterControlPoint: return 1;
-				case MiddleLeftControlPoint: return 2;
-				case MiddleRightControlPoint: return 3;
-				case BottomLeftControlPoint: return 4;
-				case BottomCenterControlPoint: return 5;
-				case MiddleCenterControlPoint: return 6;
+				case ControlPointIds.TopLeftControlPoint: return 0;
+				case ControlPointIds.TopCenterControlPoint: return 1;
+				case ControlPointIds.MiddleLeftControlPoint: return 2;
+				case ControlPointIds.MiddleRightControlPoint: return 3;
+				case ControlPointIds.BottomLeftControlPoint: return 4;
+				case ControlPointIds.BottomCenterControlPoint: return 5;
+				case ControlPointIds.MiddleCenterControlPoint: return 6;
 				default: return -1;
 			}
 		}
@@ -928,7 +656,7 @@ namespace Dataweb.NShape.FlowChartShapes {
 
 		/// <override></override>
 		protected override void CalcCaptionBounds(int index, out Rectangle captionBounds) {
-			if (index != 0) throw new IndexOutOfRangeException();
+			if (index != 0) throw new ArgumentOutOfRangeException("index");
 			base.CalcCaptionBounds(index, out captionBounds);
 			int top = (int)Math.Round(-Height / 2f);
 			captionBounds.Y = top + (int)Math.Round(Height / 4f);
@@ -970,271 +698,8 @@ namespace Dataweb.NShape.FlowChartShapes {
 		}
 
 
-		#region Fields
-		private const int TopLeftControlPoint = 1;
-		private const int TopCenterControlPoint = 2;
-		private const int MiddleLeftControlPoint = 4;
-		private const int MiddleRightControlPoint = 5;
-		private const int BottomLeftControlPoint = 6;
-		private const int BottomCenterControlPoint = 7;
-		private const int MiddleCenterControlPoint = 9;
-
+		// Fields
 		Point[] shapePoints = new Point[5];
-		#endregion
-	}
-
-
-	public class ExtractSymbol : FlowChartTriangleBase {
-
-		/// <override></override>
-		public override Shape Clone() {
-			//Shape result = new ExtractSymbol(Type, (Template)null);
-			Shape result = new ExtractSymbol(Type, this.Template);
-			result.CopyFrom(this);
-			return result;
-		}
-
-
-		/// <override></override>
-		public override bool HasControlPointCapability(ControlPointId controlPointId, ControlPointCapabilities controlPointCapability) {
-			switch (controlPointId) {
-				case TopCenterControlPoint:
-				case BottomCenterControlPoint:
-					return ((controlPointCapability & ControlPointCapabilities.Resize) != 0 || ((controlPointCapability & ControlPointCapabilities.Connect) != 0 && IsConnectionPointEnabled(controlPointId)));
-				case BottomLeftControlPoint:
-				case BottomRightControlPoint:
-					return ((controlPointCapability & ControlPointCapabilities.Resize) != 0);
-				case LeftConnectionPoint:
-				case RightConnectionPoint:
-					return ((controlPointCapability & ControlPointCapabilities.Connect) != 0 && IsConnectionPointEnabled(controlPointId));
-				default:
-					return base.HasControlPointCapability(controlPointId, controlPointCapability);
-			}
-		}
-
-
-		/// <override></override>
-		protected override int ControlPointCount { get { return base.ControlPointCount + 2; } }
-
-
-		protected internal ExtractSymbol(ShapeType shapeType, Template template)
-			: base(shapeType, template) {
-		}
-
-
-		protected internal ExtractSymbol(ShapeType shapeType, IStyleSet styleSet)
-			: base(shapeType, styleSet) {
-		}
-
-
-		/// <override></override>
-		protected override void CalcControlPoints() {
-			base.CalcControlPoints();
-
-			int left = (int)Math.Round(-Width * CenterPosFactorX);
-			int right = left + Width;
-			int bottom = (int)Math.Round(Height * (1 - CenterPosFactorY));
-
-			ControlPoints[5].X = left + (int)Math.Round(Width / 4f);
-			ControlPoints[5].Y = bottom;
-			ControlPoints[6].X = right - (int)Math.Round(Width / 4f);
-			ControlPoints[6].Y = bottom;
-		}
-
-
-		#region Fields
-
-		// ControlPoint Id Constants
-		private const int TopCenterControlPoint = 1;
-		private const int BottomLeftControlPoint = 2;
-		private const int BottomCenterControlPoint = 3;
-		private const int BottomRightControlPoint = 4;
-		private const int MiddleCenterControlPoint = 5;
-		private const int LeftConnectionPoint = 6;
-		private const int RightConnectionPoint = 7;
-		#endregion
-	}
-
-
-	public class MergeSymbol : FlowChartTriangleBase {
-
-		/// <override></override>
-		public override Shape Clone() {
-			//Shape result = new MergeSymbol(Type, (Template)null);
-			Shape result = new MergeSymbol(Type, this.Template);
-			result.CopyFrom(this);
-			return result;
-		}
-
-
-		/// <override></override>
-		public override bool HasControlPointCapability(ControlPointId controlPointId, ControlPointCapabilities controlPointCapability) {
-			switch (controlPointId) {
-				case TopCenterControlPoint:
-				case BottomCenterControlPoint:
-					return ((controlPointCapability & ControlPointCapabilities.Resize) != 0 || ((controlPointCapability & ControlPointCapabilities.Connect) != 0 && IsConnectionPointEnabled(controlPointId)));
-				case TopLeftControlPoint:
-				case TopRightControlPoint:
-					return ((controlPointCapability & ControlPointCapabilities.Resize) != 0);
-				case LeftConnectionPoint:
-				case RightConnectionPoint:
-					return ((controlPointCapability & ControlPointCapabilities.Connect) != 0 && IsConnectionPointEnabled(controlPointId));
-				default:
-					return base.HasControlPointCapability(controlPointId, controlPointCapability);
-			}
-		}
-
-
-		/// <override></override>
-		protected override int ControlPointCount { get { return base.ControlPointCount + 2; } }
-
-
-		protected internal MergeSymbol(ShapeType shapeType, Template template)
-			: base(shapeType, template) {
-		}
-
-
-		protected internal MergeSymbol(ShapeType shapeType, IStyleSet styleSet)
-			: base(shapeType, styleSet) {
-		}
-
-
-		/// <override></override>
-		protected override bool MovePointByCore(ControlPointId pointId, float transformedDeltaX, float transformedDeltaY, float sin, float cos, ResizeModifiers modifiers) {
-			bool result = true;
-			int dx = 0, dy = 0;
-			int width = Width;
-			int height = Height;
-			switch ((int)pointId) {
-				case TopLeftControlPoint:
-					if (!Geometry.MoveRectangleTopLeft(width, height, 0, 0, CenterPosFactorX, CenterPosFactorY, DivFactorX, DivFactorY, 
-													transformedDeltaX, transformedDeltaY, cos, sin, modifiers, 
-													out dx, out dy, out width, out height))
-						result = false;
-					break;
-
-				case TopCenterControlPoint:
-					result = (transformedDeltaX == 0);
-					if (!Geometry.MoveRectangleTop(width, height, 0, CenterPosFactorX, CenterPosFactorY, DivFactorX, DivFactorY, 
-													transformedDeltaX, transformedDeltaY, cos, sin, modifiers, 
-													out dx, out dy, out width, out height))
-						result = false;
-					break;
-
-				case TopRightControlPoint:
-					if (!Geometry.MoveRectangleTopRight(width, height, 0, 0, CenterPosFactorX, CenterPosFactorY, DivFactorX, DivFactorY, 
-													transformedDeltaX, transformedDeltaY, cos, sin, modifiers, 
-													out dx, out dy, out width, out height))
-						result = false;
-					break;
-
-				case BottomCenterControlPoint:
-					result = (transformedDeltaX == 0);
-					if (!Geometry.MoveRectangleBottom(width, height, 0, CenterPosFactorX, CenterPosFactorY, 
-													DivFactorX, DivFactorY, transformedDeltaX, transformedDeltaY, cos, sin, modifiers, 
-													out dx, out dy, out width, out height))
-						result = false;
-					break;
-
-				default:
-					break;
-			}
-			Width = width;
-			Height = height;
-			MoveByCore(dx, dy);
-			ControlPointsHaveMoved();
-
-			return result;
-		}
-
-
-		/// <override></override>
-		protected override Rectangle CalculateBoundingRectangle(bool tight) {
-			// tight and loose fitting bounding rectangles are equal
-			if (Angle == 0 || Angle == 900 || Angle == 1800 || Angle == 2700)
-				return base.CalculateBoundingRectangle(tight);
-			else {
-				// Calculate tight fitting bounding rectangle
-				Rectangle result = Geometry.InvalidRectangle;
-				float angleDeg = Geometry.TenthsOfDegreeToDegrees(Angle);
-				int x1, y1, x2, y2, x3, y3;
-				int left = (int)Math.Round(X - (Width / 2f));
-				int top = Y - (int)Math.Round(Height * CenterPosFactorY);
-				int right = left + Width;
-				int bottom = top + Height;
-				x1 = left; y1 = top;
-				x2 = right; y2 = top;
-				x3 = X; y3 = bottom;
-				Geometry.RotatePoint(X, Y, angleDeg, ref x1, ref y1);
-				Geometry.RotatePoint(X, Y, angleDeg, ref x2, ref y2);
-				Geometry.RotatePoint(X, Y, angleDeg, ref x3, ref y3);
-
-				result.X = Math.Min(Math.Min(x1, x2), Math.Min(x1, x3));
-				result.Y = Math.Min(Math.Min(y1, y2), Math.Min(y1, y3));
-				result.Width = Math.Max(Math.Max(x1, x2), Math.Max(x1, x3)) - result.X;
-				result.Height = Math.Max(Math.Max(y1, y2), Math.Max(y1, y3)) - result.Y;
-				ShapeUtils.InflateBoundingRectangle(ref result, LineStyle);
-				return result;
-			}
-		}
-
-
-		/// <override></override>
-		protected override void CalcControlPoints() {
-			int left = (int)Math.Round(-Width / 2f);
-			int top = (int)Math.Round(-Height * CenterPosFactorY);
-			int right = left + Width;
-			int bottom = top + Height;
-
-			ControlPoints[0].X = left;
-			ControlPoints[0].Y = top;
-			ControlPoints[1].X = 0;
-			ControlPoints[1].Y = top;
-			ControlPoints[2].X = right;
-			ControlPoints[2].Y = top;
-			ControlPoints[3].X = 0;
-			ControlPoints[3].Y = bottom;
-			ControlPoints[4].X = 0;
-			ControlPoints[4].Y = 0;
-			ControlPoints[5].X = left + (int)Math.Round(Width * (CenterPosFactorX / 2f));
-			ControlPoints[5].Y = top;
-			ControlPoints[6].X = right - (int)Math.Round(Width * (CenterPosFactorX / 2f));
-			ControlPoints[6].Y = top;
-		}
-
-
-		/// <override></override>
-		protected override void CalculateShapePoints() {
-			int left = (int)Math.Round(-Width * CenterPosFactorX);
-			int top = (int)Math.Round(-Height * CenterPosFactorY);
-			int right = left + Width;
-			int bottom = top + Height;
-
-			shapePoints[0].X = left;
-			shapePoints[0].Y = top;
-			shapePoints[1].X = right;
-			shapePoints[1].Y = top;
-			shapePoints[2].X = 0;
-			shapePoints[2].Y = bottom;
-		}
-
-
-		/// <override></override>
-		protected override float CenterPosFactorY { get { return centerPosFactorY; } }
-
-
-		#region Fields
-		private const float centerPosFactorY = 0.3333333333f;
-
-		Point[] shapeBuffer = new Point[3];
-		private const int TopLeftControlPoint = 1;
-		private const int TopCenterControlPoint = 2;
-		private const int TopRightControlPoint = 3;
-		private const int BottomCenterControlPoint = 4;
-		private const int BalancePointControlPoint = 5;
-		private const int LeftConnectionPoint = 6;
-		private const int RightConnectionPoint = 7;
-		#endregion
 	}
 
 
@@ -1242,10 +707,31 @@ namespace Dataweb.NShape.FlowChartShapes {
 
 		/// <override></override>
 		public override Shape Clone() {
-			//Shape result = new OnlineStorageSymbol(Type, (Template)null);
 			Shape result = new OnlineStorageSymbol(Type, this.Template);
 			result.CopyFrom(this);
 			return result;
+		}
+
+
+		/// <override></override>
+		public override bool HasControlPointCapability(ControlPointId controlPointId, ControlPointCapabilities controlPointCapability) {
+			//if (controlPointId == FlowChartRectangleBase.MiddleRightControlPoint)
+			//    // Remove the 'Connect' cappability from the middle right control point
+			//    return (controlPointCapability & ControlPointCapabilities.Resize) != 0;
+			//else
+				return base.HasControlPointCapability(controlPointId, controlPointCapability);
+		}
+
+
+		/// <override></override>
+		protected internal OnlineStorageSymbol(ShapeType shapeType, Template template)
+			: base(shapeType, template) {
+		}
+
+
+		/// <override></override>
+		protected internal OnlineStorageSymbol(ShapeType shapeType, IStyleSet styleSet)
+			: base(shapeType, styleSet) {
 		}
 
 
@@ -1281,20 +767,8 @@ namespace Dataweb.NShape.FlowChartShapes {
 
 
 		/// <override></override>
-		protected internal OnlineStorageSymbol(ShapeType shapeType, Template template)
-			: base(shapeType, template) {
-		}
-
-
-		/// <override></override>
-		protected internal OnlineStorageSymbol(ShapeType shapeType, IStyleSet styleSet)
-			: base(shapeType, styleSet) {
-		}
-
-
-		/// <override></override>
 		protected override void CalcCaptionBounds(int index, out Rectangle captionBounds) {
-			if (index != 0) throw new IndexOutOfRangeException();
+			if (index != 0) throw new ArgumentOutOfRangeException("index");
 			base.CalcCaptionBounds(index, out captionBounds);
 			int left = (int)Math.Round(-Width / 2f);
 			int top = (int)Math.Round(-Height / 2f);
@@ -1334,70 +808,10 @@ namespace Dataweb.NShape.FlowChartShapes {
 	}
 
 
-	public class OfflineStorageSymbol : MergeSymbol {
-
-		/// <override></override>
-		public override Shape Clone() {
-			//Shape result = new OfflineStorageSymbol(Type, (Template)null);
-			Shape result = new OfflineStorageSymbol(Type, this.Template);
-			result.CopyFrom(this);
-			return result;
-		}
-
-
-		protected internal OfflineStorageSymbol(ShapeType shapeType, Template template)
-			: base(shapeType, template) {
-		}
-
-
-		protected internal OfflineStorageSymbol(ShapeType shapeType, IStyleSet styleSet)
-			: base(shapeType, styleSet) {
-		}
-
-
-		/// <override></override>
-		protected override bool CalculatePath() {
-			if (base.CalculatePath()) {
-				int left = (int)Math.Round(-Width * CenterPosFactorX);
-				int top = (int)Math.Round(-Height * CenterPosFactorY);
-				int right = left + Width;
-				int bottom = top + Height;
-
-				shapePoints[0].X = left;
-				shapePoints[0].Y = top;
-				shapePoints[1].X = right;
-				shapePoints[1].Y = top;
-				shapePoints[2].X = 0;
-				shapePoints[2].Y = bottom;
-
-				int x1, x2, y1, y2;
-				int a1, b1, c1, a2, b2, c2, a, b, c;
-				Geometry.CalcLine(0, bottom, left, top, out a1, out b1, out c1);
-				Geometry.CalcLine(0, bottom, right, top, out a2, out b2, out c2);
-				Geometry.CalcLine(left, bottom - (Height / 3), right, bottom - (Height / 3), out a, out b, out c);
-				//Geometry.SolveLinear22System(a, b, a1, b1, c, c1, out x1, out y1);
-				Geometry.IntersectLines(a, b, c, a1, b1, c1, out x1, out y1);
-				//Geometry.SolveLinear22System(a, b, a2, b2, c, c2, out x2, out y2);
-				Geometry.IntersectLines(a, b, c, a2, b2, c2, out x2, out y2);
-
-				Path.Reset();
-				Path.StartFigure();
-				Path.AddPolygon(shapePoints);
-				Path.CloseFigure();
-				Path.StartFigure();
-				Path.AddLine(x1, y1, x2, y2);
-				Path.CloseFigure();
-				return true;
-			} else return false;
-		}
-	}
-
-
 	public class DrumStorageSymbol : FlowChartRectangleBase {
 
 		/// <override></override>
 		public override Shape Clone() {
-			//Shape result = new DrumStorageSymbol(Type, (Template)null);
 			Shape result = new DrumStorageSymbol(Type, this.Template);
 			result.CopyFrom(this);
 			return result;
@@ -1444,7 +858,7 @@ namespace Dataweb.NShape.FlowChartShapes {
 
 		/// <override></override>
 		protected override void CalcCaptionBounds(int index, out Rectangle captionBounds) {
-			if (index != 0) throw new IndexOutOfRangeException();
+			if (index != 0) throw new ArgumentOutOfRangeException("index");
 			int left = (int)Math.Round(-Width / 2f);
 			int top = (int)Math.Round(-Height / 2f);
 			int arcRadius = GetArcRadius();
@@ -1490,7 +904,6 @@ namespace Dataweb.NShape.FlowChartShapes {
 
 		/// <override></override>
 		public override Shape Clone() {
-			//Shape result = new DiskStorageSymbol(Type, (Template)null);
 			Shape result = new DiskStorageSymbol(Type, this.Template);
 			result.CopyFrom(this);
 			return result;
@@ -1544,7 +957,7 @@ namespace Dataweb.NShape.FlowChartShapes {
 
 		/// <override></override>
 		protected override void CalcCaptionBounds(int index, out Rectangle captionBounds) {
-			if (index != 0) throw new IndexOutOfRangeException();
+			if (index != 0) throw new ArgumentOutOfRangeException("index");
 			base.CalcCaptionBounds(index, out captionBounds);
 			int left = (int)Math.Round(-Width / 2f);
 			int top = (int)Math.Round(-Height / 2f);
@@ -1597,87 +1010,10 @@ namespace Dataweb.NShape.FlowChartShapes {
 	}
 
 
-	public class TapeStorageSymbol : FlowChartCircleBase {
-
-		/// <override></override>
-		public override Shape Clone() {
-			//Shape result = new TapeStorageSymbol(Type, (Template)null);
-			Shape result = new TapeStorageSymbol(Type, this.Template);
-			result.CopyFrom(this);
-			return result;
-		}
-
-
-		/// <override></override>
-		protected override Rectangle CalculateBoundingRectangle(bool tight) {
-			if (tight) {
-				Rectangle result = base.CalculateBoundingRectangle(tight);
-				Rectangle r = Rectangle.Empty;
-				r.Location = Point.Round(Geometry.RotatePoint(X, Y, Geometry.TenthsOfDegreeToDegrees(Angle), X + (DiameterInternal / 2f), Y + (DiameterInternal / 2f)));
-				ShapeUtils.InflateBoundingRectangle(ref r, LineStyle);
-				return Geometry.UniteRectangles(r, result);
-			} else return base.CalculateBoundingRectangle(tight);
-		}
-
-
-		protected internal TapeStorageSymbol(ShapeType shapeType, Template template)
-			: base(shapeType, template) {
-		}
-
-
-		protected internal TapeStorageSymbol(ShapeType shapeType, IStyleSet styleSet)
-			: base(shapeType, styleSet) {
-		}
-
-
-		/// <override></override>
-		protected override bool IntersectsWithCore(int x, int y, int width, int height) {
-			if (base.IntersectsWithCore(x, y, width, height))
-				return true;
-			int bottom = (Y - (DiameterInternal / 2) + DiameterInternal);
-			int right = (X - (DiameterInternal / 2) + DiameterInternal);
-			if (Geometry.RectangleIntersectsWithLine(x, y, x + width, y + height, Center.X, bottom, right, bottom, true))
-				return true;
-			return false;
-		}
-
-
-		/// <override></override>
-		protected override void CalcControlPoints() {
-			base.CalcControlPoints();
-			int right = (int)Math.Round(Diameter / 2f);
-			int bottom = right;
-			ControlPoints[7].X = right;
-			ControlPoints[7].Y = bottom;
-		}
-
-
-		/// <override></override>
-		protected override bool CalculatePath() {
-			if (base.CalculatePath()) {
-				Path.Reset();
-				int left = (int)Math.Round(-Diameter / 2f);
-				int top = (int)Math.Round(-Diameter / 2f);
-				int right = left + Diameter;
-				int bottom = top + Diameter;
-
-				Path.StartFigure();
-				Path.AddLine(0, bottom, right, bottom);
-				Path.AddEllipse(left, top, Diameter, Diameter);
-				Path.CloseFigure();
-				return true;
-			}
-			return false;
-		}
-
-	}
-
-
 	public class PreparationSymbol : FlowChartRectangleBase {
 
 		/// <override></override>
 		public override Shape Clone() {
-			//Shape result = new PreparationSymbol(Type, (Template)null);
 			Shape result = new PreparationSymbol(Type, this.Template);
 			result.CopyFrom(this);
 			return result;
@@ -1794,7 +1130,6 @@ namespace Dataweb.NShape.FlowChartShapes {
 
 		/// <override></override>
 		public override Shape Clone() {
-			//Shape result = new ManualInputSymbol(Type, (Template)null);
 			Shape result = new ManualInputSymbol(Type, this.Template);
 			result.CopyFrom(this);
 			return result;
@@ -1804,7 +1139,7 @@ namespace Dataweb.NShape.FlowChartShapes {
 		/// <override></override>
 		protected override Rectangle CalculateBoundingRectangle(bool tight) {
 			if (tight) {
-				int left = X+(int)Math.Round(-Width / 2f);
+				int left = X + (int)Math.Round(-Width / 2f);
 				int top = Y + (int)Math.Round(-Height / 2f);
 				int right = left + Width;
 				int bottom = top + Height;
@@ -1869,7 +1204,6 @@ namespace Dataweb.NShape.FlowChartShapes {
 
 		/// <override></override>
 		public override Shape Clone() {
-			//Shape result = new CoreSymbol(Type, (Template)null);
 			Shape result = new CoreSymbol(Type, this.Template);
 			result.CopyFrom(this);
 			return result;
@@ -1925,7 +1259,6 @@ namespace Dataweb.NShape.FlowChartShapes {
 
 		/// <override></override>
 		public override Shape Clone() {
-			//Shape result = new DisplaySymbol(Type, (Template)null);
 			Shape result = new DisplaySymbol(Type, this.Template);
 			result.CopyFrom(this);
 			return result;
@@ -1959,7 +1292,7 @@ namespace Dataweb.NShape.FlowChartShapes {
 					Point br = Geometry.RotatePoint(X, Y, angle, right, bottom);
 					result = Geometry.UniteRectangles(tr.X, tr.Y, br.X, br.Y, leftBounds);
 				}
-			} else result =  base.CalculateBoundingRectangle(tight);
+			} else result = base.CalculateBoundingRectangle(tight);
 			if (Geometry.IsValid(result))
 				ShapeUtils.InflateBoundingRectangle(ref result, LineStyle);
 			return result;
@@ -2027,7 +1360,6 @@ namespace Dataweb.NShape.FlowChartShapes {
 
 		/// <override></override>
 		public override Shape Clone() {
-			//Shape result = new TapeSymbol(Type, (Template)null);
 			Shape result = new TapeSymbol(Type, this.Template);
 			result.CopyFrom(this);
 			return result;
@@ -2054,7 +1386,7 @@ namespace Dataweb.NShape.FlowChartShapes {
 
 		/// <override></override>
 		protected override void CalcCaptionBounds(int index, out Rectangle captionBounds) {
-			if (index != 0) throw new IndexOutOfRangeException();
+			if (index != 0) throw new ArgumentOutOfRangeException("index");
 			base.CalcCaptionBounds(index, out captionBounds);
 			int tearOffSize = CalcTearOffSize();
 			captionBounds.Y += tearOffSize;
@@ -2100,7 +1432,6 @@ namespace Dataweb.NShape.FlowChartShapes {
 
 		/// <override></override>
 		public override Shape Clone() {
-			//Shape result = new ManualOperationSymbol(Type, (Template)null);
 			Shape result = new ManualOperationSymbol(Type, this.Template);
 			result.CopyFrom(this);
 			return result;
@@ -2179,75 +1510,10 @@ namespace Dataweb.NShape.FlowChartShapes {
 	}
 
 
-	public class SortSymbol : FlowChartDiamondBase {
-
-		/// <override></override>
-		public override Shape Clone() {
-			//Shape result = new SortSymbol(Type, (Template)null);
-			Shape result = new SortSymbol(Type, this.Template);
-			result.CopyFrom(this);
-			return result;
-		}
-
-
-		protected internal SortSymbol(ShapeType shapeType, Template template)
-			: base(shapeType, template) {
-		}
-
-
-		protected internal SortSymbol(ShapeType shapeType, IStyleSet styleSet)
-			: base(shapeType, styleSet) {
-		}
-
-
-		/// <override></override>
-		protected override void InitializeToDefault(IStyleSet styleSet) {
-			base.InitializeToDefault(styleSet);
-			Width = 40;
-			Height = 40;
-		}
-
-
-		/// <override></override>
-		protected override bool CalculatePath() {
-			if (base.CalculatePath()) {
-				Path.Reset();
-				if (Width > 0 && Height > 0) {
-					int left = (int)Math.Round(-Width / 2f);
-					int top = (int)Math.Round(-Height / 2f);
-					int right = left + Width;
-					int bottom = top + Height;
-
-					pointBuffer[0].X = 0;
-					pointBuffer[0].Y = top;
-					pointBuffer[1].X = right;
-					pointBuffer[1].Y = 0;
-					pointBuffer[2].X = 0;
-					pointBuffer[2].Y = bottom;
-					pointBuffer[3].X = left;
-					pointBuffer[3].Y = 0;
-
-					Path.StartFigure();
-					Path.AddPolygon(pointBuffer);
-					Path.CloseFigure();
-
-					// refresh edge positions
-					Path.StartFigure();
-					Path.AddLine(left, 0, right, 0);
-					Path.CloseFigure();
-					Path.FillMode = System.Drawing.Drawing2D.FillMode.Winding;
-					return true;
-				} else return false;
-			} else return false;
-		}
-	}
-
-
 	public class CollateSymbol : FlowChartRectangleBase {
 
 		/// <override></override>
 		public override Shape Clone() {
-			//Shape result = new CollateSymbol(Type, (Template)null);
 			Shape result = new CollateSymbol(Type, this.Template);
 			result.CopyFrom(this);
 			return result;
@@ -2327,7 +1593,6 @@ namespace Dataweb.NShape.FlowChartShapes {
 
 		/// <override></override>
 		public override Shape Clone() {
-			//Shape result = new CardSymbol(Type, (Template)null);
 			Shape result = new CardSymbol(Type, this.Template);
 			result.CopyFrom(this);
 			return result;
@@ -2352,7 +1617,7 @@ namespace Dataweb.NShape.FlowChartShapes {
 				Point obl = Geometry.RotatePoint(X, Y, angle, left, bottom);
 
 				Rectangle result;
-				Geometry.CalcBoundingRectangle(itl, tr, ibl, br, out result); 
+				Geometry.CalcBoundingRectangle(itl, tr, ibl, br, out result);
 				result = Geometry.UniteWithRectangle(otl, result);
 				ShapeUtils.InflateBoundingRectangle(ref result, LineStyle);
 				return Geometry.UniteWithRectangle(obl, result);
@@ -2395,290 +1660,4 @@ namespace Dataweb.NShape.FlowChartShapes {
 		}
 	}
 
-
-	public class CommLinkSymbol : FlowChartDiamondBase {
-
-		/// <override></override>
-		public override Shape Clone() {
-			//Shape result = new CommLinkSymbol(Type, (Template)null);
-			Shape result = new CommLinkSymbol(Type, this.Template);
-			result.CopyFrom(this);
-			return result;
-		}
-
-
-		/// <override></override>
-		public override bool HasControlPointCapability(ControlPointId controlPointId, ControlPointCapabilities controlPointCapability) {
-			switch (controlPointId) {
-				case TopCenterControlPoint:
-				case MiddleLeftControlPoint:
-				case MiddleRightControlPoint:
-				case BottomCenterControlPoint:
-					return ((controlPointCapability & ControlPointCapabilities.Resize) != 0);
-				case MiddleCenterControlPoint:
-					return ((controlPointCapability & ControlPointCapabilities.Reference) != 0 || (controlPointCapability & ControlPointCapabilities.Rotate) != 0 || ((controlPointCapability & ControlPointCapabilities.Connect) != 0 && IsConnectionPointEnabled(controlPointId)));
-				case ControlPointId.Reference:
-					return ((controlPointCapability & ControlPointCapabilities.Reference) != 0 || (controlPointCapability & ControlPointCapabilities.Rotate) != 0);
-				default:
-					return false;
-			}
-		}
-
-
-		protected internal CommLinkSymbol(ShapeType shapeType, Template template)
-			: base(shapeType, template) {
-			pointBuffer = new Point[6];
-		}
-
-
-		protected internal CommLinkSymbol(ShapeType shapeType, IStyleSet styleSet)
-			: base(shapeType, styleSet) {
-			pointBuffer = new Point[6];
-		}
-
-
-		/// <override></override>
-		protected override int ControlPointCount {
-			get { return 5; }
-		}
-
-
-		/// <override></override>
-		protected override void InitializeToDefault(IStyleSet styleSet) {
-			base.InitializeToDefault(styleSet);
-			pointBuffer = new Point[6];
-			Height = 60;
-			Width = 20;
-		}
-
-
-		/// <override></override>
-		protected override bool MovePointByCore(ControlPointId pointId, float transformedDeltaX, float transformedDeltaY, float sin, float cos, ResizeModifiers modifiers) {
-			bool result = true;
-			int dx = 0, dy = 0;
-			int width = Width;
-			int height = Height;
-			switch ((int)pointId) {
-				case TopCenterControlPoint:
-					result = (transformedDeltaX == 0);
-					if (!Geometry.MoveRectangleTop(width, height, transformedDeltaX, transformedDeltaY, cos, sin, modifiers, out dx, out dy, out width, out height))
-						result = false;
-					break;
-				case MiddleLeftControlPoint:
-					result = (transformedDeltaY == 0);
-					if (!Geometry.MoveRectangleLeft(width, height, transformedDeltaX, transformedDeltaY, cos, sin, modifiers, out dx, out dy, out width, out height))
-						result = false;
-					break;
-				case MiddleRightControlPoint:
-					result = (transformedDeltaY == 0);
-					if (!Geometry.MoveRectangleRight(width, height, transformedDeltaX, transformedDeltaY, cos, sin, modifiers, out dx, out dy, out width, out height))
-						result = false;
-					break;
-				case BottomCenterControlPoint:
-					result = (transformedDeltaX == 0);
-					if (!Geometry.MoveRectangleBottom(width, height, transformedDeltaX, transformedDeltaY, cos, sin, modifiers, out dx, out dy, out width, out height))
-						result = false;
-					break;
-				default:
-					break;
-			}
-			if (result) {
-				Width = width;
-				Height = height;
-				X += dx;
-				Y += dy;
-			}
-			ControlPointsHaveMoved();
-			return result;
-		}
-
-
-		/// <override></override>
-		protected override Rectangle CalculateBoundingRectangle(bool tight) {
-			Rectangle result;
-			CalculalteTranslatedShapePoints();
-			Geometry.CalcBoundingRectangle(pointBuffer, out result);
-			ShapeUtils.InflateBoundingRectangle(ref result, LineStyle);
-			return result;
-		}
-
-
-		/// <override></override>
-		protected override bool ContainsPointCore(int x, int y) {
-			CalculalteTranslatedShapePoints();
-			bool result = Geometry.PolygonContainsPoint(pointBuffer, x, y);
-			if (!result) {
-				pt.X = x;
-				pt.Y = y;
-				if (DisplayService != null)
-					DisplayService.Invalidate(new Rectangle(short.MinValue, short.MinValue, short.MaxValue * 2, short.MaxValue * 2));
-			} else pt = Point.Empty;
-			return result;
-		}
-
-
-		/// <override></override>
-		protected override void CalcControlPoints() {
-			int left = (int)Math.Round(-Width / 2f);
-			int top = (int)Math.Round(-Height / 2f);
-			int right = left + Width;
-			int bottom = top + Height;
-
-			ControlPoints[0].X = 0;
-			ControlPoints[0].Y = top;
-			ControlPoints[1].X = left;
-			ControlPoints[1].Y = 0;
-			ControlPoints[2].X = right;
-			ControlPoints[2].Y = 0;
-			ControlPoints[3].X = 0;
-			ControlPoints[3].Y = bottom;
-			ControlPoints[4].X = 0;
-			ControlPoints[4].Y = 0;
-		}
-
-
-		/// <override></override>
-		protected override bool CalculatePath() {
-			if (base.CalculatePath()) {
-				CalculateShapePoints();
-
-				Path.Reset();
-				Path.StartFigure();
-				Path.AddPolygon(pointBuffer);
-				Path.CloseFigure();
-				return true;
-			}
-			return false;
-		}
-
-
-		private void CalculateShapePoints() {
-			int left = (int)Math.Round(-Width / 2f);
-			int top = (int)Math.Round(-Height / 2f);
-			int right = left + Width;
-			int bottom = top + Height;
-			int w = (int)Math.Round(Width / 8f);
-			int h = (int)Math.Round(Height / 16f);
-
-			pointBuffer[0].X = 0;
-			pointBuffer[0].Y = top;
-			pointBuffer[1].X = right;
-			pointBuffer[1].Y = 0 + h;
-			pointBuffer[2].X = 0 - w;
-			pointBuffer[2].Y = 0 + (int)Math.Round(h / 2f);
-			pointBuffer[3].X = 0;
-			pointBuffer[3].Y = bottom;
-			pointBuffer[4].X = left;
-			pointBuffer[4].Y = 0 - h;
-			pointBuffer[5].X = 0 + w;
-			pointBuffer[5].Y = 0 - (int)Math.Round(h / 2f);
-		}
-
-
-		private void CalculalteTranslatedShapePoints() {
-			CalculateShapePoints();
-			Matrix.Reset();
-			Matrix.Translate(X, Y, MatrixOrder.Prepend);
-			Matrix.RotateAt(Geometry.TenthsOfDegreeToDegrees(Angle), Center, MatrixOrder.Append);
-			Matrix.TransformPoints(pointBuffer);
-		}
-
-
-		private Point pt;
-
-		#region Fields
-		private const int TopCenterControlPoint = 1;
-		private const int MiddleLeftControlPoint = 2;
-		private const int MiddleRightControlPoint = 3;
-		private const int BottomCenterControlPoint = 4;
-		private const int MiddleCenterControlPoint = 5;
-		#endregion
-	}
-
-
-	public static class NShapeLibraryInitializer {
-
-		public static void Initialize(IRegistrar registrar) {
-			registrar.RegisterLibrary(namespaceName, preferredRepositoryVersion);
-			registrar.RegisterShapeType(new ShapeType("Terminator", namespaceName, namespaceName,
-				delegate(ShapeType shapeType, Template t) { return new TerminatorSymbol(shapeType, t); },
-				TerminatorSymbol.GetPropertyDefinitions));
-			registrar.RegisterShapeType(new ShapeType("Process", namespaceName, namespaceName,
-				delegate(ShapeType shapeType, Template t) { return new ProcessSymbol(shapeType, t); },
-				ProcessSymbol.GetPropertyDefinitions));
-			registrar.RegisterShapeType(new ShapeType("Decision", namespaceName, namespaceName,
-				delegate(ShapeType shapeType, Template t) { return new DecisionSymbol(shapeType, t); },
-				DecisionSymbol.GetPropertyDefinitions));
-			registrar.RegisterShapeType(new ShapeType("InputOutput", namespaceName, namespaceName,
-				delegate(ShapeType shapeType, Template t) { return new InputOutputSymbol(shapeType, t); },
-				InputOutputSymbol.GetPropertyDefinitions));
-			registrar.RegisterShapeType(new ShapeType("Document", namespaceName, namespaceName,
-				delegate(ShapeType shapeType, Template t) { return new DocumentSymbol(shapeType, t); },
-				DocumentSymbol.GetPropertyDefinitions));
-			registrar.RegisterShapeType(new ShapeType("OffpageConnector", namespaceName, namespaceName,
-				delegate(ShapeType shapeType, Template t) { return new OffpageConnectorSymbol(shapeType, t); },
-				OffpageConnectorSymbol.GetPropertyDefinitions));
-			registrar.RegisterShapeType(new ShapeType("Connector", namespaceName, namespaceName,
-				delegate(ShapeType shapeType, Template t) { return new ConnectorSymbol(shapeType, t); },
-				ConnectorSymbol.GetPropertyDefinitions));
-			registrar.RegisterShapeType(new ShapeType("PredefinedProcess", namespaceName, namespaceName,
-				delegate(ShapeType shapeType, Template t) { return new PredefinedProcessSymbol(shapeType, t); },
-				PredefinedProcessSymbol.GetPropertyDefinitions));
-			registrar.RegisterShapeType(new ShapeType("Extract", namespaceName, namespaceName,
-				delegate(ShapeType shapeType, Template t) { return new ExtractSymbol(shapeType, t); },
-				ExtractSymbol.GetPropertyDefinitions));
-			registrar.RegisterShapeType(new ShapeType("Merge", namespaceName, namespaceName,
-				delegate(ShapeType shapeType, Template t) { return new MergeSymbol(shapeType, t); },
-				MergeSymbol.GetPropertyDefinitions));
-			registrar.RegisterShapeType(new ShapeType("OnlineStorage", namespaceName, namespaceName,
-				delegate(ShapeType shapeType, Template t) { return new OnlineStorageSymbol(shapeType, t); },
-				OnlineStorageSymbol.GetPropertyDefinitions));
-			registrar.RegisterShapeType(new ShapeType("OfflineStorage", namespaceName, namespaceName,
-				delegate(ShapeType shapeType, Template t) { return new OfflineStorageSymbol(shapeType, t); },
-				OfflineStorageSymbol.GetPropertyDefinitions));
-			registrar.RegisterShapeType(new ShapeType("DrumStorage", namespaceName, namespaceName,
-				delegate(ShapeType shapeType, Template t) { return new DrumStorageSymbol(shapeType, t); },
-				DrumStorageSymbol.GetPropertyDefinitions));
-			registrar.RegisterShapeType(new ShapeType("DiskStorage", namespaceName, namespaceName,
-				delegate(ShapeType shapeType, Template t) { return new DiskStorageSymbol(shapeType, t); },
-				DiskStorageSymbol.GetPropertyDefinitions));
-			registrar.RegisterShapeType(new ShapeType("TapeStorage", namespaceName, namespaceName,
-				delegate(ShapeType shapeType, Template t) { return new TapeStorageSymbol(shapeType, t); },
-				TapeStorageSymbol.GetPropertyDefinitions));
-			registrar.RegisterShapeType(new ShapeType("Preparation", namespaceName, namespaceName,
-				delegate(ShapeType shapeType, Template t) { return new PreparationSymbol(shapeType, t); },
-				PreparationSymbol.GetPropertyDefinitions));
-			registrar.RegisterShapeType(new ShapeType("ManualInput", namespaceName, namespaceName,
-				delegate(ShapeType shapeType, Template t) { return new ManualInputSymbol(shapeType, t); },
-				ManualInputSymbol.GetPropertyDefinitions));
-			registrar.RegisterShapeType(new ShapeType("Core", namespaceName, namespaceName,
-				delegate(ShapeType shapeType, Template t) { return new CoreSymbol(shapeType, t); },
-				CoreSymbol.GetPropertyDefinitions));
-			registrar.RegisterShapeType(new ShapeType("Display", namespaceName, namespaceName,
-				delegate(ShapeType shapeType, Template t) { return new DisplaySymbol(shapeType, t); },
-				DisplaySymbol.GetPropertyDefinitions));
-			registrar.RegisterShapeType(new ShapeType("Tape", namespaceName, namespaceName,
-				delegate(ShapeType shapeType, Template t) { return new TapeSymbol(shapeType, t); },
-				TapeSymbol.GetPropertyDefinitions));
-			registrar.RegisterShapeType(new ShapeType("ManualOperation", namespaceName, namespaceName,
-				delegate(ShapeType shapeType, Template t) { return new ManualOperationSymbol(shapeType, t); },
-				ManualOperationSymbol.GetPropertyDefinitions));
-			registrar.RegisterShapeType(new ShapeType("Sort", namespaceName, namespaceName,
-				delegate(ShapeType shapeType, Template t) { return new SortSymbol(shapeType, t); },
-				SortSymbol.GetPropertyDefinitions));
-			registrar.RegisterShapeType(new ShapeType("Collate", namespaceName, namespaceName,
-				delegate(ShapeType shapeType, Template t) { return new CollateSymbol(shapeType, t); },
-				CollateSymbol.GetPropertyDefinitions));
-			registrar.RegisterShapeType(new ShapeType("Card", namespaceName, namespaceName,
-				delegate(ShapeType shapeType, Template t) { return new CardSymbol(shapeType, t); },
-				CardSymbol.GetPropertyDefinitions));
-			registrar.RegisterShapeType(new ShapeType("CommLink", namespaceName, namespaceName,
-				delegate(ShapeType shapeType, Template t) { return new CommLinkSymbol(shapeType, t); },
-				CommLinkSymbol.GetPropertyDefinitions));
-		}
-
-
-		private const string namespaceName = "FlowChartShapes";
-		private const int preferredRepositoryVersion = 3;
-	}
 }

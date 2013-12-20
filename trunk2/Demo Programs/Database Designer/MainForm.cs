@@ -471,7 +471,7 @@ namespace Database_Designer {
 
 
 		private void gridButton_Click(object sender, EventArgs e) {
-			display.ShowGrid = gridButton.Checked;
+			display.IsGridVisible = gridButton.Checked;
 		}
 
 		

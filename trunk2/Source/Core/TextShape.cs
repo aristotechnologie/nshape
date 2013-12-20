@@ -1,5 +1,5 @@
 ﻿/******************************************************************************
-  Copyright 2009-2012 dataweb GmbH
+  Copyright 2009-2013 dataweb GmbH
   This file is part of the NShape framework.
   NShape is free software: you can redistribute it and/or modify it under the 
   terms of the GNU General Public License as published by the Free Software 
@@ -27,6 +27,26 @@ namespace Dataweb.NShape.Advanced {
 	/// </summary>
 	/// <remarks>RequiredPermissions set</remarks>
 	public abstract class TextBase : RectangleBase {
+
+		/// <summary>ControlPointId of the top left control point.</summary>
+		public const int TopLeftControlPoint = 1;
+		/// <summary>ControlPointId of the top center control point.</summary>
+		public const int TopCenterControlPoint = 2;
+		/// <summary>ControlPointId of the top right control point.</summary>
+		public const int TopRightControlPoint = 3;
+		/// <summary>ControlPointId of the middle left control point.</summary>
+		public const int MiddleLeftControlPoint = 4;
+		/// <summary>ControlPointId of the middle right control point.</summary>
+		public const int MiddleRightControlPoint = 5;
+		/// <summary>ControlPointId of the bottom left control point.</summary>
+		public const int BottomLeftControlPoint = 6;
+		/// <summary>ControlPointId of the bottom center control point.</summary>
+		public const int BottomCenterControlPoint = 7;
+		/// <summary>ControlPointId of the bottom right control point.</summary>
+		public const int BottomRightControlPoint = 8;
+		/// <summary>ControlPointId of the center control point.</summary>
+		public const int MiddleCenterControlPoint = 9;
+
 
 		#region [Public] Properties
 
@@ -314,25 +334,42 @@ namespace Dataweb.NShape.Advanced {
 
 
 		#region Fields
-
-		// ControlPoint Id Constants
-		private const int TopLeftControlPoint = 1;
-		private const int TopCenterControlPoint = 2;
-		private const int TopRightControlPoint = 3;
-		private const int MiddleLeftControlPoint = 4;
-		private const int MiddleRightControlPoint = 5;
-		private const int BottomLeftControlPoint = 6;
-		private const int BottomCenterControlPoint = 7;
-		private const int BottomRightControlPoint = 8;
-		private const int MiddleCenterControlPoint = 9;
 		
 		private bool autoSize = true;
+
 		#endregion
 	}
 
 
 	/// <ToBeCompleted></ToBeCompleted>
 	public abstract class LabelBase : TextBase {
+
+		/// <summary>
+		/// Provides constants for the control point id's of the shape.
+		/// </summary>
+		new public class ControlPointIds {
+			/// <summary>ControlPointId of the top left control point.</summary>
+			public const int TopLeftControlPoint = 1;
+			/// <summary>ControlPointId of the top center control point.</summary>
+			public const int TopCenterControlPoint = 2;
+			/// <summary>ControlPointId of the top right control point.</summary>
+			public const int TopRightControlPoint = 3;
+			/// <summary>ControlPointId of the middle left control point.</summary>
+			public const int MiddleLeftControlPoint = 4;
+			/// <summary>ControlPointId of the middle right control point.</summary>
+			public const int MiddleRightControlPoint = 5;
+			/// <summary>ControlPointId of the bottom left control point.</summary>
+			public const int BottomLeftControlPoint = 6;
+			/// <summary>ControlPointId of the bottom center control point.</summary>
+			public const int BottomCenterControlPoint = 7;
+			/// <summary>ControlPointId of the bottom right control point.</summary>
+			public const int BottomRightControlPoint = 8;
+			/// <summary>ControlPointId of the center control point.</summary>
+			public const int MiddleCenterControlPoint = 9;
+			/// <summary>ControlPointId of the sticky control point used to attach the label to other shapes.</summary>
+			public const int GlueControlPoint = 10;
+		}
+
 
 		#region [Public] Properties
 
@@ -389,10 +426,10 @@ namespace Dataweb.NShape.Advanced {
 			if ((controlPointCapabilities & ControlPointCapabilities.Glue) != 0
 				|| (controlPointCapabilities & ControlPointCapabilities.Resize) != 0) {
 				if (Geometry.DistancePointPoint(x, y, gluePointPos.X, gluePointPos.Y) <= range)
-					return GlueControlPoint;
-				if (IsConnected(GlueControlPoint, null) == ControlPointId.None
+					return ControlPointIds.GlueControlPoint;
+				if (IsConnected(ControlPointIds.GlueControlPoint, null) == ControlPointId.None
 					&& (pinPath != null && pinPath.IsVisible(x, y)))
-					return GlueControlPoint;
+					return ControlPointIds.GlueControlPoint;
 			}
 			return base.HitTest(x, y, controlPointCapabilities, range);
 		}
@@ -400,7 +437,7 @@ namespace Dataweb.NShape.Advanced {
 
 		/// <override></override>
 		public override bool HasControlPointCapability(ControlPointId controlPointId, ControlPointCapabilities controlPointCapability) {
-			if (controlPointId == GlueControlPoint)
+			if (controlPointId == ControlPointIds.GlueControlPoint)
 				return ((controlPointCapability & ControlPointCapabilities.Glue) != 0 
 					|| (controlPointCapability & ControlPointCapabilities.Resize) != 0);
 			else return base.HasControlPointCapability(controlPointId, controlPointCapability);
@@ -426,7 +463,7 @@ namespace Dataweb.NShape.Advanced {
 
 		/// <override></override>
 		public override Point GetControlPointPosition(ControlPointId controlPointId) {
-			if (controlPointId == GlueControlPoint)
+			if (controlPointId == ControlPointIds.GlueControlPoint)
 				return gluePointPos;
 			else return base.GetControlPointPosition(controlPointId);
 		}
@@ -601,7 +638,11 @@ namespace Dataweb.NShape.Advanced {
 		protected override Rectangle CalculateBoundingRectangle(bool tight) {
 			Rectangle result = base.CalculateBoundingRectangle(tight);
 			if (Geometry.IsValid(gluePointPos)) {
-				if (!tight && IsConnected(GlueControlPoint, null) == ControlPointId.None) {
+				// Calculating the pin bounds even if they are not visible.
+				// Otherwise, the number of cells calculated by CalculateCells() differs between connected 
+				// and unconnected state and the (connected) label would not be removed completely from 
+				// the diagram's spatial index.
+				if (!tight) {
 					tl.X = bl.X = gluePointPos.X - pinSize / 2;
 					tr.X = br.X = gluePointPos.X + pinSize / 2;
 					tl.Y = tr.Y = gluePointPos.Y - pinSize;
@@ -614,7 +655,6 @@ namespace Dataweb.NShape.Advanced {
 					Geometry.CalcBoundingRectangle(tl, tr, br, bl, out pinBounds);
 					result = Geometry.UniteRectangles(result, pinBounds);
 				} 
-				//else result = Geometry.UniteRectangles(gluePointPos.X, gluePointPos.Y, gluePointPos.X, gluePointPos.Y, result);
 			}
 			return result;
 		}
@@ -626,7 +666,7 @@ namespace Dataweb.NShape.Advanced {
 			if (!result) {
 				if (showGluePointLine)
 					result = Geometry.LineContainsPoint(gluePointPos.X, gluePointPos.Y, X, Y, true, x, y, (int)Math.Ceiling(LineStyle.LineWidth / 2f));
-				if (IsConnected(GlueControlPoint, null) == ControlPointId.None) {
+				if (IsConnected(ControlPointIds.GlueControlPoint, null) == ControlPointId.None) {
 					if (pinPath != null) result = pinPath.IsVisible(x, y);
 					else {
 						// Fallback solution: Test on bounding rectangle of the 'pin'
@@ -658,7 +698,7 @@ namespace Dataweb.NShape.Advanced {
 		protected override bool MoveByCore(int deltaX, int deltaY) {
 			bool result = base.MoveByCore(deltaX, deltaY);
 			// If the glue point is not connected, move it with the shape
-			ShapeConnectionInfo ci = GetConnectionInfo(GlueControlPoint, null);
+			ShapeConnectionInfo ci = GetConnectionInfo(ControlPointIds.GlueControlPoint, null);
 			if (ci.IsEmpty) {
 				if (Geometry.IsValid(gluePointPos)) {
 					gluePointPos.X += deltaX;
@@ -678,10 +718,10 @@ namespace Dataweb.NShape.Advanced {
 
 		/// <override></override>
 		protected override bool MovePointByCore(ControlPointId pointId, int origDeltaX, int origDeltaY, ResizeModifiers modifiers) {
-			if (pointId == GlueControlPoint) {
+			if (pointId == ControlPointIds.GlueControlPoint) {
 				bool result = false;
 				// If the glue ponit is connected, recalculate glue point calculation info
-				ShapeConnectionInfo ci = GetConnectionInfo(GlueControlPoint, null);
+				ShapeConnectionInfo ci = GetConnectionInfo(ControlPointIds.GlueControlPoint, null);
 				if (ci.IsEmpty) {
 					// If the glue point is not connected, move the glue point to the desired position
 					if (Geometry.IsValid(gluePointPos)) {
@@ -692,7 +732,7 @@ namespace Dataweb.NShape.Advanced {
 					}
 				} else {
 					if (ci.OtherPointId != ControlPointId.Reference)
-						CalcGluePoint(GlueControlPoint, ci.OtherShape);
+						CalcGluePoint(ControlPointIds.GlueControlPoint, ci.OtherShape);
 				}
 				return result;
 			} else return base.MovePointByCore(pointId, origDeltaX, origDeltaY, modifiers);
@@ -703,7 +743,7 @@ namespace Dataweb.NShape.Advanced {
 		protected override bool RotateCore(int deltaAngle, int x, int y) {
 			bool result = base.RotateCore(deltaAngle, x, y);
 			if (!followingConnectedShape) {
-				ShapeConnectionInfo ci = GetConnectionInfo(GlueControlPoint, null);
+				ShapeConnectionInfo ci = GetConnectionInfo(ControlPointIds.GlueControlPoint, null);
 				if (!ci.IsEmpty) {
 					// If the gluePoint is connected, recalculate GluePointCalcInfo
 					this.calcInfo = GluePointCalcInfo.Empty;
@@ -718,7 +758,7 @@ namespace Dataweb.NShape.Advanced {
 		protected override void InvalidateDrawCache() {
 			base.InvalidateDrawCache();
 			if (pinPath != null) {
-				if (IsConnected(GlueControlPoint, null) != ControlPointId.None) {
+				if (IsConnected(ControlPointIds.GlueControlPoint, null) != ControlPointId.None) {
 					pinPath.Dispose();
 					pinPath = null;
 				} else pinPath.Reset();
@@ -813,7 +853,7 @@ namespace Dataweb.NShape.Advanced {
 		/// <ToBeCompleted></ToBeCompleted>
 		protected virtual void DrawHint(Graphics graphics) {
 			// Draw connection point hints
-			if (IsConnected(GlueControlPoint, null) == ControlPointId.None) {
+			if (IsConnected(ControlPointIds.GlueControlPoint, null) == ControlPointId.None) {
 				if (DisplayService != null) {
 					Pen foregroundPen = ToolCache.GetPen(DisplayService.HintForegroundStyle, null, null);
 					Brush backgroundBrush = ToolCache.GetBrush(DisplayService.HintBackgroundStyle);
@@ -981,8 +1021,6 @@ namespace Dataweb.NShape.Advanced {
 
 		#region Fields
 
-		/// <ToBeCompleted></ToBeCompleted>
-		protected const int GlueControlPoint = 10;
 		// Position of glue point (unrotated)
 		/// <ToBeCompleted></ToBeCompleted>
 		protected Point gluePointPos = Geometry.InvalidPoint;

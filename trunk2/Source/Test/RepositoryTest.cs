@@ -1,5 +1,5 @@
 ﻿/******************************************************************************
-  Copyright 2009-2012 dataweb GmbH
+  Copyright 2009-2013 dataweb GmbH
   This file is part of the NShape framework.
   NShape is free software: you can redistribute it and/or modify it under the 
   terms of the GNU General Public License as published by the Free Software 
@@ -236,19 +236,35 @@ namespace NShapeTest {
 				
 				// If the store is a XML store, check files and file names
 				if (store1 is XmlStore) {
-					// Save project again and check if backup files were created
 					XmlStore xmlStore = (XmlStore)store1;
-					project1.Repository.SaveChanges();
-					Assert.IsTrue(File.Exists(Path.Combine(xmlStore.DirectoryName, project1.Name + ".bak")));
-					Assert.IsTrue(File.Exists(Path.Combine(xmlStore.DirectoryName, project1.Name + xmlStore.FileExtension)));
-					Assert.IsTrue(Directory.Exists(Path.Combine(xmlStore.DirectoryName, project1.Name + " Images")));
-					Assert.IsTrue(Directory.Exists(Path.Combine(xmlStore.DirectoryName, project1.Name + " Images.bak")));
-					// Save project another time and check if backup files can be deleted
-					project1.Repository.SaveChanges();
-					Assert.IsTrue(File.Exists(Path.Combine(xmlStore.DirectoryName, project1.Name + ".bak")));
-					Assert.IsTrue(File.Exists(Path.Combine(xmlStore.DirectoryName, project1.Name + xmlStore.FileExtension)));
-					Assert.IsTrue(Directory.Exists(Path.Combine(xmlStore.DirectoryName, project1.Name + " Images")));
-					Assert.IsTrue(Directory.Exists(Path.Combine(xmlStore.DirectoryName, project1.Name + " Images.bak")));
+					// Change the backup file extension
+					xmlStore.BackupFileExtension = ".backup";
+
+					string projectFilePath = xmlStore.ProjectFilePath;
+					string projectImageDir = xmlStore.ImageDirectory;
+					string backupFilePath = xmlStore.ProjectFilePath + xmlStore.BackupFileExtension;
+					string backupImageDir = xmlStore.ImageDirectory + xmlStore.BackupFileExtension;
+					// Delete backup files before testing their (non)-existance
+					if (File.Exists(backupFilePath)) File.Delete(backupFilePath);
+					if (Directory.Exists(backupImageDir)) Directory.Delete(backupImageDir, true);
+
+
+					// Save project multiple times in order to check 
+					// a) whether the backup files are *not* created in BackupGenerationMode == BackupFileGenerationMode.None
+					// b) whether the backup files *are* created in BackupGenerationMode == BackupFileGenerationMode.BakFile
+					// c) whether the backup files can be overwritten
+					foreach (XmlStore.BackupFileGenerationMode backupMode in Enum.GetValues(typeof(XmlStore.BackupFileGenerationMode))) {
+						xmlStore.BackupGenerationMode = backupMode;
+						// Save two times in order to check for file locks etc
+						for (int i = 0; i < 2; ++i) {
+							project1.Repository.SaveChanges();
+							Assert.IsTrue(File.Exists(projectFilePath));
+							Assert.IsTrue(Directory.Exists(projectImageDir));
+							bool createBackup = (xmlStore.BackupGenerationMode == XmlStore.BackupFileGenerationMode.BakFile);
+							Assert.AreEqual(createBackup, File.Exists(backupFilePath));
+							Assert.AreEqual(createBackup, Directory.Exists(backupImageDir));
+						}
+					}
 				}
 			} finally {
 				project1.Close();

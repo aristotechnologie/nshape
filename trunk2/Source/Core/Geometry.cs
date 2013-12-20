@@ -1,5 +1,5 @@
 /******************************************************************************
-  Copyright 2009-2012 dataweb GmbH
+  Copyright 2009-2013 dataweb GmbH
   This file is part of the NShape framework.
   NShape is free software: you can redistribute it and/or modify it under the 
   terms of the GNU General Public License as published by the Free Software 
@@ -1558,8 +1558,9 @@ namespace Dataweb.NShape.Advanced {
 			int n = points.Length - 1;
 			float ai = (float)Math.Atan2(points[n].X - points[0].X, points[n].Y - points[0].Y);
 			for (int i = 0; i < n; ++i) {
-				int j = i + 1;
-				float aj = (float)Math.Atan2(points[i].X - points[j].X, points[i].Y - points[j].Y);
+				Point a = points[i];
+				Point b = points[i + 1];
+				float aj = (float)Math.Atan2(a.X - b.X, a.Y - b.Y);
 				if (ai - aj < 0) convex++;
 				ai = aj;
 			}
@@ -1573,11 +1574,12 @@ namespace Dataweb.NShape.Advanced {
 		public static bool PolygonIsConvex(PointF[] points) {
 			if (points == null) throw new ArgumentNullException("points");
 			int convex = 0;
-			int n = points.Length;
-			float ai = (float)Math.Atan2(points[n - 1].X - points[0].X, points[n - 1].Y - points[0].Y);
+			int n = points.Length - 1;
+			float ai = (float)Math.Atan2(points[n].X - points[0].X, points[n].Y - points[0].Y);
 			for (int i = 0; i < n; ++i) {
-				int j = i + 1;
-				float aj = (float)Math.Atan2(points[i].X - points[j].X, points[i].Y - points[j].Y);
+				PointF a = points[i];
+				PointF b = points[i + 1];
+				float aj = (float)Math.Atan2(a.X - b.X, a.Y - b.Y);
 				if (ai - aj < 0) convex++;
 				ai = aj;
 			}
@@ -1595,10 +1597,10 @@ namespace Dataweb.NShape.Advanced {
 			// are on the same side), the point is inside the convex polygon.
 			int maxIdx = points.Length - 1;
 			bool z = VectorCrossProduct(points[maxIdx].X, points[maxIdx].Y, points[0].X, points[0].Y, x, y) < 0;
-			int j;
 			for (int i = 0; i < maxIdx; ++i) {
-				j = i + 1;
-				if (VectorCrossProduct(points[i].X, points[i].Y, points[j].X, points[j].Y, x, y) < 0 != z)
+				Point a = points[i];
+				Point b = points[i + 1];
+				if (VectorCrossProduct(a.X, a.Y, b.X, b.Y, x, y) < 0 != z)
 					return false;
 			}
 			return true;
@@ -1616,23 +1618,14 @@ namespace Dataweb.NShape.Advanced {
 			// Store the cross product of the points.
 			// If all the points have the same cross product (this means that they 
 			// are on the same side), the point is inside the convex polygon.
-			bool z = VectorCrossProduct(
-							(int)Math.Round(points[maxIdx].X), 
-							(int)Math.Round(points[maxIdx].Y), 
-							(int)Math.Round(points[0].X), 
-							(int)Math.Round(points[0].Y), 
-							x, 
-							y) < 0;
-			int j;
+			PointF a = PointF.Empty, b = PointF.Empty;
+			a = points[maxIdx];
+			b = points[0];
+			bool z = VectorCrossProduct((int)Math.Round(a.X), (int)Math.Round(a.Y), (int)Math.Round(b.X), (int)Math.Round(b.Y), x, y) < 0;
 			for (int i = 0; i < maxIdx; ++i) {
-				j = i + 1;
-				if (VectorCrossProduct(
-						(int)Math.Round(points[i].X), 
-						(int)Math.Round(points[i].Y), 
-						(int)Math.Round(points[j].X), 
-						(int)Math.Round(points[j].Y), 
-						x, 
-						y) < 0 != z)
+				a = points[i];
+				b = points[i + 1];
+				if (VectorCrossProduct((int)Math.Round(a.X), (int)Math.Round(a.Y), (int)Math.Round(b.X), (int)Math.Round(b.Y), x, y) < 0 != z) 
 					return false;
 			}
 			return true;
@@ -1675,10 +1668,38 @@ namespace Dataweb.NShape.Advanced {
 				int j;
 				for (int i = 0; i < cnt; ++i) {
 					j = i + 1;
-					if (j == cnt) j = 0;
-					if (DistancePointLine(x, y, points[i].X, points[i].Y, points[j].X, points[j].Y, true) == 0)
+					Point a = points[i];
+					Point b = (j == cnt) ? points[0] : points[j];
+					if (DistancePointLine(x, y, a.X, a.Y, b.X, b.Y, true) == 0)
 						return true;
-					else if (LineSegmentIntersectsWithLineSegment(x, y, x2, y2, points[i].X, points[i].Y, points[j].X, points[j].Y))
+					else if (LineSegmentIntersectsWithLineSegment(x, y, x2, y2, a.X, a.Y, b.X, b.Y))
+						intersectionCnt++;
+				}
+				return (intersectionCnt % 2) != 0;
+			}
+		}
+
+
+		/// <summary>
+		/// Tests if point x/y is inside or on the bounds of the given polygon
+		/// </summary>
+		public static bool PolygonContainsPoint(PointF[] points, int x, int y) {
+			int cnt = points.Length;
+			if (cnt == 0) return false;
+			else if (cnt == 1) return points[0].X == x && points[0].Y == y;
+			else {
+				// Test intersection of a line between the point and a point far, far away
+				// If the number of intersections is even, the point must be outside, otherwise it is inside.
+				int intersectionCnt = 0;
+				long x2 = int.MaxValue, y2 = int.MaxValue;
+				int j;
+				for (int i = 0; i < cnt; ++i) {
+					j = i + 1;
+					PointF a = points[i];
+					PointF b = (j == cnt) ? points[0] : points[j];
+					if (DistancePointLine(x, y, a.X, a.Y, b.X, b.Y, true) == 0)
+						return true;
+					else if (LineSegmentIntersectsWithLineSegment(x, y, x2, y2, a.X, a.Y, b.X, b.Y))
 						intersectionCnt++;
 				}
 				return (intersectionCnt % 2) != 0;
@@ -2199,19 +2220,21 @@ namespace Dataweb.NShape.Advanced {
 			int rectangleHeight = rectangleBottom - rectangleTop;
 			int maxIdx = points.Length - 1;
 			for (int i = 0; i < maxIdx; ++i) {
-				if (points[i].X < left) left = points[i].X;
-				if (points[i].X > right) right = points[i].X;
-				if (points[i].Y < top) top = points[i].Y;
-				if (points[i].Y > bottom) bottom = points[i].Y;
+				Point a = points[i];
+				Point b = points[i + 1];
+				if (a.X < left) left = a.X;
+				if (a.X > right) right = a.X;
+				if (a.Y < top) top = a.Y;
+				if (a.Y > bottom) bottom = a.Y;
 
 				// The polygon intersects the Rectangle if the rectangle contains one point of the polygon...
-				if (RectangleContainsPoint(rectangleLeft, rectangleTop, rectangleWidth, rectangleHeight, points[i].X, points[i].Y))
+				if (RectangleContainsPoint(rectangleLeft, rectangleTop, rectangleWidth, rectangleHeight, a.X, a.Y))
 					return true;
-				if (RectangleContainsPoint(rectangleLeft, rectangleTop, rectangleWidth, rectangleHeight, points[i + 1].X, points[i + 1].Y))
+				if (RectangleContainsPoint(rectangleLeft, rectangleTop, rectangleWidth, rectangleHeight, b.X, b.Y))
 					return true;
 
 				// ... or if one side of the polygon intersects one side of the rectangle ...
-				if (RectangleIntersectsWithLine(rectangleLeft, rectangleTop, rectangleRight, rectangleBottom, points[i].X, points[i].Y, points[i + 1].X, points[i + 1].Y, true))
+				if (RectangleIntersectsWithLine(rectangleLeft, rectangleTop, rectangleRight, rectangleBottom, a.X, a.Y, b.X, b.Y, true))
 					return true;
 			}
 			if (RectangleIntersectsWithLine(rectangleLeft, rectangleTop, rectangleRight, rectangleBottom, points[maxIdx].X, points[maxIdx].Y, points[0].X, points[0].Y, true))
@@ -2241,13 +2264,15 @@ namespace Dataweb.NShape.Advanced {
 			if (points.Length <= 0) return false;
 			int maxIdx = points.Length - 1;
 			for (int i = 0; i < maxIdx; ++i) {
+				PointF a = points[i];
+				PointF b = points[i + 1];
 				// The polygon intersects the Rectangle if the rectangle contains one point of the polygon...
-				if (RectangleContainsPoint(rectangle, points[i].X, points[i].Y))
+				if (RectangleContainsPoint(rectangle, a.X, a.Y))
 					return true;
-				if (RectangleContainsPoint(rectangle, points[i + 1].X, points[i + 1].Y))
+				if (RectangleContainsPoint(rectangle, b.X, b.Y))
 					return true;
 				// ... or if one side of the polygon intersects one side of the rectangle ...
-				if (RectangleIntersectsWithLine(rectangle, points[i].X, points[i].Y, points[i + 1].X, points[i + 1].Y, true))
+				if (RectangleIntersectsWithLine(rectangle, a.X, a.Y, b.X, b.Y, true))
 					return true;
 			}
 			if (RectangleIntersectsWithLine(rectangle, points[maxIdx].X, points[maxIdx].Y, points[0].X, points[0].Y, true))
@@ -2296,11 +2321,14 @@ namespace Dataweb.NShape.Advanced {
 
 			// Wenn det == 0 ist, sind die Linien parallel. 
 			if (det == 0) {
-				// wenn die Linien gegensinnig laufen, also die Vektoren die Beträge [10|10] und [-10|-10] haben, schneiden sie sich zwangsläufig
-				if (line1Vec.X == -line2Vec.X && line1Vec.Y == -line2Vec.Y)
-					return true;
-				else
-					return false;
+				// Wenn die Linien gegensinnig laufen, also die Vektoren die Beträge [10|10] und [-10|-10] haben, schneiden sie 
+				// sich zwangsläufig - vorausgesetzt sie sind nicht parallel verschoben!
+				if (line1Vec.X == -line2Vec.X && line1Vec.Y == -line2Vec.Y) {
+					float m1, m2, c1, c2;
+					Geometry.CalcLine(line1StartX, line1StartY, line1EndX, line1EndY, out m1, out c1);
+					Geometry.CalcLine(line2StartX, line2StartY, line2EndX, line2EndY, out m2, out c2);
+					return (Math.Abs(c1 - c2) < EqualityDeltaFloat);
+				} else return false;
 			}
 
 			// Determinante det's berechnen 
@@ -2346,11 +2374,14 @@ namespace Dataweb.NShape.Advanced {
 
 			// Wenn det == 0 ist, sind die Linien parallel. 
 			if (det == 0) {
-				// wenn die Linien gegensinnig laufen, also die Vektoren die Beträge [10|10] und [-10|-10] haben, schneiden sie sich zwangsläufig
-				if (line1Vec.X == -line2Vec.X && line1Vec.Y == -line2Vec.Y)
-					return true;
-				else
-					return false;
+				// Wenn die Linien gegensinnig laufen, also die Vektoren die Beträge [10|10] und [-10|-10] haben, schneiden sie 
+				// sich zwangsläufig - vorausgesetzt sie sind nicht parallel verschoben!
+				if (line1Vec.X == -line2Vec.X && line1Vec.Y == -line2Vec.Y) {
+					float m1, m2, c1, c2;
+					Geometry.CalcLine(line1StartX, line1StartY, line1EndX, line1EndY, out m1, out c1);
+					Geometry.CalcLine(line2StartX, line2StartY, line2EndX, line2EndY, out m2, out c2);
+					return (Math.Abs(c1 - c2) < EqualityDeltaFloat);
+				} else return false;
 			}
 
 			// Determinante det's berechnen 
@@ -3000,17 +3031,15 @@ namespace Dataweb.NShape.Advanced {
 			if (ellipseAngleDeg != 0) {
 				// instead of rotating the ellipse, we rotate the polygon in the opposite direction and calculate 
 				// intersection of the unrotated ellipse with the rotated polygon
-				float x, y;
-				for (int i = polygon.Length - 1; i >= 0; --i) {
-					x = polygon[i].X; y = polygon[i].Y;
-					RotatePoint(ellipseCenterX, ellipseCenterY, -ellipseAngleDeg, ref x, ref y);
-					polygon[i].X = x; polygon[i].Y = y;
-				}
+				for (int i = polygon.Length - 1; i >= 0; --i)
+					polygon[i] = RotatePoint(ellipseCenterX, ellipseCenterY, -ellipseAngleDeg, polygon[i]);
 			}
 
 			int maxIdx = polygon.Length - 1;
 			for (int i = 0; i < maxIdx; ++i) {
-				if (EllipseIntersectsWithLine(ellipseCenterX, ellipseCenterY, ellipseWidth, ellipseHeight, polygon[i].X, polygon[i].Y, polygon[i + 1].X, polygon[i + 1].Y, true))
+				PointF a = polygon[i]; 
+				PointF b = polygon[i + 1];
+				if (EllipseIntersectsWithLine(ellipseCenterX, ellipseCenterY, ellipseWidth, ellipseHeight, a.X, a.Y, b.X, b.Y, true))
 					return true;
 			}
 			if (EllipseIntersectsWithLine(ellipseCenterX, ellipseCenterY, ellipseWidth, ellipseHeight, polygon[0].X, polygon[0].Y, polygon[maxIdx].X, polygon[maxIdx].Y, true))
@@ -3025,17 +3054,15 @@ namespace Dataweb.NShape.Advanced {
 			if (ellipseAngleDeg != 0) {
 				// instead of rotating the ellipse, we rotate the polygon in the opposite direction and calculate 
 				// intersection of the unrotated ellipse with the rotated polygon
-				int x, y;
-				for (int i = polygon.Length - 1; i >= 0; --i) {
-					x = polygon[i].X; y = polygon[i].Y;
-					RotatePoint(ellipseCenterX, ellipseCenterY, -ellipseAngleDeg, ref x, ref y);
-					polygon[i].X = x; polygon[i].Y = y;
-				}
+				for (int i = polygon.Length - 1; i >= 0; --i)
+					polygon[i] = RotatePoint(ellipseCenterX, ellipseCenterY, -ellipseAngleDeg, polygon[i]);
 			}
 
 			int maxIdx = polygon.Length - 1;
 			for (int i = 0; i < maxIdx; ++i) {
-				if (EllipseIntersectsWithLine(ellipseCenterX, ellipseCenterY, ellipseWidth, ellipseHeight, polygon[i].X, polygon[i].Y, polygon[i + 1].X, polygon[i + 1].Y, true))
+				PointF a = polygon[i]; 
+				PointF b = polygon[i + 1];
+				if (EllipseIntersectsWithLine(ellipseCenterX, ellipseCenterY, ellipseWidth, ellipseHeight, a.X, a.Y, b.X, b.Y, true))
 					return true;
 			}
 			if (EllipseIntersectsWithLine(ellipseCenterX, ellipseCenterY, ellipseWidth, ellipseHeight, polygon[0].X, polygon[0].Y, polygon[maxIdx].X, polygon[maxIdx].Y, true))
@@ -3781,10 +3808,8 @@ namespace Dataweb.NShape.Advanced {
 
 			int maxIdx = points.Length - 1;
 			for (int i = 0; i < maxIdx; ++i) {
-				polyPt1.X = points[i].X;
-				polyPt1.Y = points[i].Y;
-				polyPt2.X = points[i + 1].X;
-				polyPt2.Y = points[i + 1].Y;
+				polyPt1 = points[i];
+				polyPt2 = points[i + 1];
 				if (isSegment ?
 					LineSegmentIntersectsWithLineSegment(pt1X, pt1Y, pt2X, pt2Y, polyPt1.X, polyPt1.Y, polyPt2.X, polyPt2.Y) 
 					: LineIntersectsWithLineSegment(pt1X, pt1Y, pt2X, pt2Y, polyPt1.X, polyPt1.Y, polyPt2.X, polyPt2.Y)) {
@@ -3829,19 +3854,16 @@ namespace Dataweb.NShape.Advanced {
 		public static IEnumerable<Point> IntersectPolygonLine(PointF[] points, float pt1X, float pt1Y, float pt2X, float pt2Y, bool isSegment) {
 			if (points == null) throw new ArgumentNullException("points");
 			Point result = Point.Empty;
-			PointF polyPt1 = Point.Empty;
-			PointF polyPt2 = Point.Empty;
 
 			float a, b, c;
 			float aLine, bLine, cLine;
 			CalcLine(pt1X, pt1Y, pt2X, pt2Y, out aLine, out bLine, out cLine);
 
+			PointF polyPt1 = Point.Empty, polyPt2 = Point.Empty;
 			int maxIdx = points.Length - 1;
 			for (int i = 0; i < maxIdx; ++i) {
-				polyPt1.X = points[i].X;
-				polyPt1.Y = points[i].Y;
-				polyPt2.X = points[i + 1].X;
-				polyPt2.Y = points[i + 1].Y;
+				polyPt1 = points[i];
+				polyPt2 = points[i + 1];
 				bool intersection;
 				if (isSegment)
 					intersection = LineIntersectsWithLineSegment(pt1X, pt1Y, pt2X, pt2Y, polyPt1.X, polyPt1.Y, polyPt2.X, polyPt2.Y);
@@ -3857,10 +3879,8 @@ namespace Dataweb.NShape.Advanced {
 				}
 			}
 			if (points[0] != points[maxIdx]) {
-				polyPt1.X = points[0].X;
-				polyPt1.Y = points[0].Y;
-				polyPt2.X = points[maxIdx].X;
-				polyPt2.Y = points[maxIdx].Y;
+				polyPt1 = points[0];
+				polyPt2 = points[maxIdx];
 				bool intersection;
 				if (isSegment)
 					intersection = LineIntersectsWithLineSegment(pt1X, pt1Y, pt2X, pt2Y, polyPt1.X, polyPt1.Y, polyPt2.X, polyPt2.Y);
@@ -5327,16 +5347,21 @@ namespace Dataweb.NShape.Advanced {
 		/// </summary>
 		/// <remarks>The foot is the solution of equation (p - d) . (a - b) = 0</remarks>
 		public static void CalcDroppedPerpendicularFoot(int pX, int pY, int aX, int aY, int bX, int bY, out int fX, out int fY) {
-			int a1, b1, c1;
-			// Calculate line formula parameters for the line a - b.
-			CalcLine(aX, aY, bX, bY, out a1, out b1, out c1);
-			// Calculate perpendicular through p
-			int a2, b2, c2;
-			a2 = aX - bX;
-			b2 = aY - bY;
-			c2 = bX * pX - aX * pX + bY * pY - aY * pY;
-			// Now intersect the two lines
-			IntersectLines(a1, b1, c1, a2, b2, c2, out fX, out fY);
+			if (aX == bX && aY == bY) {
+				fX = aX;
+				fY = aY;
+			} else {
+				int a1, b1, c1;
+				// Calculate line formula parameters for the line a - b.
+				CalcLine(aX, aY, bX, bY, out a1, out b1, out c1);
+				// Calculate perpendicular through p
+				int a2, b2, c2;
+				a2 = aX - bX;
+				b2 = aY - bY;
+				c2 = bX * pX - aX * pX + bY * pY - aY * pY;
+				// Now intersect the two lines
+				IntersectLines(a1, b1, c1, a2, b2, c2, out fX, out fY);
+			}
 		}
 
 
@@ -6221,6 +6246,8 @@ namespace Dataweb.NShape.Advanced {
 		private const int InvalidCoordinateValue = int.MinValue;
 		private const int InvalidSizeValue = int.MinValue;
 		private const double RadiansFactor = 0.017453292519943295769236907684886d;	// = Math.PI / 180
+		private const double EqualityDeltaDouble = 0.000001d;
+		private const float EqualityDeltaFloat = 0.000001f;
 	}
 
 }

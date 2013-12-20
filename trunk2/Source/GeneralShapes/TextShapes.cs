@@ -1,5 +1,5 @@
 ﻿/******************************************************************************
-  Copyright 2009-2012 dataweb GmbH
+  Copyright 2009-2013 dataweb GmbH
   This file is part of the NShape framework.
   NShape is free software: you can redistribute it and/or modify it under the 
   terms of the GNU General Public License as published by the Free Software 
@@ -26,7 +26,6 @@ namespace Dataweb.NShape.GeneralShapes {
 
 		/// <override></override>
 		public override Shape Clone() {
-			//Shape result = new Text(Type, (Template)null);
 			Shape result = new Text(Type, this.Template);
 			result.CopyFrom(this);
 			return result;
@@ -48,7 +47,6 @@ namespace Dataweb.NShape.GeneralShapes {
 
 		/// <override></override>
 		public override Shape Clone() {
-			//Shape result = new Label(Type, (Template)null);
 			Shape result = new Label(Type, this.Template);
 			result.CopyFrom(this);
 			return result;

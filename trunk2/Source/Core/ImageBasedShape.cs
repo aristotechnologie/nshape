@@ -1,5 +1,5 @@
 ﻿/******************************************************************************
-  Copyright 2009-2012 dataweb GmbH
+  Copyright 2009-2013 dataweb GmbH
   This file is part of the NShape framework.
   NShape is free software: you can redistribute it and/or modify it under the 
   terms of the GNU General Public License as published by the Free Software 
@@ -32,6 +32,26 @@ namespace Dataweb.NShape.Advanced {
 	/// Displays a bitmap in the diagram.
 	/// </summary>
 	public class PictureBase : RectangleBase {
+
+		/// <summary>ControlPointId of the top left control point.</summary>
+		public const int TopLeftControlPoint = 1;
+		/// <summary>ControlPointId of the top center control point.</summary>
+		public const int TopCenterControlPoint = 2;
+		/// <summary>ControlPointId of the top right control point.</summary>
+		public const int TopRightControlPoint = 3;
+		/// <summary>ControlPointId of the middle left control point.</summary>
+		public const int MiddleLeftControlPoint = 4;
+		/// <summary>ControlPointId of the middle right control point.</summary>
+		public const int MiddleRightControlPoint = 5;
+		/// <summary>ControlPointId of the bottom left control point.</summary>
+		public const int BottomLeftControlPoint = 6;
+		/// <summary>ControlPointId of the bottom center control point.</summary>
+		public const int BottomCenterControlPoint = 7;
+		/// <summary>ControlPointId of the bottom right control point.</summary>
+		public const int BottomRightControlPoint = 8;
+		/// <summary>ControlPointId of the center control point.</summary>
+		public const int MiddleCenterControlPoint = 9;
+
 
 		#region [Public] Properties
 
@@ -145,7 +165,6 @@ namespace Dataweb.NShape.Advanced {
 
 		/// <override></override>
 		public override Shape Clone() {
-			//Shape result = new PictureBase(Type, (Template)null);
 			Shape result = new PictureBase(Type, this.Template);
 			result.CopyFrom(this);
 			return result;
@@ -183,27 +202,6 @@ namespace Dataweb.NShape.Advanced {
 		/// <override></override>
 		public override ControlPointId HitTest(int x, int y, ControlPointCapabilities controlPointCapability, int range) {
 			return base.HitTest(x, y, controlPointCapability, range);
-		}
-
-
-		/// <override></override>
-		public override bool HasControlPointCapability(ControlPointId controlPointId, ControlPointCapabilities controlPointCapability) {
-			//if (ImageLayout == ImageLayoutMode.Original) {
-			//    if ((controlPointCapability & ControlPointCapabilities.Glue) != 0)
-			//        return false;
-			//    if ((controlPointCapability & ControlPointCapabilities.Connect) != 0 ) {
-			//        return (controlPointId != RotateControlPointId && IsConnectionPointEnabled(controlPointId));
-			//    }
-			//    if ((controlPointCapability & ControlPointCapabilities.Reference) != 0) {
-			//        if (controlPointId == RotateControlPointId || controlPointId == ControlPointId.Reference)
-			//            return true;
-			//    }
-			//    if ((controlPointCapability & ControlPointCapabilities.Rotate) != 0) {
-			//        if (controlPointId == RotateControlPointId)
-			//            return true;
-			//    }
-				return base.HasControlPointCapability(controlPointId, controlPointCapability);
-			//} else return base.HasControlPointCapability(controlPointId, controlPointCapability);
 		}
 
 
@@ -309,7 +307,7 @@ namespace Dataweb.NShape.Advanced {
 
 		/// <override></override>
 		protected override void CalcCaptionBounds(int index, out Rectangle captionBounds) {
-			if (index != 0) throw new IndexOutOfRangeException();
+			if (index != 0) throw new ArgumentOutOfRangeException("index");
 			Size txtSize = Size.Empty;
 			txtSize.Width = Width;
 			txtSize.Height = Height;
@@ -479,8 +477,6 @@ namespace Dataweb.NShape.Advanced {
 		/// <ToBeCompleted></ToBeCompleted>
 		protected const int PropertyIdImageTransparentColor = 14;
 
-		private const int RotateControlPointId = 9;
-
 		private ImageAttributes imageAttribs = null;
 		private TextureBrush imageBrush = null;
 		private Rectangle imageBounds = Geometry.InvalidRectangle;
@@ -508,6 +504,21 @@ namespace Dataweb.NShape.Advanced {
 	/// </summary>
 	/// <remarks>RequiredPermissions set</remarks>
 	public class ImageBasedShape : ShapeBase, IPlanarShape, ICaptionedShape {
+
+		/// <summary>
+		/// Provides constants for the control point id's of the shape.
+		/// </summary>
+		public class ControlPointIds {
+			/// <summary>ControlPointId of the top left control point.</summary>
+			public const int TopLeftControlPoint = 1;
+			/// <summary>ControlPointId of the center control point.</summary>
+			public const int MiddleCenterControlPoint = 2;
+			/// <summary>ControlPointId of the bottom center connection point.</summary>
+			public const int BottomCenterConnectionPoint = 3;
+			/// <summary>ControlPointId of the bottom center control point.</summary>
+			public const int BottomCenterControlPoint = 8;
+		}
+
 
 		/// <ToBeCompleted></ToBeCompleted>
 		protected internal ImageBasedShape(ShapeType shapeType, Template template,
@@ -573,7 +584,6 @@ namespace Dataweb.NShape.Advanced {
 
 		/// <override></override>
 		public override Shape Clone() {
-			//Shape result = new ImageBasedShape(Type, (Template)null, resourceName, resourceAssembly);
 			Shape result = new ImageBasedShape(Type, this.Template, resourceName, resourceAssembly);
 			result.CopyFrom(this);
 			return result;
@@ -643,8 +653,8 @@ namespace Dataweb.NShape.Advanced {
 		public override RelativePosition CalculateRelativePosition(int x, int y) {
 			if (!Geometry.IsValid(x, y)) throw new ArgumentOutOfRangeException("x / y");
 			RelativePosition result = RelativePosition.Empty;
-			result.A = 0;
-			result.B = 0;
+			result.A = (int)Math.Round(((x - X) / (float)this.w) * 1000);
+			result.B = (int)Math.Round(((y - Y) / (float)this.h) * 1000);
 			return result;
 		}
 
@@ -653,8 +663,8 @@ namespace Dataweb.NShape.Advanced {
 		public override Point CalculateAbsolutePosition(RelativePosition relativePosition) {
 			if (relativePosition == RelativePosition.Empty) throw new ArgumentOutOfRangeException("relativePosition");
 			Point result = Point.Empty;
-			result.X = x;
-			result.Y = y;
+			result.X = (int)Math.Round((relativePosition.A / 1000f) * w) + X;
+			result.Y = (int)Math.Round((relativePosition.B / 1000f) * h) + Y;
 			return result;
 		}
 
@@ -752,22 +762,22 @@ namespace Dataweb.NShape.Advanced {
 		public override Point GetControlPointPosition(ControlPointId controlPointId) {
 			Point result = Point.Empty;
 			switch (controlPointId) {
-				case 1:
+				case ControlPointIds.TopLeftControlPoint:
 					// Links oben
 					result.X = x - w / 2;
 					result.Y = y - h / 2;
 					break;
 				case ControlPointId.Reference:
-				case 2:
+				case ControlPointIds.MiddleCenterControlPoint:
 					// Referenzpunkt
 					result.X = x;
 					result.Y = y;
 					break;
-				case 3:
+				case ControlPointIds.BottomCenterConnectionPoint:
 				    result.X = x;
 				    result.Y = y - h / 2 + h - ch;
 				    break;
-				case 8:
+				case ControlPointIds.BottomCenterControlPoint:
 					result.X = x;
 					result.Y = y - h / 2 + h;
 					break;
@@ -783,18 +793,17 @@ namespace Dataweb.NShape.Advanced {
 		public override bool HasControlPointCapability(ControlPointId controlPointId, ControlPointCapabilities controlPointCapability) {
 			bool result;
 			switch (controlPointId) {
-				case 1:
+				case ControlPointIds.TopLeftControlPoint:
+				case ControlPointIds.BottomCenterControlPoint:
 					result = (controlPointCapability & ControlPointCapabilities.Resize) != 0;
 					break;
 				case ControlPointId.Reference:
-				case 2:
-					result = (controlPointCapability & (ControlPointCapabilities.Reference | ControlPointCapabilities.Connect)) != 0;
+				case ControlPointIds.MiddleCenterControlPoint:
+					result = ((controlPointCapability & ControlPointCapabilities.Reference) != 0
+						|| ((controlPointCapability & ControlPointCapabilities.Connect) != 0 && IsConnectionPointEnabled(controlPointId)));
 					break;
-				case 3:
+				case ControlPointIds.BottomCenterConnectionPoint:
 					result = (controlPointCapability & ControlPointCapabilities.Connect) != 0 && IsConnectionPointEnabled(controlPointId);
-					break;
-				case 8:
-					result = (controlPointCapability & ControlPointCapabilities.Resize) != 0;
 					break;
 				default:
 					result = base.HasControlPointCapability(controlPointId, controlPointCapability);
@@ -875,7 +884,7 @@ namespace Dataweb.NShape.Advanced {
 
 		/// <ToBeCompleted></ToBeCompleted>
 		public bool GetCaptionTextBounds(int index, out Point topLeft, out Point topRight, out Point bottomRight, out Point bottomLeft) {
-			if (index != 0) throw new IndexOutOfRangeException("index");
+			if (index != 0) throw new ArgumentOutOfRangeException("index");
 			Point location = Point.Empty;
 			location.Offset(X, Y);
 			Rectangle captionBounds = Rectangle.Empty;
@@ -891,7 +900,7 @@ namespace Dataweb.NShape.Advanced {
 
 		/// <ToBeCompleted></ToBeCompleted>
 		public bool GetCaptionBounds(int index, out Point topLeft, out Point topRight, out Point bottomRight, out Point bottomLeft) {
-			if (index != 0) throw new IndexOutOfRangeException("index");
+			if (index != 0) throw new ArgumentOutOfRangeException("index");
 			Point location = Point.Empty;
 			location.Offset(X, Y);
 			Rectangle captionBounds = Rectangle.Empty;
@@ -906,7 +915,7 @@ namespace Dataweb.NShape.Advanced {
 
 		/// <ToBeCompleted></ToBeCompleted>
 		public Rectangle GetCaptionTextBounds(int index) {
-			if (index != 0) throw new IndexOutOfRangeException("index");
+			if (index != 0) throw new ArgumentOutOfRangeException("index");
 			Rectangle captionBounds = Rectangle.Empty;
 			captionBounds.X = -w / 2;
 			captionBounds.Y = -h / 2 + h - ch;
@@ -1217,7 +1226,6 @@ namespace Dataweb.NShape.Advanced {
 
 		/// <override></override>
 		public override Shape Clone() {
-			//Shape result = new CustomizableMetaFile(Type, (Template)null, resourceName, resourceAssembly);
 			Shape result = new CustomizableMetaFile(Type, this.Template, resourceName, resourceAssembly);
 			result.CopyFrom(this);
 			return result;
@@ -1348,10 +1356,10 @@ namespace Dataweb.NShape.Advanced {
 							// This type of record only appears in WMF and 'classic' EMF files, not in EMF+ files.
 							// Get color of current brush
 							if (!replaceColorFound) {
-								Buffers.SetByte(metafileData, 8, FillStyle.BaseColorStyle.Color.R);
-								Buffers.SetByte(metafileData, 9, FillStyle.BaseColorStyle.Color.G);
-								Buffers.SetByte(metafileData, 10, FillStyle.BaseColorStyle.Color.B);
-								Buffers.SetByte(metafileData, 11, FillStyle.BaseColorStyle.Color.A);
+								metafileData[8] = FillStyle.BaseColorStyle.Color.R;
+								metafileData[9] = FillStyle.BaseColorStyle.Color.G;
+								metafileData[10] = FillStyle.BaseColorStyle.Color.B;
+								metafileData[11] = FillStyle.BaseColorStyle.Color.A;
 								replaceColorFound = true;
 							}
 							break;

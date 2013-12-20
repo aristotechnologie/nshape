@@ -1,5 +1,5 @@
 /******************************************************************************
-  Copyright 2009-2012 dataweb GmbH
+  Copyright 2009-2013 dataweb GmbH
   This file is part of the NShape framework.
   NShape is free software: you can redistribute it and/or modify it under the 
   terms of the GNU General Public License as published by the Free Software 
@@ -59,7 +59,7 @@ namespace Dataweb.NShape.Designer {
 			get { return showGrid; }
 			set {
 				showGrid = value;
-				if (CurrentDisplay != null) CurrentDisplay.ShowGrid = value;
+				if (CurrentDisplay != null) CurrentDisplay.IsGridVisible = value;
 			}
 		}
 
@@ -191,23 +191,23 @@ namespace Dataweb.NShape.Designer {
 					// Grid settings
 					currentDisplay.GridColor = GridColor;
 					currentDisplay.GridSize = GridSize;
-					currentDisplay.ShowGrid = ShowGrid;
+					currentDisplay.IsGridVisible = ShowGrid;
 					// Security Settings
 					currentDisplay.ShowDefaultContextMenu = ShowDefaultContextMenu;
 					currentDisplay.HideDeniedMenuItems = HideDeniedMenuItems;
 					// Rendering settings
 					currentDisplay.HighQualityRendering = HighQuality;
-					currentDisplay.ShowGrid = ShowGrid;
+					currentDisplay.IsGridVisible = ShowGrid;
 					currentDisplay.HighQualityBackground = HighQuality;
 #if DEBUG_UI
-					currentDisplay.ShowCellOccupation = ShowCellOccupation;
-					currentDisplay.ShowInvalidatedAreas = ShowInvalidatedAreas;
+					currentDisplay.IsDebugInfoCellOccupationVisible = ShowCellOccupation;
+					currentDisplay.IsDebugInfoInvalidateVisible = ShowInvalidatedAreas;
 #endif
 					// Apply display's zoom to the UI
 					Zoom = currentDisplay.ZoomLevel;
 
 					if (currentDisplay.Diagram != null) {
-						currentDisplay.CurrentTool = toolSetController.SelectedTool;
+						currentDisplay.ActiveTool = toolSetController.SelectedTool;
 						if (currentDisplay.SelectedShapes.Count > 0)
 							propertyController.SetObjects(0, currentDisplay.SelectedShapes);
 						else propertyController.SetObject(0, currentDisplay.Diagram);
@@ -232,7 +232,7 @@ namespace Dataweb.NShape.Designer {
 			get { return showCellOccupation; }
 			set {
 				showCellOccupation = value;
-				if (CurrentDisplay != null) CurrentDisplay.ShowCellOccupation = value;
+				if (CurrentDisplay != null) CurrentDisplay.IsDebugInfoCellOccupationVisible = value;
 			}
 		}
 
@@ -241,7 +241,7 @@ namespace Dataweb.NShape.Designer {
 			get { return showInvalidatedAreas; }
 			set {
 				showInvalidatedAreas = value;
-				if (CurrentDisplay != null) CurrentDisplay.ShowInvalidatedAreas = value;
+				if (CurrentDisplay != null) CurrentDisplay.IsDebugInfoInvalidateVisible = value;
 			}
 		}
 
@@ -598,10 +598,15 @@ namespace Dataweb.NShape.Designer {
 
 
 
-		private void ReplaceRepository(string projectName, Store repository) {
+		private void ReplaceStore(string projectName, Store store) {
 			UnregisterRepositoryEvents();
 			project.Name = projectName;
-			((CachedRepository)project.Repository).Store = repository;
+			((CachedRepository)project.Repository).Store = store;
+			if (store is XmlStore) {
+				XmlStore xmlStore = (XmlStore)store;
+				xmlStore.BackupFileExtension = XmlStore.DefaultBackupFileExtension;
+				xmlStore.BackupGenerationMode = XmlStore.BackupFileGenerationMode.BakFile;
+			}
 			RegisterRepositoryEvents();
 		}
 
@@ -619,8 +624,8 @@ namespace Dataweb.NShape.Designer {
 		private void CreateRecentProjectsMenuItems() {
 			ClearRecentProjectsMenu();
 			recentProjectsMenuItem.Visible = (recentProjects.Count > 0);
-			for (int i = 0; i < recentProjects.Count; ++i)
-				PrependRecentProjectsMenuItem(recentProjects[i]);
+			foreach (RepositoryInfo recentProject in recentProjects)
+				PrependRecentProjectsMenuItem(recentProject);
 		}
 
 
@@ -649,8 +654,8 @@ namespace Dataweb.NShape.Designer {
 
 		private bool AddToRecentProjects(RepositoryInfo projectInfo) {
 			// Check if the project already exists in the recent projects list
-			for (int i = recentProjects.Count - 1; i >= 0; --i)
-				if (recentProjects[i] == projectInfo) return false;
+			foreach (RepositoryInfo recentProject in recentProjects)
+				if (recentProject == projectInfo) return false;
 			// If it does not, add it and create a new menu item
 			if (recentProjects.Count == recentProjectsItemCount)
 				recentProjects.RemoveAt(0);
@@ -688,7 +693,7 @@ namespace Dataweb.NShape.Designer {
 
 
 		private void CreateProject(string projectName, Store store, bool askUserLoadLibraries) {
-			ReplaceRepository(projectName, store);
+			ReplaceStore(projectName, store);
 			project.Create();
 			projectSaved = false;
 			DisplayDiagrams();
@@ -721,7 +726,7 @@ namespace Dataweb.NShape.Designer {
 			Application.DoEvents();
 			string errorMessage = null;
 			try {
-				ReplaceRepository(projectName, repository);
+				ReplaceStore(projectName, repository);
 				project.Open();
 				DisplayDiagrams();
 				projectSaved = true;
@@ -795,9 +800,10 @@ namespace Dataweb.NShape.Designer {
 						xmlStore.DirectoryName = Path.GetDirectoryName(saveFileDialog.FileName);
 						project.Name = Path.GetFileNameWithoutExtension(saveFileDialog.FileName);
 						Text = string.Format("{0} - {1}", AppTitle, project.Name);
-						// Delete file if it exists, because the user was prompted whether to overwrite it before (SaveFileDialog.CheckPathExists).
-						if (project.Repository.Exists()) project.Repository.Erase();
 					}
+					// Delete file if it exists, because the user was prompted whether to overwrite it before (SaveFileDialog.CheckPathExists).
+					if (project.Repository.Exists()) project.Repository.Erase();
+
 					saveMenuItem.Enabled = true;
 					result = SaveProject();
 				}
@@ -846,8 +852,9 @@ namespace Dataweb.NShape.Designer {
 				projectSaved = false;
 				// Clear all displays and diagramControllers
 				for (int i = displayTabControl.TabPages.Count - 1; i >= 0; --i) {
-					if (displayTabControl.TabPages[i].Controls.Count > 0) {
-						Display display = (Display)displayTabControl.TabPages[i].Controls[0];
+					TabPage tabPage = displayTabControl.TabPages[i];
+					if (tabPage.Controls.Count > 0) {
+						Display display = (Display)tabPage.Controls[0];
 						if (display != null) {
 							UnregisterDisplayEvents(display);
 							display.Clear();
@@ -919,7 +926,7 @@ namespace Dataweb.NShape.Designer {
 				// Copy
 				shapesOnly =
 				shapesAndModels = CurrentDisplay.DiagramSetController.CanCopy(CurrentDisplay.SelectedShapes);
-				cutShapeButton.Enabled = shapesOnly;
+				copyShapeButton.Enabled = shapesOnly;
 				copyAsImageToolStripMenuItem.Enabled = true;
 				copyShapeOnlyMenuItem.Enabled = shapesOnly;
 				copyShapeAndModelMenuItem.Enabled = shapesAndModels;
@@ -949,7 +956,7 @@ namespace Dataweb.NShape.Designer {
 				// Copy
 				shapesOnly =
 				shapesAndModels =
-				cutShapeButton.Enabled =
+				copyShapeButton.Enabled =
 				copyAsImageToolStripMenuItem.Enabled =
 				copyShapeOnlyMenuItem.Enabled =
 				copyShapeAndModelMenuItem.Enabled = false;
@@ -1040,7 +1047,7 @@ namespace Dataweb.NShape.Designer {
 			display.BackColor = Color.DarkGray;
 			display.HighQualityRendering = HighQuality;
 			display.HighQualityBackground = HighQuality;
-			display.ShowGrid = ShowGrid;
+			display.IsGridVisible = ShowGrid;
 			display.GridSize = GridSize;
 			display.SnapToGrid = SnapToGrid;
 			display.SnapDistance = SnapDistance;
@@ -1049,8 +1056,8 @@ namespace Dataweb.NShape.Designer {
 			display.ConnectionPointShape = ConnectionPointShape;
 			display.ZoomLevel = Zoom;
 #if DEBUG_UI
-			display.ShowCellOccupation = ShowCellOccupation;
-			display.ShowInvalidatedAreas = ShowInvalidatedAreas;
+			display.IsDebugInfoCellOccupationVisible = ShowCellOccupation;
+			display.IsDebugInfoInvalidateVisible = ShowInvalidatedAreas;
 #endif
 			display.Dock = DockStyle.Fill;
 			//
@@ -1058,7 +1065,7 @@ namespace Dataweb.NShape.Designer {
 			display.PropertyController = propertyController;
 			display.DiagramSetController = diagramSetController;
 			display.Diagram = diagram;
-			display.CurrentTool = toolSetController.SelectedTool;
+			display.ActiveTool = toolSetController.SelectedTool;
 			display.UserMessage += display_UserMessage;
 			//
 			return display;
@@ -1517,9 +1524,9 @@ namespace Dataweb.NShape.Designer {
 				string[] commandLineArgs = Environment.GetCommandLineArgs();
 				if (commandLineArgs != null) {
 					int cnt = commandLineArgs.Length;
-					for (int i = 0; i < cnt; ++i) {
-						Debug.Print(commandLineArgs[i]);
-						string path = Path.GetFullPath(commandLineArgs[i]);
+					foreach (string arg in commandLineArgs) {
+						Debug.Print(arg);
+						string path = Path.GetFullPath(arg);
 						if (string.IsNullOrEmpty(path)) continue;
 						else {
 							if (path == Path.GetFullPath(Application.ExecutablePath))
@@ -2045,9 +2052,6 @@ namespace Dataweb.NShape.Designer {
 				// Copy image as PNG and EMFPlusDual formats to clipboard
 				CurrentDisplay.CopyImageToClipboard(ImageFileFormat.Png, true);
 				CurrentDisplay.CopyImageToClipboard(ImageFileFormat.EmfPlus, false);
-				// Ensure that both file formats are in the clipboard
-				Debug.Assert(Clipboard.ContainsData(DataFormats.EnhancedMetafile));
-				Debug.Assert(Clipboard.ContainsData(DataFormats.Bitmap));
 			}
 		}
 
@@ -2084,7 +2088,7 @@ namespace Dataweb.NShape.Designer {
 
 		private void selectAllToolStripMenuItem_Click(object sender, EventArgs e) {
 			if (CurrentDisplay != null && CurrentDisplay.Diagram != null)
-				CurrentDisplay.SelectShapes(CurrentDisplay.Diagram.Shapes, false);
+				CurrentDisplay.SelectAll();
 		}
 
 

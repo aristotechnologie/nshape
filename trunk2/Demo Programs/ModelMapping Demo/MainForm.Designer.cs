@@ -1,5 +1,5 @@
 ﻿namespace ModelMapping_Demo {
-	partial class Form1 {
+	partial class MainForm {
 		/// <summary>
 		/// Required designer variable.
 		/// </summary>
@@ -24,7 +24,7 @@
 		/// </summary>
 		private void InitializeComponent() {
 			this.components = new System.ComponentModel.Container();
-			System.ComponentModel.ComponentResourceManager resources = new System.ComponentModel.ComponentResourceManager(typeof(Form1));
+			System.ComponentModel.ComponentResourceManager resources = new System.ComponentModel.ComponentResourceManager(typeof(MainForm));
 			Dataweb.NShape.RoleBasedSecurityManager roleBasedSecurityManager4 = new Dataweb.NShape.RoleBasedSecurityManager();
 			this.display1 = new Dataweb.NShape.WinFormsUI.Display();
 			this.diagramSetController = new Dataweb.NShape.Controllers.DiagramSetController();

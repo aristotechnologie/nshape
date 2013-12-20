@@ -1,5 +1,5 @@
 /******************************************************************************
-  Copyright 2009-2012 dataweb GmbH
+  Copyright 2009-2013 dataweb GmbH
   This file is part of the NShape framework.
   NShape is free software: you can redistribute it and/or modify it under the 
   terms of the GNU General Public License as published by the Free Software 
@@ -362,11 +362,11 @@ namespace Dataweb.NShape.WinFormsUI {
 						listBox.IntegralHeight = false;
 						listBox.Items.Clear();
 
-						FontFamily[] families = FontFamily.Families;
-						int cnt = families.Length;
+						int cnt = FontFamily.Families.Length;
 						for (int i = 0; i < cnt; ++i) {
-							listBox.Items.Add(families[i].Name);
-							if (families[i] == value)
+							FontFamily family = FontFamily.Families[i];
+							listBox.Items.Add(family.Name);
+							if (family == value)
 								listBox.SelectedIndex = listBox.Items.Count - 1;
 						}
 						edSvc.DropDownControl(listBox);
@@ -756,8 +756,8 @@ namespace Dataweb.NShape.WinFormsUI {
 						int cnt = objArr.Length;
 						showItemDefaultStyle = true;
 						showItemOpenEditor = project.SecurityManager.IsGranted(Permission.Designs);
-						for (int i = 0; i < cnt; ++i) {
-							Shape shape = objArr[i] as Shape;
+						foreach (object obj in objArr) {
+							Shape shape = obj as Shape;
 							if (shape == null || shape.Template == null) {
 								showItemDefaultStyle = false;
 								showItemOpenEditor = false;

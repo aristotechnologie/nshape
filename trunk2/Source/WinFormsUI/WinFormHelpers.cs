@@ -1,5 +1,5 @@
 ﻿/******************************************************************************
-  Copyright 2009-2012 dataweb GmbH
+  Copyright 2009-2013 dataweb GmbH
   This file is part of the NShape framework.
   NShape is free software: you can redistribute it and/or modify it under the 
   terms of the GNU General Public License as published by the Free Software 
@@ -209,7 +209,7 @@ namespace Dataweb.NShape.WinFormsUI {
 		public static void CleanUpContextMenu(ContextMenuStrip contextMenuStrip) {
 			if (contextMenuStrip == null) throw new ArgumentNullException("contextMenuStrip");
 			// Do not dispose the items here because the execute method of the attached action will be called later!
-			for (int i = contextMenuStrip.Items.Count-1; i>=0;--i) {
+			for (int i = contextMenuStrip.Items.Count - 1; i >= 0; --i) {
 				if (contextMenuStrip.Items[i].Tag is MenuItemDef)
 					contextMenuStrip.Items.RemoveAt(i);
 			}
@@ -255,7 +255,8 @@ namespace Dataweb.NShape.WinFormsUI {
 				menuItem.DropDownItems.Clear();
 				// Add sub menu items (do not skip any sub items: if parent is granted, subitems are granted too)
 				if (action.SubItems != null) {
-					for (int i = 0; i < action.SubItems.Length; ++i)
+					int cnt = action.SubItems.Length;
+					for (int i = 0; i < cnt; ++i)
 						menuItem.DropDownItems.Add(CreateMenuItemFromAction(action.SubItems[i], project));
 				}
 				return menuItem;

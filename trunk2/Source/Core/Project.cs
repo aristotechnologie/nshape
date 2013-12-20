@@ -1,5 +1,5 @@
 /******************************************************************************
-  Copyright 2009-2012 dataweb GmbH
+  Copyright 2009-2013 dataweb GmbH
   This file is part of the NShape framework.
   NShape is free software: you can redistribute it and/or modify it under the 
   terms of the GNU General Public License as published by the Free Software 
@@ -125,6 +125,17 @@ namespace Dataweb.NShape {
 		}
 
 
+		/// <summary>
+		/// Specifies the name of the project.
+		/// </summary>
+		/// <remarks>The name is used as the repository name as well.</remarks>
+		[Category("NShape")]
+		public string Description {
+			get { return settings.Description; }
+			set { settings.Description  = value; }
+		}
+
+		
 		/// <summary>
 		/// Specifies the directories, where NShape libraries are looked for.
 		/// </summary>
@@ -303,26 +314,50 @@ namespace Dataweb.NShape {
 
 		/// <ToBeCompleted></ToBeCompleted>
 		public bool IsValidLibrary(string assemblyPath) {
+			string msg;
+			return IsValidLibrary(assemblyPath, out msg);
+		}
+
+
+		/// <ToBeCompleted></ToBeCompleted>
+		public bool IsValidLibrary(string assemblyPath, out string reason) {
+			bool result = false;
+			reason = null;
 			try {
 				string fullAssemblyPath = GetFullAssemblyPath(assemblyPath);
 				AssemblyName assemblyName = AssemblyName.GetAssemblyName(assemblyPath);
 				if (assemblyName != null) {
 					Assembly assembly = Assembly.Load(assemblyName.FullName);
-					return (GetInitializerType(assembly) != null);
-				} else return false;
-			} catch (Exception) {
-				return false;
+					result = IsValidLibrary(assembly, out reason);
+				} else
+					reason = "Invalid assembly path.";
+			} catch (Exception exc) {
+				reason = exc.Message;
 			}
+			return result;
 		}
 
 
 		/// <ToBeCompleted></ToBeCompleted>
 		public bool IsValidLibrary(Assembly assembly) {
+			string msg;
+			return IsValidLibrary(assembly, out msg);
+		}
+
+
+		/// <ToBeCompleted></ToBeCompleted>
+		public bool IsValidLibrary(Assembly assembly, out string reason) {
+			bool result = false;
+			reason = null;
 			try {
-				return (GetInitializerType(assembly) != null);
-			} catch (Exception) {
-				return false;
+				if (GetInitializerType(assembly) != null)
+					result = true;
+				else
+					reason = string.Format("Assembly does not contain the {0} class.", NShapeLibraryInitializerClassName);
+			} catch (Exception exc) {
+				reason = exc.Message;
 			}
+			return result;
 		}
 
 
@@ -899,8 +934,8 @@ namespace Dataweb.NShape {
 			bool canRemove = true;
 			// Get and check all corresponding templates if they are referenced by shapes.
 			foreach (Template template in Repository.GetTemplates()) {
-				for (int i = registeredShapeTypes.Count - 1; i >= 0; --i) {
-					if (IsShapeOfType(template.Shape, registeredShapeTypes[i])) {
+				foreach (ShapeType registeredShapeType in registeredShapeTypes) {
+					if (IsShapeOfType(template.Shape, registeredShapeType)) {
 						if (Repository.IsTemplateInUse(template))
 							canRemove = false;
 						else registeredShapeTypeTemplates.Add(template);
@@ -921,17 +956,17 @@ namespace Dataweb.NShape {
 
 			if (canRemove) {
 				// Remove (unused) Templates
-				for (int i = registeredShapeTypeTemplates.Count - 1; i >= 0; --i)
-					Repository.DeleteAll(registeredShapeTypeTemplates[i]);
+				foreach (Template registeredShapeTypeTemplate in registeredShapeTypeTemplates)
+					Repository.DeleteAll(registeredShapeTypeTemplate);
 				// Remove Shape EntityTypes
-				for (int i = registeredShapeTypes.Count - 1; i >= 0; --i) {
-					shapeTypes.Remove(registeredShapeTypes[i]);
-					repository.RemoveEntityType(registeredShapeTypes[i].FullName);
+				foreach (ShapeType registeredShapeType in registeredShapeTypes) {
+					shapeTypes.Remove(registeredShapeType);
+					repository.RemoveEntityType(registeredShapeType.FullName);
 				}
 				// Remove Model EntityTypes
-				for (int i = registeredModelObjectTypes.Count - 1; i >= 0; --i) {
-					modelObjectTypes.Remove(registeredModelObjectTypes[i]);
-					repository.RemoveEntityType(registeredModelObjectTypes[i].FullName);
+				foreach (ModelObjectType registeredModelObjectType in registeredModelObjectTypes) {
+					modelObjectTypes.Remove(registeredModelObjectType);
+					repository.RemoveEntityType(registeredModelObjectType.FullName);
 				}
 				libraries.Remove(library);
 
@@ -1140,9 +1175,9 @@ namespace Dataweb.NShape {
 
 		// Supported repository versions of the Core library
 		internal const int FirstSupportedSaveVersion = 1;
-		internal const int LastSupportedSaveVersion = 4;
+		internal const int LastSupportedSaveVersion = 5;
 		internal const int FirstSupportedLoadVersion = 1;
-		internal const int LastSupportedLoadVersion = 4;
+		internal const int LastSupportedLoadVersion = 5;
 
 		/// <ToBeCompleted></ToBeCompleted>
 		public const string NShapeLibraryInitializerClassName = "NShapeLibraryInitializer";
@@ -1162,10 +1197,10 @@ namespace Dataweb.NShape {
 		private ISecurityManager security = new RoleBasedSecurityManager();
 
 		// -- Properties --
-		private string name;
+		private string name = null;
 		private bool autoCreateTemplates = true;
 		private bool autoLoadLibraries = false;
-		private ProjectSettings settings;
+		private ProjectSettings settings = null;
 		private Model model = null;
 		private IList<string> librarySearchPaths = new List<string>();
 

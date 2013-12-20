@@ -1,5 +1,5 @@
 /******************************************************************************
-  Copyright 2009-2012 dataweb GmbH
+  Copyright 2009-2013 dataweb GmbH
   This file is part of the NShape framework.
   NShape is free software: you can redistribute it and/or modify it under the 
   terms of the GNU General Public License as published by the Free Software 
@@ -415,6 +415,7 @@ namespace Dataweb.NShape {
 			if (oldModelObject == null) throw new ArgumentNullException("oldModelObject");
 			if (newModelObject == null) throw new ArgumentNullException("newModelObject");
 			foreach (KeyValuePair<ControlPointId, TerminalId> item in connectionPointMappings) {
+				if (item.Value == TerminalId.Invalid) continue;
 				string oldTerminalName = oldModelObject.Type.GetTerminalName(item.Value);
 				string newTerminalName = newModelObject.Type.GetTerminalName(item.Value);
 				if (oldTerminalName != newTerminalName)

@@ -1,5 +1,5 @@
 /******************************************************************************
-  Copyright 2009-2012 dataweb GmbH
+  Copyright 2009-2013 dataweb GmbH
   This file is part of the NShape framework.
   NShape is free software: you can redistribute it and/or modify it under the 
   terms of the GNU General Public License as published by the Free Software 
@@ -118,8 +118,8 @@ namespace Dataweb.NShape.WinFormsUI {
 
 		private void SetButtonStates() {
 			designsComboBox.Enabled = false;
-			for (int i = 0; i < designsComboBox.Items.Count; ++i) {
-				if (designsComboBox.Items[i] != Project.Design) {
+			foreach (object obj in designsComboBox.Items) {
+				if (obj != Project.Design) {
 					designsComboBox.Enabled = true;
 					break;
 				}

@@ -1,5 +1,5 @@
 ﻿/******************************************************************************
-  Copyright 2009-2012 dataweb GmbH
+  Copyright 2009-2013 dataweb GmbH
   This file is part of the NShape framework.
   NShape is free software: you can redistribute it and/or modify it under the 
   terms of the GNU General Public License as published by the Free Software 
@@ -150,12 +150,17 @@ namespace Dataweb.NShape {
 		bool ContainsAny(IEnumerable<Shape> shapes);
 
 		/// <summary>
+		/// Retrieves the z-order of the given shape.
+		/// </summary>
+		/// <param name="shape"></param>
+		int GetZOrder(Shape shape);
+	
+		/// <summary>
 		/// Assigns a z-order to a shape.
 		/// </summary>
 		/// <param name="shape"></param>
 		/// <param name="zOrder"></param>
-		/// <remarks>This method modifies the shape. The caller must make sure that the
-		/// repository is informed about the modification.</remarks>
+		/// <remarks>This method modifies the shape. The caller must ensure that the repository is informed about the modification.</remarks>
 		void SetZOrder(Shape shape, int zOrder);
 	}
 
@@ -442,6 +447,13 @@ namespace Dataweb.NShape {
 
 
 		/// <override></override>
+		public int GetZOrder(Shape shape) {
+			if (shape == null) throw new ArgumentNullException("shape");
+			return shape.ZOrder;
+		}
+
+
+		/// <override></override>
 		public void SetZOrder(Shape shape, int zOrder) {
 			if (shape == null) throw new ArgumentNullException("shape");
 			Remove(shape);
@@ -607,14 +619,13 @@ namespace Dataweb.NShape {
 
 			// Restore connections between copied shapes
 			foreach (KeyValuePair<Shape, List<ShapeConnectionInfo>> item in connections) {
-				int cnt = item.Value.Count;
-				for (int i = 0; i < cnt; ++i) {
+				foreach (ShapeConnectionInfo connInfo in item.Value) {
 					// If the passive shape was among the copied shapes, restore the connection
-					if (!shapeDict.ContainsKey(item.Value[i].OtherShape)) continue;
+					if (!shapeDict.ContainsKey(connInfo.OtherShape)) continue;
 					Shape activeShape = shapeDict[item.Key];
-					Shape passiveShape = shapeDict[item.Value[i].OtherShape];
+					Shape passiveShape = shapeDict[connInfo.OtherShape];
 					Debug.Assert(result.Contains(passiveShape));
-					activeShape.Connect(item.Value[i].OwnPointId, passiveShape, item.Value[i].OtherPointId);
+					activeShape.Connect(connInfo.OwnPointId, passiveShape, connInfo.OtherPointId);
 				}
 			}
 			shapeDict.Clear();
@@ -760,8 +771,8 @@ namespace Dataweb.NShape {
 			else shapeList = new List<Shape>(shapes);
 
 			// Remove shapes
-			for (int i = shapeList.Count - 1; i >= 0; --i) {
-				if (!RemoveCore(shapeList[i]))
+			foreach (Shape shape in shapeList) {
+				if (!RemoveCore(shape))
 					result = false;
 			}
 			return result;
@@ -802,8 +813,8 @@ namespace Dataweb.NShape {
 
 		internal void SetDisplayService(IDisplayService displayService) {
 			// set displayService for all shapes - the shapes set their children's DisplayService themselfs
-			for (int i = shapes.Count - 1; i >= 0; --i)
-				shapes[i].DisplayService = displayService;
+			foreach (Shape shape in shapes)
+				shape.DisplayService = displayService;
 		}
 
 
@@ -876,6 +887,8 @@ namespace Dataweb.NShape {
 				for (p.Y = minCellY; p.Y <= maxCellY; ++p.Y) {
 					int listLength = 0;
 					foreach (Shape s in shapeMap[CalcMapHashCode(p)]) {
+						s.Invalidate();
+
 						int left = p.X * Diagram.CellSize;
 						int top = p.Y * Diagram.CellSize;
 						if (s.IntersectsWith(left, top, Diagram.CellSize, Diagram.CellSize)
@@ -893,7 +906,7 @@ namespace Dataweb.NShape {
 					}
 				}
 			}
-			int avgListLength = (int)Math.Round(itemCnt / (float)listCnt, MidpointRounding.AwayFromZero);
+			int avgListLength = (listCnt > 0) ? (int)Math.Round(itemCnt / (float)listCnt, MidpointRounding.AwayFromZero) : 0;
 		}
 
 
@@ -1067,15 +1080,18 @@ namespace Dataweb.NShape {
 						return searchIdx;
 					if (shapes[searchIdx].ZOrder == zOrder) {
 						// If there are shapes with identical zOrders, search them all
-						int i;
-						i = searchIdx;
-						while (i < ePos && shapes[i].ZOrder == zOrder)
-							if (shapes[i] == shape) return i;
+						int i = searchIdx;
+						while (i < ePos && shapes[i].ZOrder == zOrder) {
+							if (shapes[i] == shape)
+								return i;
 							else ++i;
+						}
 						i = searchIdx;
-						while (i >= sPos && shapes[i].ZOrder == zOrder)
-							if (shapes[i] == shape) return i;
+						while (i >= sPos && shapes[i].ZOrder == zOrder) {
+							if (shapes[i] == shape)
+								return i;
 							else --i;
+						}
 					} else if (shapes[searchIdx].ZOrder > zOrder)
 						sPos = searchIdx;
 					else ePos = searchIdx;
@@ -1085,10 +1101,12 @@ namespace Dataweb.NShape {
 				int foundIndex = sPos;
 				if (shapes[foundIndex].ZOrder < zOrder) {
 					for (int i = foundIndex; i < shapeCnt; ++i)
-						if (shapes[i] == shape) return i;
+						if (shapes[i] == shape) 
+							return i;
 				} else {
 					for (int i = foundIndex; i >= 0; --i)
-						if (shapes[i] == shape) return i;
+						if (shapes[i] == shape) 
+							return i;
 				}
 				Debug.Fail("The shape was not found although it exists in the list!");
 			}

@@ -1,5 +1,5 @@
 /******************************************************************************
-  Copyright 2009-2012 dataweb GmbH
+  Copyright 2009-2013 dataweb GmbH
   This file is part of the NShape framework.
   NShape is free software: you can redistribute it and/or modify it under the 
   terms of the GNU General Public License as published by the Free Software 
@@ -39,50 +39,7 @@ namespace Dataweb.NShape {
 			Dispose();
 		}
 
-
-		#region IDisposable Members
-
-		/// <override></override>
-		public abstract void Dispose();
-
-		#endregion
-
-
-		#region IEquatable<T> Members
-
-		/// <override></override>
-		public bool Equals(Shape other) {
-			return other == this;
-		}
-		
-		#endregion
-
-
-		#region Standard Methods
-
-		/// <override></override>
-		public override string ToString() {
-			return Type.FullName;
-		}
-
-
-		/// <summary>
-		/// Creates a clone, which owns clones of all composite objects in the shape.
-		/// </summary>
-		/// <remarks>
-		/// If the cloned shape has a template, the clone (and its child shapes) reference the template(s) of the source shape(s), too.
-		/// If the cloned shape has no template, the child shapes are cloned without templates, too.
-		/// </remarks>
-		public abstract Shape Clone();
-
-		/// <summary>
-		/// Copies as many properties as possible from the source shape.
-		/// </summary>
-		/// <remarks>
-		/// The Template will not be copied. 
-		/// If the template should be copied, create the new shape instance with the source's template or clone it.
-		/// </remarks>
-		public abstract void CopyFrom(Shape source);
+		#region [Public] Shape Interface Properties
 
 		/// <summary>
 		/// Indicates the type of the shape. Is always defined.
@@ -112,6 +69,11 @@ namespace Dataweb.NShape {
 		[Browsable(false)]
 		public abstract object Tag { get; set; }
 
+		/// <summary>Stores user defined string data.</summary>
+		[Browsable(false)]
+		[RequiredPermission(Permission.Data)]
+		public abstract String Data { get; set; }
+
 		/// <summary>
 		/// Indicates the diagram this shape is part of.
 		/// </summary>
@@ -129,6 +91,93 @@ namespace Dataweb.NShape {
 		/// </summary>
 		[Browsable(false)]
 		public abstract IShapeCollection Children { get; }
+
+		/// <summary>
+		/// Indicates the name of the security domain this shape belongs to.
+		/// </summary>
+		[Category("General")]
+		[Description("Modify the security domain of the shape.")]
+		[RequiredPermission(Permission.Security)]
+		public abstract char SecurityDomainName { get; set; }
+
+		/// <summary>
+		/// Gets or sets the x-coordinate of the shape's location.
+		/// </summary>
+		[Category("Layout")]
+		[Description("Horizontal position of the shape's reference point.")]
+		[RequiredPermission(Permission.Layout)]
+		public abstract int X { get; set; }
+
+		/// <summary>
+		/// Gets or sets the y-coordinate of the shape's location.
+		/// </summary>
+		[Category("Layout")]
+		[Description("Vertical position of the shape's reference point.")]
+		[RequiredPermission(Permission.Layout)]
+		public abstract int Y { get; set; }
+
+		#endregion
+
+
+		#region [Public] Shape Interface Methods
+
+		/// <summary>
+		/// Creates a clone, which owns clones of all composite objects in the shape.
+		/// </summary>
+		/// <remarks>
+		/// If the cloned shape has a template, the clone (and its child shapes) reference the template(s) of the source shape(s), too.
+		/// If the cloned shape has no template, the child shapes are cloned without templates, too.
+		/// </remarks>
+		public abstract Shape Clone();
+
+		/// <summary>
+		/// Copies as many properties as possible from the source shape.
+		/// </summary>
+		/// <remarks>
+		/// The Template will not be copied. 
+		/// If the template should be copied, create the new shape instance with the source's template or clone it.
+		/// </remarks>
+		public abstract void CopyFrom(Shape source);
+
+		/// <summary>
+		/// Sets private preview styles for all used styles.
+		/// </summary>
+		/// <param name="styleSet"></param>
+		public abstract void MakePreview(IStyleSet styleSet);
+
+		/// <summary>Checks whether the given style is used by the shape.</summary>
+		/// <returns>True if the given style is used by the shape.</returns>
+		public abstract bool HasStyle(IStyle style);
+
+		/// <summary>
+		/// Returns a collection of <see cref="T:Dataweb.NShape.Advanced.MenuItemDef" /> for constructing context menus etc.
+		/// </summary>
+		/// <param name="x">The X coordinate of the point clicked by the user.</param>
+		/// <param name="y">The Y coordinate of the point clicked by the user.</param>
+		/// <param name="range">The radius of the grips representing the shape's control points.</param>
+		public abstract IEnumerable<MenuItemDef> GetMenuItemDefs(int x, int y, int range);
+
+		/// <summary>
+		/// Calculates the diagram cells occupied by this shape.
+		/// </summary>
+		/// <param name="cellSize">Size of cell in vertical and horizontal direction.</param>
+		/// <returns>Cell indices starting with (0, 0) from the upper left corner.</returns>
+		/// <remarks>Method is called by large shape collections to create a kind of spatial index for the 
+		/// shapes for faster searching. Implementation must not rely on display service. Duplicate cells
+		/// are allowed but should be minimized for performance reasons.</remarks>
+		protected internal abstract IEnumerable<Point> CalculateCells(int cellSize);
+
+		#endregion
+
+
+		#region [Public] Shape Interface Methods: Connecting Shapes
+
+		/// <summary>
+		/// Returns true if the control point of this shape can be connected to the other shapes' control point.
+		/// If the passive control point (the one the glue point is attached to) is equal to ControlPointId.Reference, 
+		/// the shape-to-shape connection is meant.
+		/// </summary>
+		public abstract bool CanConnect(ControlPointId ownPointId, Shape otherShape, ControlPointId otherPointId);
 
 		/// <summary>
 		/// Called upon the active shape of the connection, e.g. by a tool or a command.
@@ -165,6 +214,11 @@ namespace Dataweb.NShape {
 		/// <param name="otherShape">Other shape. Null if any other shape is taken into account.</param>
 		/// <returns>The ControlPointId of the connected shape.</returns>
 		public abstract ControlPointId IsConnected(ControlPointId ownPointId, Shape otherShape);
+
+		#endregion
+
+
+		#region [Public] Shape Interface Methods: Hit Testing
 
 		/// <summary>
 		/// Determines whether the given rectangular region intersects with the shape.
@@ -203,32 +257,10 @@ namespace Dataweb.NShape {
 		/// <returns>The axis-aligned bounding rectangle.</returns>
 		public abstract Rectangle GetBoundingRectangle(bool tight);
 
-		/// <summary>
-		/// Calculates the diagram cells occupied by this shape.
-		/// </summary>
-		/// <param name="cellSize">Size of cell in vertical and horizontal direction.</param>
-		/// <returns>Cell indices starting with (0, 0) from the upper left corner.</returns>
-		/// <remarks>Method is called by large shape collections to create a kind of spatial index for the 
-		/// shapes for faster searching. Implementation must not rely on display service. Duplicate cells
-		/// are allowed but should be minimized for performance reasons.</remarks>
-		protected internal abstract IEnumerable<Point> CalculateCells(int cellSize);
+		#endregion
 
-		/// <summary>
-		/// Gets or sets the x-coordinate of the shape's location.
-		/// </summary>
-		[Category("Layout")]
-		[Description("Horizontal position of the shape's reference point.")]
-		[RequiredPermission(Permission.Layout)]
-		public abstract int X { get; set; }
 
-		/// <summary>
-		/// Gets or sets the y-coordinate of the shape's location.
-		/// </summary>
-		[Category("Layout")]
-		[Description("Vertical position of the shape's reference point.")]
-		[RequiredPermission(Permission.Layout)]
-		public abstract int Y { get; set; }
-
+		#region [Public] Shape Interface Methods: Moving, Resizing, Manipulating Control Points
 		/// <summary>
 		/// Fits the shape in the given rectangle.
 		/// </summary>
@@ -339,36 +371,10 @@ namespace Dataweb.NShape {
 		/// </summary>
 		public abstract Point CalculateConnectionFoot(int fromX, int fromY);
 
-		/// <summary>
-		/// Sets private preview styles for all used styles.
-		/// </summary>
-		/// <param name="styleSet"></param>
-		public abstract void MakePreview(IStyleSet styleSet);
-
-		/// <summary>Checks whether the given style is used by the shape.</summary>
-		/// <returns>True if the given style is used by the shape.</returns>
-		public abstract bool HasStyle(IStyle style);
-
-		/// <summary>
-		/// Indicates the name of the security domain this shape belongs to.
-		/// </summary>
-		[Category("General")]
-		[Description("Modify the security domain of the shape.")]
-		[RequiredPermission(Permission.Security)]
-		public abstract char SecurityDomainName { get; set; }
-
-		/// <summary>
-		/// Returns a collection of <see cref="T:Dataweb.NShape.Advanced.MenuItemDef" /> for constructing context menus etc.
-		/// </summary>
-		/// <param name="x">The X coordinate of the point clicked by the user.</param>
-		/// <param name="y">The Y coordinate of the point clicked by the user.</param>
-		/// <param name="range">The radius of the grips representing the shape's control points.</param>
-		public abstract IEnumerable<MenuItemDef> GetMenuItemDefs(int x, int y, int range);
-
 		#endregion
 
 
-		#region Rendering Elements
+		#region [Public] Shape Interface Methods: Rendering Elements
 
 		/// <summary>
 		/// Defines the display service, which every displayed shape must have.
@@ -415,7 +421,115 @@ namespace Dataweb.NShape {
 		#endregion
 
 
-		#region IEntity Members (protected implementation)
+		#region [Public / Protected] Shape Interface Methods for exclusive Framework Use
+
+		/// <summary>
+		/// Informs the shape about a changed property in its model object.
+		/// </summary>
+		/// <param name="propertyId"></param>
+		public abstract void NotifyModelChanged(int propertyId);
+
+		/// <summary>
+		/// Called upon the active shape of the connection, e.g. by a CurrentTool or a command.
+		/// The active shape calculates the new position of it's GluePoint and moves it to the new position
+		/// </summary>
+		/// <param name="gluePointId">Id of the GluePoint connected to the moved ControlPoint</param>
+		/// <param name="connectedShape">The passive shape of the connection</param>
+		/// <param name="connectedPointId">Id of the ControlPoint that has moved</param>
+		public abstract void FollowConnectionPointWithGluePoint(ControlPointId gluePointId, Shape connectedShape, ControlPointId connectedPointId);
+
+		/// <ToBeCompleted></ToBeCompleted>
+		[Category("Layout")]
+		[Description("Specifies the layers the shape is part of.")]
+		[RequiredPermission(Permission.Layout)]
+		[Editor("Dataweb.NShape.WinFormsUI.LayerUITypeEditor, Dataweb.NShape.WinFormsUI", typeof(System.Drawing.Design.UITypeEditor))]
+		public LayerIds Layers {
+			get { return layers; }
+			internal set { layers = value; }
+		}
+
+		/// <summary>
+		/// Notifies the shape that a style has changed. The shape decides what to do.
+		/// </summary>
+		/// <param name="style">
+		/// The changed style. 
+		/// if this argument is null/Nothing, it will be treated as if every style of the shape has changed.
+		/// </param>
+		/// <returns>True if the given style is used by the shape</returns>
+		protected internal abstract bool NotifyStyleChanged(IStyle style);
+
+		/// <summary>
+		/// Called upon the passive shape of the connection by the active shape. 
+		/// If ownPointId is equal to ControlPointId.Reference, the global connection is meant.
+		/// </summary>
+		protected internal abstract void AttachGluePointToConnectionPoint(ControlPointId ownPointId, Shape otherShape, ControlPointId gluePointId);
+
+
+		/// <summary>
+		/// Called upon the passive shape of the connection by the active shape. 
+		/// If ownPointId is equal to ControlPointId.Reference, the global connection is meant.
+		/// </summary>
+		protected internal abstract void DetachGluePointFromConnectionPoint(ControlPointId ownPointId, Shape otherShape, ControlPointId gluePointId);
+
+
+		/// <summary>
+		/// Specifies a general purpose property for internal use.
+		/// </summary>
+		[Browsable(false)]
+		protected internal abstract object InternalTag { get; set; }
+
+
+		/// <ToBeCompleted></ToBeCompleted>
+		protected const int PropertyIdLineStyle = 1;
+
+		// For performance reasons the diagram stores the z-order and the layers
+		// of its shapes within the shapes themselves.
+		// These members must not be accessed but by the diagram.
+		[Browsable(false)]
+		[RequiredPermission(Permission.Layout)]
+		internal int ZOrder {
+			get { return zOrder; }
+			set { zOrder = value; }
+		}
+
+		private int zOrder = 0;
+		private LayerIds layers = LayerIds.None;
+		
+		// ToDo: Make protected?
+		internal ShapeAggregation children;
+
+		#endregion
+
+
+		#region [Public] Standard Methods
+
+		/// <override></override>
+		public override string ToString() {
+			return Type.FullName;
+		}
+
+		#endregion
+
+
+		#region [Public] IDisposable Members
+
+		/// <override></override>
+		public abstract void Dispose();
+
+		#endregion
+
+
+		#region [Public] IEquatable<T> Members
+
+		/// <override></override>
+		public bool Equals(Shape other) {
+			return other == this;
+		}
+		
+		#endregion
+
+
+		#region [Protected] IEntity Members (Abstract)
 
 		/// <ToBeCompleted></ToBeCompleted>
 		protected abstract object IdCore { get; }
@@ -441,7 +555,7 @@ namespace Dataweb.NShape {
 		#endregion
 
 
-		#region IEntity Members (explicit implementation)
+		#region [Explicit] IEntity Members (Explicit Implementation)
 
 		object IEntity.Id { get { return IdCore; } }
 
@@ -484,80 +598,6 @@ namespace Dataweb.NShape {
 		/// <param name="styleSet"></param>
 		/// <remarks>Only used by the ShapeType class.</remarks>
 		protected internal abstract void InitializeToDefault(IStyleSet styleSet);
-
-
-		#region Methods for exclusive Framework Use
-
-		/// <summary>
-		/// Informs the shape about a changed property in its model object.
-		/// </summary>
-		/// <param name="propertyId"></param>
-		public abstract void NotifyModelChanged(int propertyId);
-
-		/// <summary>
-		/// Called upon the active shape of the connection, e.g. by a CurrentTool or a command.
-		/// The active shape calculates the new position of it's GluePoint and moves it to the new position
-		/// </summary>
-		/// <param name="gluePointId">Id of the GluePoint connected to the moved ControlPoint</param>
-		/// <param name="connectedShape">The passive shape of the connection</param>
-		/// <param name="connectedPointId">Id of the ControlPoint that has moved</param>
-		public abstract void FollowConnectionPointWithGluePoint(ControlPointId gluePointId, Shape connectedShape, ControlPointId connectedPointId);
-
-		// For performance reasons the diagram stores the z-order and the layers
-		// of its shapes within the shapes themselves.
-		// These members must not be accessed but by the diagram.
-		[Browsable(false)]
-		[RequiredPermission(Permission.Layout)]
-		internal int ZOrder {
-			get { return zOrder; }
-			set { zOrder = value; }
-		}
-
-		/// <ToBeCompleted></ToBeCompleted>
-		[Category("Layout")]
-		[Description("Specifies the layers the shape is part of.")]
-		[RequiredPermission(Permission.Layout)]
-		[Editor("Dataweb.NShape.WinFormsUI.LayerUITypeEditor, Dataweb.NShape.WinFormsUI", typeof(System.Drawing.Design.UITypeEditor))]
-		public LayerIds Layers {
-			get { return layers; }
-			internal set { layers = value; }
-		}
-
-		/// <summary>
-		/// Notifies the shape that a style has changed. The shape decides what to do.
-		/// </summary>
-		/// <param name="style">The changed style</param>
-		/// <returns>True if the given style is used by the shape</returns>
-		protected internal abstract bool NotifyStyleChanged(IStyle style);
-
-		/// <summary>
-		/// Called upon the passive shape of the connection by the active shape. 
-		/// If ownPointId is equal to ControlPointId.Reference, the global connection is meant.
-		/// </summary>
-		protected internal abstract void AttachGluePointToConnectionPoint(ControlPointId ownPointId, Shape otherShape, ControlPointId gluePointId);
-
-
-		/// <summary>
-		/// Called upon the passive shape of the connection by the active shape. 
-		/// If ownPointId is equal to ControlPointId.Reference, the global connection is meant.
-		/// </summary>
-		protected internal abstract void DetachGluePointFromConnectionPoint(ControlPointId ownPointId, Shape otherShape, ControlPointId gluePointId);
-
-
-		/// <summary>
-		/// Specifies a general purpose property for internal use.
-		/// </summary>
-		[Browsable(false)]
-		protected internal abstract object InternalTag { get; set; }
-
-
-		/// <ToBeCompleted></ToBeCompleted>
-		protected const int PropertyIdLineStyle = 1;
-
-		private int zOrder = 0;
-		private LayerIds layers = LayerIds.None;
-
-		#endregion
 
 	}
 
@@ -784,7 +824,7 @@ namespace Dataweb.NShape {
 		/// <summary>A control point that can be moved but does not affect the outline of a shape.</summary>
 		Movable = 0x20,
 		/// <summary>All capabilities</summary>
-		All = 0xFF
+		All = int.MaxValue
 	}
 
 
@@ -1102,6 +1142,12 @@ namespace Dataweb.NShape {
 		/// <override></override>
 		public override int GetHashCode() {
 			return (A.GetHashCode() ^ B.GetHashCode() ^ C.GetHashCode());
+		}
+
+
+		/// <override></override>
+		public override string ToString() {
+			return string.Format("A={0},B={1}C={2}", A, B, C);
 		}
 
 		

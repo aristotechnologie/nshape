@@ -1,5 +1,5 @@
 ﻿/******************************************************************************
-  Copyright 2009-2012 dataweb GmbH
+  Copyright 2009-2013 dataweb GmbH
   This file is part of the NShape framework.
   NShape is free software: you can redistribute it and/or modify it under the 
   terms of the GNU General Public License as published by the Free Software 
@@ -341,7 +341,7 @@ namespace NShapeTest {
 				IEnumerator<Shape> shapesA = diagramA.Shapes.BottomUp.GetEnumerator();
 				IEnumerator<Shape> shapesB = diagramB.Shapes.BottomUp.GetEnumerator();
 				Assert.AreEqual<int>(diagramA.Shapes.Count, diagramB.Shapes.Count);
-				for (int i = diagramA.Shapes.Count; i >= 0; --i) {
+				for (int i = diagramA.Shapes.Count - 1; i >= 0; --i) {
 					Compare(shapesA.Current, shapesB.Current, version);
 					Assert.AreEqual(shapesA.MoveNext(), shapesB.MoveNext());
 				}

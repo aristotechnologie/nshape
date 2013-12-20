@@ -1,5 +1,5 @@
 ﻿/******************************************************************************
-  Copyright 2009-2012 dataweb GmbH
+  Copyright 2009-2013 dataweb GmbH
   This file is part of the NShape framework.
   NShape is free software: you can redistribute it and/or modify it under the 
   terms of the GNU General Public License as published by the Free Software 
@@ -332,7 +332,7 @@ namespace Dataweb.NShape.WinFormsUI {
 
 			// This is a workaround for the disappearing subitems
 			// ToDo: Find out why subitems keep disappearing and find a better solution than this
-			for (int i = 0; i < e.Item.SubItems.Count; ++i)
+			for (int i = e.Item.SubItems.Count - 1; i >= 0; --i)
 				OnDrawSubItem(new DrawListViewSubItemEventArgs(e.Graphics, e.Bounds, e.Item, e.Item.SubItems[i], e.ItemIndex, i, null, e.State));
 
 			if (SelectedItems.Count > 0 && e.Item.Selected)
@@ -376,8 +376,8 @@ namespace Dataweb.NShape.WinFormsUI {
 		#region [Private] Methods
 
 		private IEnumerable<Layer> GetSelectedLayers() {
-			for (int i = 0; i < SelectedItems.Count; ++i)
-				yield return ((LayerInfo)SelectedItems[i].Tag).layer;
+			foreach (ListViewItem item in SelectedItems)
+				yield return ((LayerInfo)item.Tag).layer;
 		}
 
 
@@ -414,9 +414,9 @@ namespace Dataweb.NShape.WinFormsUI {
 
 		private ListViewItem FindItem(Layer layer) {
 			ListViewItem result = null;
-			for (int i = 0; i < Items.Count; ++i) {
-				if (layer == ((LayerInfo)Items[i].Tag).layer) {
-					result = Items[i];
+			foreach (ListViewItem item in Items) {
+				if (layer == ((LayerInfo)item.Tag).layer) {
+					result = item;
 					break;
 				}
 			}

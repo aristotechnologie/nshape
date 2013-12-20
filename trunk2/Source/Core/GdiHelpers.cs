@@ -1,5 +1,5 @@
 ﻿/******************************************************************************
-  Copyright 2009-2012 dataweb GmbH
+  Copyright 2009-2013 dataweb GmbH
   This file is part of the NShape framework.
   NShape is free software: you can redistribute it and/or modify it under the 
   terms of the GNU General Public License as published by the Free Software 
@@ -513,6 +513,8 @@ namespace Dataweb.NShape.Advanced {
 					}
 					break;
 				case ImageLayoutMode.Original:
+					gfx.DrawImageUnscaled(image, Point.Empty);
+					break;
 				case ImageLayoutMode.Center:
 					if (image.Width > dstBounds.Width || image.Height > dstBounds.Height) {
 						srcWidth = destinationBounds.Width = Math.Min(image.Width, dstBounds.Width);

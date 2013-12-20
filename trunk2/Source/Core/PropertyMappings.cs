@@ -1,5 +1,5 @@
 ﻿/******************************************************************************
-  Copyright 2009-2012 dataweb GmbH
+  Copyright 2009-2013 dataweb GmbH
   This file is part of the NShape framework.
   NShape is free software: you can redistribute it and/or modify it under the 
   terms of the GNU General Public License as published by the Free Software 
@@ -23,7 +23,7 @@ namespace Dataweb.NShape.Advanced {
 	/// Indicates that a property can be used for model-to-shape property mappings.
 	/// </summary>
 	[AttributeUsage(AttributeTargets.Property, Inherited = true)]
-	public class PropertyMappingIdAttribute : Attribute {
+	public sealed class PropertyMappingIdAttribute : Attribute {
 
 		/// <summary>
 		/// Initializes a new instance of <see cref="T:Dataweb.NShape.Advanced.PropertyMappingIdAttribute" />.

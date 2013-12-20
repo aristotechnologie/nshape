@@ -1,5 +1,5 @@
 /******************************************************************************
-  Copyright 2009-2012 dataweb GmbH
+  Copyright 2009-2013 dataweb GmbH
   This file is part of the NShape framework.
   NShape is free software: you can redistribute it and/or modify it under the 
   terms of the GNU General Public License as published by the Free Software 
@@ -1927,14 +1927,15 @@ namespace Dataweb.NShape.Advanced {
 			result = result.Replace('>', '_');
 			// We replace Camel casing with underscores
 			stringBuilder.Length = 0;
-			for (int i = 0; i < result.Length; ++i) {
-				if (char.IsUpper(result[i])) {
+			foreach (char c in result) {
+				if (char.IsUpper(c)) {
 					// Avoid multiple subsequent underscores
-					if (i > 0 && stringBuilder.Length > 0 && stringBuilder[stringBuilder.Length - 1] != '_')
+					if (stringBuilder.Length > 0 && stringBuilder[stringBuilder.Length - 1] != '_')
 						stringBuilder.Append('_');
-					stringBuilder.Append(char.ToLowerInvariant(result[i]));
-				} else stringBuilder.Append(result[i]);
+					stringBuilder.Append(char.ToLowerInvariant(c));
+				} else stringBuilder.Append(c);
 			}
+
 			// We use namespace prefixes for the library names
 			// Not yet, must use prefix plus name in order to do that
 			// result = result.ReplaceRange('.', ':');

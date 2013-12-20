@@ -1,5 +1,5 @@
 ﻿/******************************************************************************
-  Copyright 2009-2012 dataweb GmbH
+  Copyright 2009-2013 dataweb GmbH
   This file is part of the NShape framework.
   NShape is free software: you can redistribute it and/or modify it under the 
   terms of the GNU General Public License as published by the Free Software 
@@ -133,10 +133,9 @@ namespace Dataweb.NShape.Advanced {
 		
 		public Layer FindLayer(string name) {
 			if (name == null) throw new ArgumentNullException("name");
-			int cnt = layers.Count;
-			for (int i = 0; i < cnt; ++i) {
-				if (layers[i] != null && string.Compare(layers[i].Name, name, StringComparison.InvariantCultureIgnoreCase) == 0)
-					return layers[i];
+			foreach (Layer layer in layers) {
+				if (layer != null && string.Compare(layer.Name, name, StringComparison.InvariantCultureIgnoreCase) == 0)
+					return layer;
 			}
 			return null;
 		}
@@ -180,7 +179,8 @@ namespace Dataweb.NShape.Advanced {
 			if (item.Id == LayerIds.None) {
 				// LayerId is not set: 
 				// Insert layer at the next free slot and assign the corresponding LayerId.
-				for (int i = 0; i < layers.Count; ++i) {
+				int cnt = layers.Count;
+				for (int i = 0; i < cnt; ++i) {
 					if (layers[i] == null) {
 						item.Id = (LayerIds)Math.Pow(2, i);
 						layers[i] = item;
@@ -200,7 +200,7 @@ namespace Dataweb.NShape.Advanced {
 		}
 
 		public void Clear() {
-			for (int i = 0; i < layers.Count; ++i)
+			for (int i = layers.Count - 1; i >= 0; --i)
 				layers[i] = null;
 			layerCount = 0;
 		}

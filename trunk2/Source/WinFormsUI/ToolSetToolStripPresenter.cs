@@ -1,5 +1,5 @@
 ﻿/******************************************************************************
-  Copyright 2009-2012 dataweb GmbH
+  Copyright 2009-2013 dataweb GmbH
   This file is part of the NShape framework.
   NShape is free software: you can redistribute it and/or modify it under the 
   terms of the GNU General Public License as published by the Free Software 
@@ -79,9 +79,9 @@ namespace Dataweb.NShape.WinFormsUI {
 
 
 		private ToolStripItem FindItem(Tool tool) {
-			for (int i = Items.Count - 1; i >= 0; --i) {
-				if (Items[i].Tag == tool)
-					return Items[i];
+			foreach (ToolStripItem item in Items) {
+				if (item.Tag == tool)
+					return item;
 			}
 			return null;
 		}

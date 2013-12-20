@@ -1,5 +1,5 @@
 /******************************************************************************
-  Copyright 2009-2012 dataweb GmbH
+  Copyright 2009-2013 dataweb GmbH
   This file is part of the NShape framework.
   NShape is free software: you can redistribute it and/or modify it under the 
   terms of the GNU General Public License as published by the Free Software 
@@ -284,16 +284,16 @@ namespace Dataweb.NShape.Advanced {
 				if (descriptionAttr != null) result.Add(descriptionAttr);
 				if (requiredPermissionAttr != null) result.Add(requiredPermissionAttr);
 				// Copy all other attributes
-				for (int i = 0; i < cnt; ++i) {
+				foreach (Attribute attribute in descriptor.Attributes) {
 					// Skip stored/modified attributes
-					if (descriptor.Attributes[i] is BrowsableAttribute) continue;
-					else if (descriptor.Attributes[i] is ReadOnlyAttribute) continue;
-					else if (descriptor.Attributes[i] is DescriptionAttribute) continue;
-					else if (descriptor.Attributes[i] is EditorAttribute) {
+					if (attribute is BrowsableAttribute) continue;
+					else if (attribute is ReadOnlyAttribute) continue;
+					else if (attribute is DescriptionAttribute) continue;
+					else if (attribute is EditorAttribute) {
 						if (readOnlyAttr != null && readOnlyAttr.IsReadOnly)
 							continue;
 					}
-					result.Add(descriptor.Attributes[i]);
+					result.Add(attribute);
 				}
 				return result.ToArray();
 			} catch (Exception) {

@@ -1,5 +1,5 @@
 ﻿/******************************************************************************
-  Copyright 2009-2012 dataweb GmbH
+  Copyright 2009-2013 dataweb GmbH
   This file is part of the NShape framework.
   NShape is free software: you can redistribute it and/or modify it under the 
   terms of the GNU General Public License as published by the Free Software 
@@ -208,12 +208,6 @@ namespace Dataweb.NShape.Advanced {
 		}
 
 
-		/// <override></override>
-		public override bool HasControlPointCapability(ControlPointId controlPointId, ControlPointCapabilities controlPointCapability) {
-			return base.HasControlPointCapability(controlPointId, controlPointCapability);
-		}
-
-
 		/// <summary>
 		/// Determines if the given point is inside the shape or near a control point having one of the given control point capabilities.
 		/// </summary>
@@ -257,20 +251,6 @@ namespace Dataweb.NShape.Advanced {
 		public override Point CalcNormalVector(Point point) {
 			Point result = Geometry.InvalidPoint;
 			int range = (int)Math.Ceiling(LineStyle.LineWidth / 2f) + 1;
-			//for (int i = VertexCount - 1; i > 0; --i) {
-			//    if (Geometry.LineContainsPoint(vertices[i].X, vertices[i].Y, vertices[i - 1].X, vertices[i - 1].Y, true, point.X, point.Y, range)) {
-			//        float lineAngle = Geometry.RadiansToDegrees(Geometry.Angle(vertices[i - 1], vertices[i]));
-			//        int x = point.X + 100;
-			//        int y = point.Y;
-			//        Geometry.RotatePoint(point.X, point.Y, lineAngle + 90, ref x, ref y);
-			//        result.X = x;
-			//        result.Y = y;
-			//        return result;
-			//    }
-			//}
-			//if (!Geometry.IsValid(result)) throw new NShapeException("The given Point is not part of the line shape.");
-			//return result;
-
 			foreach (LineSegment segment in GetLineSegments()) {
 				Point posA = segment.VertexA.GetPosition();
 				Point posB = segment.VertexB.GetPosition();
@@ -590,7 +570,7 @@ namespace Dataweb.NShape.Advanced {
 			// Find position where to insert the new point
 			int pointIndex = GetControlPointIndex(beforePointId);
 			if (pointIndex < 0 || pointIndex > ControlPointCount)
-				throw new IndexOutOfRangeException();
+				throw new ArgumentOutOfRangeException("beforePointId");
 
 			InsertControlPoint(pointIndex, new VertexControlPoint(newVertexId, x, y));
 
@@ -695,9 +675,30 @@ namespace Dataweb.NShape.Advanced {
 		protected override bool MovePointByCore(ControlPointId pointId, int deltaX, int deltaY, ResizeModifiers modifiers) {
 			if (deltaX == 0 && deltaY == 0) return true;
 
-			Rectangle boundsBefore = Rectangle.Empty;
-			if ((modifiers & ResizeModifiers.MaintainAspect) == ResizeModifiers.MaintainAspect)
-				boundsBefore = GetBoundingRectangle(true);
+			// Buffer for resize maintainence of vertex points
+			const float factor = 10000;
+			RelativePosition[] relPositions = null;
+			if ((modifiers & ResizeModifiers.MaintainAspect) == ResizeModifiers.MaintainAspect) {
+				relPositions = new RelativePosition[VertexCount-2];
+				Point firstVertexPos = GetControlPointPosition(ControlPointId.FirstVertex);
+				Point lastVertexPos = GetControlPointPosition(ControlPointId.LastVertex);
+				float fullDistance = Math.Max(0.0001f, Geometry.DistancePointPoint(firstVertexPos, lastVertexPos));
+				
+				int i = -1;
+				foreach (ControlPointId id in GetControlPointIds(ControlPointCapabilities.Resize)) {
+					if (IsFirstVertex(id) || IsLastVertex(id)) continue;
+					++i;
+					// Although we use the RelativePosition struct here, the contents of the buffer is different 
+					// from the contents filled in by the CalculateRelativePosition method.
+					relPositions[i].A = id;
+					// Calculate distance from FirstVertex relative to the distance of LastVertex from FirstVertex
+					Point ptPos = GetControlPointPosition(id);
+					float dist = Geometry.DistancePointPoint(firstVertexPos, ptPos);
+					relPositions[i].B = (int)Math.Round((dist / fullDistance) * factor);
+					// Calculate angle between FirstVertex|Lastvertex and the control point
+					relPositions[i].C = Geometry.RadiansToTenthsOfDegree(Geometry.Angle(firstVertexPos, lastVertexPos, ptPos));
+				}
+			}
 
 			int idx = GetControlPointIndex(pointId);
 			LineControlPoint ctrlPoint = GetControlPoint(idx);
@@ -706,19 +707,27 @@ namespace Dataweb.NShape.Advanced {
 			// Scale line if MaintainAspect flag is set and start- or endpoint was moved
 			if ((modifiers & ResizeModifiers.MaintainAspect) == ResizeModifiers.MaintainAspect
 				&& (IsFirstVertex(pointId) || IsLastVertex(pointId))) {
-				// ToDo: Improve maintaining aspect of polylines
-				if (deltaX != 0 || deltaY != 0) {
-					int dx = (int)Math.Round(deltaX / (float)(VertexCount - 1));
-					int dy = (int)Math.Round(deltaY / (float)(VertexCount - 1));
-					// The first and the last points are glue points, so move only the points between
-					foreach (LineSegment segment in GetLineSegments()) {
-						if (!IsFirstVertex(segment.VertexA.Id) && !IsLastVertex(segment.VertexA.Id))
-							segment.VertexA.Offset(dx, dy);
-						if (!IsFirstVertex(segment.VertexB.Id) && !IsLastVertex(segment.VertexB.Id))
-							segment.VertexB.Offset(dx, dy);
-					}
-					// After moving the vertices between the first and the last vertex, 
-					// we have to maintain the glue point positions again
+				// New approach for better aspect maintainence
+				Point firstVertexPos = GetControlPointPosition(ControlPointId.FirstVertex);
+				Point lastVertexPos = GetControlPointPosition(ControlPointId.LastVertex);
+				float fullDistance = Geometry.DistancePointPoint(firstVertexPos, lastVertexPos);
+
+				for (int i = relPositions.Length - 1; i >= 0; --i) {
+					ControlPointId id = (ControlPointId)relPositions[i].A;
+					// Restore relative position on the direct line between FirstVertex and LastVertex
+					float relDist = relPositions[i].B / factor;
+					Point ptPos = Geometry.VectorLinearInterpolation(firstVertexPos, lastVertexPos, relDist);
+					// Rotate to the original angle afterwards
+					float angleDeg = Geometry.TenthsOfDegreeToDegrees(relPositions[i].C);
+					ptPos = Geometry.RotatePoint(firstVertexPos, angleDeg, ptPos);
+
+					int ptIdx = GetControlPointIndex(id);
+					LineControlPoint ctrlPt = GetControlPoint(ptIdx);
+					ctrlPt.SetPosition(ptPos.X, ptPos.Y);
+				}
+				// After moving the vertices between the first and the last vertex, 
+				// we have to maintain the glue point positions again
+				if (fullDistance > 1) {
 					MaintainGluePointPosition(ControlPointId.LastVertex, GetPreviousVertexId(ControlPointId.LastVertex));
 					MaintainGluePointPosition(ControlPointId.FirstVertex, GetNextVertexId(ControlPointId.FirstVertex));
 				}

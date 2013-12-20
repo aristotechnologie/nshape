@@ -1,5 +1,5 @@
 ﻿/******************************************************************************
-  Copyright 2009-2012 dataweb GmbH
+  Copyright 2009-2013 dataweb GmbH
   This file is part of the NShape framework.
   NShape is free software: you can redistribute it and/or modify it under the 
   terms of the GNU General Public License as published by the Free Software 
@@ -379,13 +379,13 @@ namespace Dataweb.NShape.Advanced {
 			if (VertexCount < MaxVertexCount) {
 				int pointIndex = GetControlPointIndex(beforePointId);
 				if (pointIndex < 0 || pointIndex > ControlPointCount)
-					throw new IndexOutOfRangeException();
+					throw new ArgumentOutOfRangeException("beforePointId");
 				// Insert Radius Point
 				InsertControlPoint(pointIndex, ctrlPoint);
 			} else {
 				int pointIndex = GetControlPointIndex(GetPreviousVertexId(beforePointId));
 				if (pointIndex < 0 || pointIndex > VertexCount || pointIndex > MaxVertexCount)
-					throw new IndexOutOfRangeException();
+					throw new ArgumentOutOfRangeException("beforePointId");
 				// replace Radius Point
 				SetControlPoint(pointIndex, ctrlPoint);
 			}
@@ -1095,53 +1095,6 @@ namespace Dataweb.NShape.Advanced {
 			base.InsertControlPoint(index, controlPoint);
 		}
 
-
-		//protected override int CalcRelativeConnectionPointPosition(int x, int y) {
-		//    int result = int.MinValue;
-
-		//    float range = (int)Math.Ceiling(LineStyle.LineWidth / 2f);
-		//    float ptRelPos = 0;
-		//    float lineLength = 0;
-		//    int maxPtIdx = VertexCount - 1;
-		//    for (int i = 0; i < maxPtIdx; ++i) {
-		//        if (Geometry.LineContainsPoint(vertices[i].X, vertices[i].X, vertices[i + 1].X, vertices[i + 1].Y, true, x, y, range)) {
-		//            float ptDist = Geometry.DistancePointPoint(vertices[i].X, vertices[i].Y, x, y);
-		//            ptRelPos = lineLength + ptDist;
-		//        }
-		//        lineLength += Geometry.DistancePointPoint(vertices[i], vertices[i + 1]);
-		//    }
-		//    result = (int)Math.Round((lineLength / ptRelPos) * 1000);
-		//    return result;
-		//}
-
-
-		//protected override Point CalcAbsoluteConnectionPointPosition(LineControlPoint connectionPointDef) {
-		//    Point result = Geometry.InvalidPoint;
-		//    // Calculate line's length
-		//    float lineLength = 0;
-		//    int maxPtIdx = VertexCount - 1;
-		//    for (int i = 0; i < maxPtIdx; ++i)
-		//        lineLength += Geometry.DistancePointPoint(vertices[i], vertices[i + 1]);
-		//    // Calculate absolute Position from relative position
-		//    float relPos = lineLength * (connectionPointDef.Position / 1000f);
-		//    for (int i = 0; i < maxPtIdx; ++i) {
-		//        float segmentLength = Geometry.DistancePointPoint(vertices[i], vertices[i + 1]);
-		//        if (segmentLength < relPos)
-		//            relPos -= segmentLength;
-		//        else {
-		//            float t = segmentLength / relPos;
-		//            result = Geometry.VectorLinearInterpolation(vertices[i], vertices[i + 1], t);
-		//            break;
-		//        }
-		//    }
-		//    // Validate result
-		//    if (!Geometry.IsValid(result)) {
-		//        Debug.Fail("Failed to calculate a valid ConntectionPoint position! Using fallback value.");
-		//        result.X = X; result.Y = Y;
-		//    }
-		//    return result;
-		//}
-
 		#endregion
 
 
@@ -1186,7 +1139,7 @@ namespace Dataweb.NShape.Advanced {
 						}
 					}
 					return GetControlPointPosition(radiusPointId);
-				} else throw new IndexOutOfRangeException();
+				} else throw new ArgumentOutOfRangeException("VertexCount");
 			}
 		}
 

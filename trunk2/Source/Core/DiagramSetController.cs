@@ -1,5 +1,5 @@
 ﻿/******************************************************************************
-  Copyright 2009-2012 dataweb GmbH
+  Copyright 2009-2013 dataweb GmbH
   This file is part of the NShape framework.
   NShape is free software: you can redistribute it and/or modify it under the 
   terms of the GNU General Public License as published by the Free Software 
@@ -113,8 +113,8 @@ namespace Dataweb.NShape.Controllers {
 		[Browsable(false)]
 		public IEnumerable<Diagram> Diagrams {
 			get {
-				for (int i = 0; i < diagramControllers.Count; ++i)
-					yield return diagramControllers[i].Diagram;
+				foreach (DiagramController diagramController in diagramControllers)
+					yield return diagramController.Diagram;
 			}
 		}
 
@@ -200,15 +200,27 @@ namespace Dataweb.NShape.Controllers {
 		}
 
 
-		/// <ToBeCompleted></ToBeCompleted>
+		/// <summary>
+		/// Inserts the given shape in the given diagram and adds it to the given layers.
+		/// </summary>
+		/// <remarks>
+		/// The ZOrder of the shape will not be changed! 
+		/// If the shape does not have a defined ZOrder, set it after inserting the shape by calling diagram.Shapes.SetZorder().
+		/// </remarks>
 		public void InsertShape(Diagram diagram, Shape shape, LayerIds activeLayers, bool withModelObjects) {
 			if (diagram == null) throw new ArgumentNullException("diagram");
 			if (shape == null) throw new ArgumentNullException("shape");
 			InsertShapes(diagram, SingleInstanceEnumerator<Shape>.Create(shape), activeLayers, withModelObjects);
 		}
 
-		
-		/// <ToBeCompleted></ToBeCompleted>
+
+		/// <summary>
+		/// Inserts the given shapes in the given diagram and adds them to the given layers.
+		/// </summary>
+		/// <remarks>
+		/// The ZOrder of the shapes will not be changed! 
+		/// If the shapes do not have a defined ZOrder (e.g. after creation), set it after inserting by calling diagram.Shapes.SetZorder().
+		/// </remarks>
 		public void InsertShapes(Diagram diagram, IEnumerable<Shape> shapes, LayerIds activeLayers, bool withModelObjects) {
 			if (diagram == null) throw new ArgumentNullException("diagram");
 			if (shapes == null) throw new ArgumentNullException("shapes");
@@ -289,6 +301,7 @@ namespace Dataweb.NShape.Controllers {
 		public void Cut(Diagram source, IEnumerable<Shape> shapes, bool withModelObjects, Point startPos) {
 			if (source == null) throw new ArgumentNullException("source");
 			if (shapes == null) throw new ArgumentNullException("shapes");
+			if (project == null) throw new InvalidOperationException("Property Project not set!");
 			Dictionary<Shape, IModelObject> cutModelObjects = null;
 
 			editBuffer.Clear();
@@ -323,8 +336,10 @@ namespace Dataweb.NShape.Controllers {
 			project.ExecuteCommand(cmd);
 
 			// Restore deleted model objects so they are available for pasting (one or more times)
-			foreach (KeyValuePair<Shape, IModelObject> item in cutModelObjects)
-				item.Key.ModelObject = item.Value;
+			if (withModelObjects && cutModelObjects != null) {
+				foreach (KeyValuePair<Shape, IModelObject> item in cutModelObjects)
+					item.Key.ModelObject = item.Value;
+			}
 		}
 
 
@@ -358,11 +373,11 @@ namespace Dataweb.NShape.Controllers {
 				// Check if there are connections to restore
 				if (editBuffer.connections.Count > 0) {
 					// Restore connections of cut shapes at first paste action.
-					for (int i = editBuffer.connections.Count - 1; i >= 0; --i) {
-						editBuffer.connections[i].ConnectorShape.Connect(
-							editBuffer.connections[i].GluePointId,
-							editBuffer.connections[i].TargetShape,
-							editBuffer.connections[i].TargetPointId);
+					foreach (ShapeConnection connInfo in editBuffer.connections) {
+						connInfo.ConnectorShape.Connect(
+							connInfo.GluePointId,
+							connInfo.TargetShape,
+							connInfo.TargetPointId);
 					}
 					// After the paste action, the (then connected) shapes are cloned 
 					// with their connections, so we can empty the buffer here.

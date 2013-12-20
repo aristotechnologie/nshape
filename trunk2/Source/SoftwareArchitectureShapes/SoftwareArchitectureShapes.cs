@@ -1,5 +1,5 @@
 /******************************************************************************
-  Copyright 2009-2012 dataweb GmbH
+  Copyright 2009-2013 dataweb GmbH
   This file is part of the NShape framework.
   NShape is free software: you can redistribute it and/or modify it under the 
   terms of the GNU General Public License as published by the Free Software 
@@ -240,7 +240,6 @@ namespace Dataweb.NShape.SoftwareArchitectureShapes {
 
 		/// <override></override>
 		public override Shape Clone() {
-			//Shape result = new EntitySymbol(Type, (Template)null);
 			Shape result = new EntitySymbol(Type, this.Template);
 			result.CopyFrom(this);
 			return result;
@@ -266,7 +265,7 @@ namespace Dataweb.NShape.SoftwareArchitectureShapes {
 		}
 
 
-		#region IEntity
+		#region IEntity Implementation
 
 		/// <override></override>
 		protected override void SaveFieldsCore(IRepositoryWriter writer, int version) {
@@ -337,7 +336,7 @@ namespace Dataweb.NShape.SoftwareArchitectureShapes {
 		#endregion
 
 
-		#region ICaptionedShape
+		#region ICaptionedShape Implementation
 
 		/// <override></override>
 		public override int CaptionCount { get { return base.CaptionCount + columnCaptions.Count; } }
@@ -468,7 +467,8 @@ namespace Dataweb.NShape.SoftwareArchitectureShapes {
 		#endregion
 
 
-		#region Properties
+		#region [Public] Properties
+
 		[Category("Appearance")]
 		[Description("Defines the appearence of the shape's interior.\nUse the template editor to modify all shapes of a template.\nUse the design editor to modify and create styles.")]
 		[PropertyMappingId(PropertyIdColumnBackgroundColorStyle)]
@@ -540,9 +540,10 @@ namespace Dataweb.NShape.SoftwareArchitectureShapes {
 				}
 				// Replace existing and add new columns
 				for (int i = 0; i < valueCnt; ++i) {
-					if (i < columnNames.Length)
-						columnNames[i] = value[i];
-					else AddColumn(value[i]);
+					if (i < columnNames.Length) {
+						columnCaptions[i].Text = 
+							columnNames[i] = value[i];
+					} else AddColumn(value[i]);
 				}
 
 				InvalidateDrawCache();
@@ -576,14 +577,12 @@ namespace Dataweb.NShape.SoftwareArchitectureShapes {
 
 
 		public void RemoveColumn(string columnName) {
-			int idx = -1;
-			for (int i = 0; i < columnCaptions.Count; ++i) {
+			for (int i = columnCaptions.Count - 1; i >= 0; --i) {
 				if (columnName.Equals(columnCaptions[i].Text, StringComparison.InvariantCulture)) {
-					idx = i;
+					RemoveColumnAt(i);
 					break;
 				}
 			}
-			RemoveColumnAt(idx);
 			InvalidateDrawCache();
 			Invalidate();
 		}
@@ -591,15 +590,15 @@ namespace Dataweb.NShape.SoftwareArchitectureShapes {
 
 		public void RemoveColumnAt(int index) {
 			if (index < 0 || index > columnCaptions.Count)
-				throw new IndexOutOfRangeException();
-
-			ControlPointId id;
-			id = GetControlPointId(base.ControlPointCount + (2 * index));
-			foreach (ShapeConnectionInfo sci in GetConnectionInfos(id, null))
-				DetachGluePointFromConnectionPoint(id, sci.OtherShape, sci.OtherPointId);
-			id = GetControlPointId(base.ControlPointCount + (2 * index) + 1);
-			foreach (ShapeConnectionInfo sci in GetConnectionInfos(id, null))
-				DetachGluePointFromConnectionPoint(id, sci.OtherShape, sci.OtherPointId);
+				throw new ArgumentOutOfRangeException("index");
+			// Check whether connection points are not connected
+			const String stillConnectedMsg = "Cannot remove connection point {0}: Other shapes are still connected to this point.";
+			ControlPointId leftCtrlPtId = GetControlPointId(base.ControlPointCount + (2 * index));
+			if (IsConnected(leftCtrlPtId, null) != ControlPointId.None)
+				throw new NShapeException(stillConnectedMsg, leftCtrlPtId);
+			ControlPointId rightCtrlPtId = GetControlPointId(base.ControlPointCount + (2 * index) + 1);
+			if (IsConnected(rightCtrlPtId, null) != ControlPointId.None)
+				throw new NShapeException(stillConnectedMsg, rightCtrlPtId);
 
 			// Remove caption
 			columnCaptions.RemoveAt(index);
@@ -609,6 +608,7 @@ namespace Dataweb.NShape.SoftwareArchitectureShapes {
 			if (index < columnNames.Length - 1)
 				Array.Copy(columnNames, index + 1, columnNames, index, columnNames.Length - index - 1);
 			Array.Resize(ref columnNames, columnCaptions.Count);
+			
 			InvalidateDrawCache();
 			Invalidate();
 		}
@@ -726,23 +726,24 @@ namespace Dataweb.NShape.SoftwareArchitectureShapes {
 		public override bool HasControlPointCapability(ControlPointId controlPointId, ControlPointCapabilities controlPointCapability) {
 			if (controlPointId <= base.ControlPointCount) {
 				switch (controlPointId) {
-					case TopLeftControlPoint:
-					case TopRightControlPoint:
-					case MiddleLeftControlPoint:
-					case MiddleRightControlPoint:
-					case BottomLeftControlPoint:
-					case BottomRightControlPoint:
+					case ControlPointIds.TopLeftControlPoint:
+					case ControlPointIds.TopRightControlPoint:
+					case ControlPointIds.MiddleLeftControlPoint:
+					case ControlPointIds.MiddleRightControlPoint:
+					case ControlPointIds.BottomLeftControlPoint:
+					case ControlPointIds.BottomRightControlPoint:
 						return (controlPointCapability & ControlPointCapabilities.Resize) != 0;
-					case TopCenterControlPoint:
-					case BottomCenterControlPoint:
-						return ((controlPointCapability & ControlPointCapabilities.Resize) != 0 || (controlPointCapability & ControlPointCapabilities.Connect) != 0);
-					case MiddleCenterControlPoint:
-						return (controlPointCapability & ControlPointCapabilities.Rotate) != 0;
+					case ControlPointIds.TopCenterControlPoint:
+					case ControlPointIds.BottomCenterControlPoint:
+						return ((controlPointCapability & ControlPointCapabilities.Resize) != 0
+							|| ((controlPointCapability & ControlPointCapabilities.Connect) != 0 && IsConnectionPointEnabled(controlPointId)));
+					case ControlPointIds.MiddleCenterControlPoint:
+						return ((controlPointCapability & ControlPointCapabilities.Rotate) != 0
+							|| (controlPointCapability & ControlPointCapabilities.Reference) != 0);
 					default:
 						return base.HasControlPointCapability(controlPointId, controlPointCapability);
 				}
-			}
-			else
+			} else
 				return (controlPointCapability & ControlPointCapabilities.Connect) != 0;
 		}
 
@@ -765,8 +766,9 @@ namespace Dataweb.NShape.SoftwareArchitectureShapes {
 				// draw column names
 				int top = (int)Math.Round(Y - (Height / 2f));
 				int bottom = (int)Math.Round(Y + (Height / 2f));
-				if (columnCaptions.Count > 0) {
-					for (int i = 0; i < columnCaptions.Count; ++i) {
+				int captionCnt = columnCaptions.Count;
+				if (captionCnt > 0) {
+					for (int i = 0; i < captionCnt; ++i) {
 						// draw all captions that fit into the text area. 
 						if (top + headerHeight + (i * columnHeight) + columnHeight <= bottom - cornerRadius) {
 							// If there are private styles for a single caption, use these
@@ -873,8 +875,8 @@ namespace Dataweb.NShape.SoftwareArchitectureShapes {
 			Matrix.TransformPoints(upperScrollArrow);
 			Matrix.TransformPoints(lowerScrollArrow);
 			// transform Column paths
-			for (int i = 0; i < columnCaptions.Count; ++i)
-				columnCaptions[i].TransformPath(Matrix);
+			foreach (Caption caption in columnCaptions)
+				caption.TransformPath(Matrix);
 		}
 
 
@@ -943,12 +945,14 @@ namespace Dataweb.NShape.SoftwareArchitectureShapes {
 					columnFrame[3].Y = bottom - cornerRadius;
 
 					Rectangle bounds = Rectangle.Empty;
-					if (columnCaptions.Count > 0) {
+					int captionCnt = columnCaptions.Count;
+					if (captionCnt > 0) {
 						int colX, colY, colWidth, colHeight;
 						colX = left + cornerRadius;
 						colWidth = Width - cornerRadius - cornerRadius;
 						colHeight = columnHeight;
-						for (int i = 0; i < columnCaptions.Count; ++i) {
+						
+						for (int i = 0; i < captionCnt; ++i) {
 							// calc ColumnName text path
 							colY = top + headerHeight + (i * columnHeight);
 							// check if the column text is inside the column area
@@ -1064,17 +1068,6 @@ namespace Dataweb.NShape.SoftwareArchitectureShapes {
 		protected const int PropertyIdColumnCharacterStyle = 10;
 		protected const int PropertyIdColumnParagraphStyle = 11;
 
-		// ControlPoint Id Constants
-		private const int TopLeftControlPoint = 1;
-		private const int TopCenterControlPoint = 2;
-		private const int TopRightControlPoint = 3;
-		private const int MiddleLeftControlPoint = 4;
-		private const int MiddleRightControlPoint = 5;
-		private const int BottomLeftControlPoint = 6;
-		private const int BottomCenterControlPoint = 7;
-		private const int BottomRightControlPoint = 8;
-		private const int MiddleCenterControlPoint = 9;
-
 		private const string attrNameColumns = "TableColumns";
 		private const string attrNameColumn = "Column";
 		private static string[] columnAttrNames = new string[] { "ColumnIndex", "ColumnName" };
@@ -1100,157 +1093,73 @@ namespace Dataweb.NShape.SoftwareArchitectureShapes {
 	}
 
 
-	public class AnnotationSymbol : RectangleBase {
-
-		/// <override></override>
-		protected override void InitializeToDefault(IStyleSet styleSet) {
-			base.InitializeToDefault(styleSet);
-			Width = 120;
-			Height = 80;
-			FillStyle = styleSet.FillStyles.Yellow;
+	public class ClassSymbol : EntitySymbol {
+		
+		protected internal ClassSymbol(ShapeType shapeType, Template template)
+			: base(shapeType, template) {
 		}
 
 
 		/// <override></override>
 		public override Shape Clone() {
-			//Shape result = new AnnotationSymbol(Type, (Template)null);
-			Shape result = new AnnotationSymbol(Type, this.Template);
+			Shape result = new ClassSymbol(Type, this.Template);
 			result.CopyFrom(this);
 			return result;
 		}
 
 
 		/// <override></override>
-		public override bool HasControlPointCapability(ControlPointId controlPointId, ControlPointCapabilities controlPointCapability) {
-			switch (controlPointId) {
-				case TopLeftControlPoint:
-				case TopCenterControlPoint:
-				case TopRightControlPoint:
-				case MiddleLeftControlPoint:
-				case MiddleRightControlPoint:
-				case BottomLeftControlPoint:
-				case BottomCenterControlPoint:
-				case BottomRightControlPoint:
-					return (controlPointCapability & ControlPointCapabilities.Resize) != 0;
-				case MiddleCenterControlPoint:
-				case ControlPointId.Reference:
-					return ((controlPointCapability & ControlPointCapabilities.Rotate) != 0 
-						|| (controlPointCapability & ControlPointCapabilities.Reference) != 0
-						|| ((controlPointCapability & ControlPointCapabilities.Connect) != 0
-							&& IsConnectionPointEnabled(controlPointId)));
-				default:
-					return false;
-			}
+		public override IEnumerable<MenuItemDef> GetMenuItemDefs(int mouseX, int mouseY, int range) {
+			return base.GetMenuItemDefs(mouseX, mouseY, range);
 		}
 
 
 		/// <override></override>
-		public override Point CalculateConnectionFoot(int startX, int startY) {
-			Point result = Point.Empty;
-			result.Offset(X, Y);
-
-			// Calculate shape
-			CalculateShapePoints();
-			Matrix.Reset();
-			Matrix.Translate(X, Y);
-			Matrix.RotateAt(Geometry.TenthsOfDegreeToDegrees(Angle), Center);
-			Matrix.TransformPoints(shapePoints);
-
-			float currDist, dist = float.MaxValue;
-			foreach (Point p in Geometry.IntersectPolygonLine(shapePoints, startX, startY, X, Y, true)) {
-				currDist = Geometry.DistancePointPoint(p.X, p.Y, startX, startY);
-				if (currDist < dist) {
-					dist = currDist;
-					result = p;
-				}
-			}
-			return result;
+		protected override void InitializeToDefault(IStyleSet styleSet) {
+			base.InitializeToDefault(styleSet);
+			Text = "Class";
 		}
-
-
-		/// <override></override>
-		public override void Draw(Graphics graphics) {
-			base.Draw(graphics);
-			Pen pen = ToolCache.GetPen(LineStyle, null, null);
-			graphics.DrawLines(pen, foldingPoints);
-		}
-
-
-		protected internal AnnotationSymbol(ShapeType shapeType, Template template)
-			: base(shapeType, template) {
-		}
-
-
-		/// <override></override>
-		protected override void TransformDrawCache(int deltaX, int deltaY, int deltaAngle, int rotationCenterX, int rotationCenterY) {
-			base.TransformDrawCache(deltaX, deltaY, deltaAngle, rotationCenterX, rotationCenterY);
-			Matrix.TransformPoints(foldingPoints);
-		}
-
-
-		/// <override></override>
-		protected override bool CalculatePath() {
-			if (base.CalculatePath()) {
-				CalculateShapePoints();
-
-				Path.Reset();
-				Path.StartFigure();
-				Path.AddPolygon(shapePoints);
-				Path.CloseFigure();
-				return true;
-			}
-			return false;
-		}
-
-
-		private void CalculateShapePoints() {
-			int foldingSize = Math.Min(Width / 8, Height / 8);
-			int left = (int)Math.Round(-Width / 2f);
-			int top = (int)Math.Round(-Height / 2f);
-			int right = left + Width;
-			int bottom = top + Height;
-
-			shapePoints[0].X = left;
-			shapePoints[0].Y = top;
-			shapePoints[1].X = right - foldingSize;
-			shapePoints[1].Y = top;
-			shapePoints[2].X = right;
-			shapePoints[2].Y = top + foldingSize;
-			shapePoints[3].X = right;
-			shapePoints[3].Y = bottom;
-			shapePoints[4].X = left;
-			shapePoints[4].Y = bottom;
-
-			foldingPoints[0].X = right - foldingSize;
-			foldingPoints[0].Y = top;
-			foldingPoints[1].X = right - foldingSize;
-			foldingPoints[1].Y = top + foldingSize;
-			foldingPoints[2].X = right;
-			foldingPoints[2].Y = top + foldingSize;
-		}
-
-
-		#region Fields
-
-		// ControlPoint Id Constants
-		private const int TopLeftControlPoint = 1;
-		private const int TopCenterControlPoint = 2;
-		private const int TopRightControlPoint = 3;
-		private const int MiddleLeftControlPoint = 4;
-		private const int MiddleRightControlPoint = 5;
-		private const int BottomLeftControlPoint = 6;
-		private const int BottomCenterControlPoint = 7;
-		private const int BottomRightControlPoint = 8;
-		private const int MiddleCenterControlPoint = 9;
-		
-		private Point[] shapePoints = new Point[5];
-		private Point[] foldingPoints = new Point[3];
-		
-		#endregion
 	}
 
 
 	public class CloudSymbol : RectangleBase {
+
+		/// <summary>
+		/// Provides constants for the control point id's of the shape.
+		/// </summary>
+		new public class ControlPointIds {
+			/// <summary>ControlPointId of the top left control point.</summary>
+			public const int TopLeftControlPoint = 1;
+			/// <summary>ControlPointId of the top center control point.</summary>
+			public const int TopCenterControlPoint = 2;
+			/// <summary>ControlPointId of the top right control point.</summary>
+			public const int TopRightControlPoint = 3;
+			/// <summary>ControlPointId of the middle left control point.</summary>
+			public const int MiddleLeftControlPoint = 4;
+			/// <summary>ControlPointId of the middle right control point.</summary>
+			public const int MiddleRightControlPoint = 5;
+			/// <summary>ControlPointId of the bottom left control point.</summary>
+			public const int BottomLeftControlPoint = 6;
+			/// <summary>ControlPointId of the bottom center control point.</summary>
+			public const int BottomCenterControlPoint = 7;
+			/// <summary>ControlPointId of the bottom right control point.</summary>
+			public const int BottomRightControlPoint = 8;
+			/// <summary>ControlPointId of the center control point.</summary>
+			public const int MiddleCenterControlPoint = 9;
+			/// <summary>ControlPointId of the top left connection point.</summary>
+			public const int TopLeftConnectionPoint = 10;
+			/// <summary>ControlPointId of the top right connection point.</summary>
+			public const int TopRightConnectionPoint = 11;
+			/// <summary>ControlPointId of the middle left connection point.</summary>
+			public const int MiddleLeftConnectionPoint = 12;
+			/// <summary>ControlPointId of the middle right connection point.</summary>
+			public const int MiddleRightConnectionPoint = 13;
+			/// <summary>ControlPointId of the bottom left connection point.</summary>
+			public const int BottomLeftConnectionPoint = 14;
+			/// <summary>ControlPointId of the bottom right connection point.</summary>
+			public const int BottomRightConnectionPoint = 15;
+		}
+
 
 		/// <override></override>
 		protected override void InitializeToDefault(IStyleSet styleSet) {
@@ -1262,7 +1171,6 @@ namespace Dataweb.NShape.SoftwareArchitectureShapes {
 
 		/// <override></override>
 		public override Shape Clone() {
-			//Shape result = new CloudSymbol(Type, (Template)null);
 			Shape result = new CloudSymbol(Type, this.Template);
 			result.CopyFrom(this);
 			return result;
@@ -1272,25 +1180,25 @@ namespace Dataweb.NShape.SoftwareArchitectureShapes {
 		/// <override></override>
 		public override bool HasControlPointCapability(ControlPointId controlPointId, ControlPointCapabilities controlPointCapability) {
 			switch (controlPointId) {
-				case 1:
-				case 2:
-				case 3:
-				case 4:
-				case 5:
-				case 6:
-				case 7:
-				case 8:
+				case ControlPointIds.TopLeftControlPoint:
+				case ControlPointIds.TopCenterControlPoint:
+				case ControlPointIds.TopRightControlPoint:
+				case ControlPointIds.MiddleLeftControlPoint:
+				case ControlPointIds.MiddleRightControlPoint:
+				case ControlPointIds.BottomLeftControlPoint:
+				case ControlPointIds.BottomCenterControlPoint:
+				case ControlPointIds.BottomRightControlPoint:
 					return ((controlPointCapability & ControlPointCapabilities.Resize) != 0);
-				case 9:
+				case ControlPointIds.MiddleCenterControlPoint:
 					return ((controlPointCapability & ControlPointCapabilities.Reference) != 0
 						|| (controlPointCapability & ControlPointCapabilities.Rotate) != 0);
-				case 10:
-				case 11:
-				case 12:
-				case 13:
-				case 14:
-				case 15:
-					return ((controlPointCapability & ControlPointCapabilities.Connect) != 0);
+				case ControlPointIds.TopLeftConnectionPoint:
+				case ControlPointIds.TopRightConnectionPoint:
+				case ControlPointIds.MiddleLeftConnectionPoint:
+				case ControlPointIds.MiddleRightConnectionPoint:
+				case ControlPointIds.BottomLeftConnectionPoint:
+				case ControlPointIds.BottomRightConnectionPoint:
+					return ((controlPointCapability & ControlPointCapabilities.Connect) != 0 && IsConnectionPointEnabled(controlPointId));
 				default:
 					return base.HasControlPointCapability(controlPointId, controlPointCapability);
 			}
@@ -1353,15 +1261,15 @@ namespace Dataweb.NShape.SoftwareArchitectureShapes {
 
 		/// <override></override>
 		protected override void CalcCaptionBounds(int index, out Rectangle captionBounds) {
-			if (index != 0) throw new IndexOutOfRangeException();
+			if (index != 0) throw new ArgumentOutOfRangeException("index");
 			int left, right, top, bottom;
 			left = top = int.MaxValue;
 			right = bottom = int.MinValue;
-			for (int i = 0; i < ControlPoints.Length; ++i) {
-				if (ControlPoints[i].X < left) left = ControlPoints[i].X;
-				if (ControlPoints[i].X > right) right = ControlPoints[i].X;
-				if (ControlPoints[i].Y < top) top = ControlPoints[i].Y;
-				if (ControlPoints[i].Y > bottom) bottom = ControlPoints[i].Y;
+			foreach (Point p in ControlPoints) {
+				if (p.X < left) left = p.X;
+				if (p.X > right) right = p.X;
+				if (p.Y < top) top = p.Y;
+				if (p.Y > bottom) bottom = p.Y;
 			}
 			captionBounds = Rectangle.Empty;
 			captionBounds.X = left;
@@ -1482,6 +1390,155 @@ namespace Dataweb.NShape.SoftwareArchitectureShapes {
 	}
 
 
+	public class AnnotationSymbol : RectangleBase {
+
+		/// <override></override>
+		protected override void InitializeToDefault(IStyleSet styleSet) {
+			base.InitializeToDefault(styleSet);
+			Width = 120;
+			Height = 80;
+			FillStyle = styleSet.FillStyles.Yellow;
+		}
+
+
+		/// <override></override>
+		public override Shape Clone() {
+			Shape result = new AnnotationSymbol(Type, this.Template);
+			result.CopyFrom(this);
+			return result;
+		}
+
+
+		/// <override></override>
+		public override bool HasControlPointCapability(ControlPointId controlPointId, ControlPointCapabilities controlPointCapability) {
+			switch (controlPointId) {
+				case ControlPointIds.TopLeftControlPoint:
+				case ControlPointIds.TopCenterControlPoint:
+				case ControlPointIds.TopRightControlPoint:
+				case ControlPointIds.MiddleLeftControlPoint:
+				case ControlPointIds.MiddleRightControlPoint:
+				case ControlPointIds.BottomLeftControlPoint:
+				case ControlPointIds.BottomCenterControlPoint:
+				case ControlPointIds.BottomRightControlPoint:
+					return (controlPointCapability & ControlPointCapabilities.Resize) != 0;
+				case ControlPointIds.MiddleCenterControlPoint:
+				case ControlPointId.Reference:
+					return ((controlPointCapability & ControlPointCapabilities.Rotate) != 0
+						|| (controlPointCapability & ControlPointCapabilities.Reference) != 0
+						|| ((controlPointCapability & ControlPointCapabilities.Connect) != 0
+							&& IsConnectionPointEnabled(controlPointId)));
+				default:
+					return false;
+			}
+		}
+
+
+		/// <override></override>
+		public override Point CalculateConnectionFoot(int startX, int startY) {
+			Point result = Point.Empty;
+			result.Offset(X, Y);
+
+			// Calculate shape
+			CalculateShapePoints();
+			Matrix.Reset();
+			Matrix.Translate(X, Y);
+			Matrix.RotateAt(Geometry.TenthsOfDegreeToDegrees(Angle), Center);
+			Matrix.TransformPoints(shapePoints);
+
+			float currDist, dist = float.MaxValue;
+			foreach (Point p in Geometry.IntersectPolygonLine(shapePoints, startX, startY, X, Y, true)) {
+				currDist = Geometry.DistancePointPoint(p.X, p.Y, startX, startY);
+				if (currDist < dist) {
+					dist = currDist;
+					result = p;
+				}
+			}
+			return result;
+		}
+
+
+		/// <override></override>
+		public override void Draw(Graphics graphics) {
+			base.Draw(graphics);
+			Pen pen = ToolCache.GetPen(LineStyle, null, null);
+			graphics.DrawLines(pen, foldingPoints);
+		}
+
+
+		protected internal AnnotationSymbol(ShapeType shapeType, Template template)
+			: base(shapeType, template) {
+		}
+
+
+		/// <override></override>
+		protected override void TransformDrawCache(int deltaX, int deltaY, int deltaAngle, int rotationCenterX, int rotationCenterY) {
+			base.TransformDrawCache(deltaX, deltaY, deltaAngle, rotationCenterX, rotationCenterY);
+			Matrix.TransformPoints(foldingPoints);
+		}
+
+
+		/// <override></override>
+		protected override bool CalculatePath() {
+			if (base.CalculatePath()) {
+				CalculateShapePoints();
+
+				Path.Reset();
+				Path.StartFigure();
+				Path.AddPolygon(shapePoints);
+				Path.CloseFigure();
+				return true;
+			}
+			return false;
+		}
+
+
+		private void CalculateShapePoints() {
+			int foldingSize = Math.Min(Width / 8, Height / 8);
+			int left = (int)Math.Round(-Width / 2f);
+			int top = (int)Math.Round(-Height / 2f);
+			int right = left + Width;
+			int bottom = top + Height;
+
+			shapePoints[0].X = left;
+			shapePoints[0].Y = top;
+			shapePoints[1].X = right - foldingSize;
+			shapePoints[1].Y = top;
+			shapePoints[2].X = right;
+			shapePoints[2].Y = top + foldingSize;
+			shapePoints[3].X = right;
+			shapePoints[3].Y = bottom;
+			shapePoints[4].X = left;
+			shapePoints[4].Y = bottom;
+
+			foldingPoints[0].X = right - foldingSize;
+			foldingPoints[0].Y = top;
+			foldingPoints[1].X = right - foldingSize;
+			foldingPoints[1].Y = top + foldingSize;
+			foldingPoints[2].X = right;
+			foldingPoints[2].Y = top + foldingSize;
+		}
+
+
+		#region Fields
+
+		//// ControlPoint Id Constants
+		//private const int TopLeftControlPoint = 1;
+		//private const int TopCenterControlPoint = 2;
+		//private const int TopRightControlPoint = 3;
+		//private const int MiddleLeftControlPoint = 4;
+		//private const int MiddleRightControlPoint = 5;
+		//private const int BottomLeftControlPoint = 6;
+		//private const int BottomCenterControlPoint = 7;
+		//private const int BottomRightControlPoint = 8;
+		//private const int MiddleCenterControlPoint = 9;
+		
+		private Point[] shapePoints = new Point[5];
+		private Point[] foldingPoints = new Point[3];
+		
+		#endregion
+	}
+
+
 	public class DatabaseSymbol : RectangleBase {
 
 		/// <override></override>
@@ -1494,7 +1551,6 @@ namespace Dataweb.NShape.SoftwareArchitectureShapes {
 
 		/// <override></override>
 		public override Shape Clone() {
-			//Shape result = new DatabaseSymbol(Type, (Template)null);
 			Shape result = new DatabaseSymbol(Type, this.Template);
 			result.CopyFrom(this);
 			return result;
@@ -1570,7 +1626,7 @@ namespace Dataweb.NShape.SoftwareArchitectureShapes {
 
 		/// <override></override>
 		protected override void CalcCaptionBounds(int index, out Rectangle captionBounds) {
-			if (index != 0) throw new IndexOutOfRangeException();
+			if (index != 0) throw new ArgumentOutOfRangeException("index");
 			int left = (int)Math.Round(-Width / 2f);
 			int top = (int)Math.Round(-Height / 2f);
 			captionBounds = Rectangle.Empty;
@@ -1617,41 +1673,91 @@ namespace Dataweb.NShape.SoftwareArchitectureShapes {
 	}
 
 
-	public class ClassSymbol : EntitySymbol {
-		
-		protected internal ClassSymbol(ShapeType shapeType, Template template)
-			: base(shapeType, template) {
-		}
-
-
-		/// <override></override>
-		public override Shape Clone() {
-			//Shape result = new ClassSymbol(Type, (Template)null);
-			Shape result = new ClassSymbol(Type, this.Template);
-			result.CopyFrom(this);
-			return result;
-		}
-
-
-		/// <override></override>
-		public override IEnumerable<MenuItemDef> GetMenuItemDefs(int mouseX, int mouseY, int range) {
-			return base.GetMenuItemDefs(mouseX, mouseY, range);
-		}
-
-
-		/// <override></override>
-		protected override void InitializeToDefault(IStyleSet styleSet) {
-			base.InitializeToDefault(styleSet);
-			Text = "Class";
-		}
-	}
-
-
 	public class ComponentSymbol : RectangleBase {
 
+		/// <summary>
+		/// Provides constants for the control point id's of the shape.
+		/// </summary>
+		new public class ControlPointIds {
+			/// <summary>ControlPointId of the top left control point.</summary>
+			public const int TopLeftControlPoint = 1;
+			/// <summary>ControlPointId of the top center control point.</summary>
+			public const int TopCenterControlPoint = 2;
+			/// <summary>ControlPointId of the top right control point.</summary>
+			public const int TopRightControlPoint = 3;
+			/// <summary>ControlPointId of the middle left control point.</summary>
+			public const int MiddleLeftControlPoint = 4;
+			/// <summary>ControlPointId of the middle right control point.</summary>
+			public const int MiddleRightControlPoint = 5;
+			/// <summary>ControlPointId of the bottom left control point.</summary>
+			public const int BottomLeftControlPoint = 6;
+			/// <summary>ControlPointId of the bottom center control point.</summary>
+			public const int BottomCenterControlPoint = 7;
+			/// <summary>ControlPointId of the bottom right control point.</summary>
+			public const int BottomRightControlPoint = 8;
+			/// <summary>ControlPointId of the center control point.</summary>
+			public const int MiddleCenterControlPoint = 9;
+
+			/// <summary>ControlPointId of a connection point.</summary>
+			public const int TopLeftConnectionPoint = 33;
+			/// <summary>ControlPointId of a connection point.</summary>
+			public const int MiddleLeftConnectionPoint = 18;
+			/// <summary>ControlPointId of a connection point.</summary>
+			public const int BottomLeftConnectionPoint = 34;
+
+			/// <summary>ControlPointId of a connection point.</summary>
+			public const int UpperDockTopConnectionPoint = 25;
+			/// <summary>ControlPointId of a connection point.</summary>
+			public const int UpperDockMiddleConnectionPoint = 14;
+			/// <summary>ControlPointId of a connection point.</summary>
+			public const int UpperDockBottomConnectionPoint = 26;
+
+			/// <summary>ControlPointId of a connection point.</summary>
+			public const int LowerDockTopConnectionPoint = 27;
+			/// <summary>ControlPointId of a connection point.</summary>
+			public const int LowerDockMiddleConnectionPoint = 15;
+			/// <summary>ControlPointId of a connection point.</summary>
+			public const int LowerDockBottomConnectionPoint = 28;
+
+			/// <summary>ControlPointId of a connection point.</summary>
+			public const int TopConnectionPoint1 = 10;
+			/// <summary>ControlPointId of a connection point.</summary>
+			public const int TopConnectionPoint2 = 19;
+			/// <summary>ControlPointId of a connection point.</summary>
+			public const int TopConnectionPoint3 = 20;
+			/// <summary>ControlPointId of a connection point.</summary>
+			public const int TopConnectionPoint4 = 11;
+			/// <summary>ControlPointId of a connection point.</summary>
+			public const int TopConnectionPoint5 = 21;
+
+			/// <summary>ControlPointId of a connection point.</summary>
+			public const int RightConnectionPoint1 = 29;
+			/// <summary>ControlPointId of a connection point.</summary>
+			public const int RightConnectionPoint2 = 16;
+			/// <summary>ControlPointId of a connection point.</summary>
+			public const int RightConnectionPoint3 = 30;
+			/// <summary>ControlPointId of a connection point.</summary>
+			public const int RightConnectionPoint4 = 31;
+			/// <summary>ControlPointId of a connection point.</summary>
+			public const int RightConnectionPoint5 = 17;
+			/// <summary>ControlPointId of a connection point.</summary>
+			public const int RightConnectionPoint6 = 32;
+			
+			/// <summary>ControlPointId of a connection point.</summary>
+			public const int BottomConnectionPoint1 = 12;
+			/// <summary>ControlPointId of a connection point.</summary>
+			public const int BottomConnectionPoint2 = 22;
+			/// <summary>ControlPointId of a connection point.</summary>
+			public const int BottomConnectionPoint3 = 23;
+			/// <summary>ControlPointId of a connection point.</summary>
+			public const int BottomConnectionPoint4 = 13;
+			/// <summary>ControlPointId of a connection point.</summary>
+			public const int BottomConnectionPoint5 = 24;
+		}
+
+
 		/// <override></override>
 		public override Shape Clone() {
-			//Shape result = new ComponentSymbol(Type, (Template)null);
 			Shape result = new ComponentSymbol(Type, this.Template);
 			result.CopyFrom(this);
 			return result;
@@ -1667,46 +1773,47 @@ namespace Dataweb.NShape.SoftwareArchitectureShapes {
 		/// <override></override>
 		public override bool HasControlPointCapability(ControlPointId controlPointId, ControlPointCapabilities controlPointCapability) {
 			switch (controlPointId) {
-				case 1:
-				case 4:
-				case 6:
+				case ControlPointIds.TopLeftControlPoint:
+				case ControlPointIds.MiddleLeftControlPoint:
+				case ControlPointIds.BottomLeftControlPoint:
 					return ((controlPointCapability & ControlPointCapabilities.Resize) != 0);
-				case 2:
-				case 3:
-				case 5:
-				case 7:
-				case 8:
-					return ((controlPointCapability & ControlPointCapabilities.Connect) != 0
-						|| (controlPointCapability & ControlPointCapabilities.Resize) != 0);
-				case 9:
-					return ((controlPointCapability & ControlPointCapabilities.Reference) != 0
-						|| (controlPointCapability & ControlPointCapabilities.Rotate) != 0);
-				case 10:
-				case 11:
-				case 12:
-				case 13:
-				case 14:
-				case 15:
-				case 16:
-				case 17:
-				case 18:
-				case 19:
-				case 20:
-				case 21:
-				case 22:
-				case 23:
-				case 24:
-				case 25:
-				case 26:
-				case 27:
-				case 28:
-				case 29:
-				case 30:
-				case 31:
-				case 32:
-				case 33:
-				case 34:
-					return ((controlPointCapability & ControlPointCapabilities.Connect) != 0);
+				case ControlPointIds.TopCenterControlPoint:
+				case ControlPointIds.TopRightControlPoint:
+				case ControlPointIds.MiddleRightControlPoint:
+				case ControlPointIds.BottomCenterControlPoint:
+				case ControlPointIds.BottomRightControlPoint:
+					return ((controlPointCapability & ControlPointCapabilities.Resize) != 0)
+						|| ((controlPointCapability & ControlPointCapabilities.Connect) != 0 && IsConnectionPointEnabled(controlPointId));
+				case ControlPointIds.MiddleCenterControlPoint:
+					return ((controlPointCapability & ControlPointCapabilities.Rotate) != 0
+						|| (controlPointCapability & ControlPointCapabilities.Reference) != 0);
+				// Connection points
+				case ControlPointIds.TopLeftConnectionPoint :
+				case ControlPointIds.MiddleLeftConnectionPoint :
+				case ControlPointIds.BottomLeftConnectionPoint:
+				case ControlPointIds.UpperDockTopConnectionPoint:
+				case ControlPointIds.UpperDockMiddleConnectionPoint:
+				case ControlPointIds.UpperDockBottomConnectionPoint:
+				case ControlPointIds.LowerDockTopConnectionPoint:
+				case ControlPointIds.LowerDockMiddleConnectionPoint:
+				case ControlPointIds.LowerDockBottomConnectionPoint:
+				case ControlPointIds.TopConnectionPoint1:
+				case ControlPointIds.TopConnectionPoint2:
+				case ControlPointIds.TopConnectionPoint3:
+				case ControlPointIds.TopConnectionPoint4:
+				case ControlPointIds.TopConnectionPoint5:
+				case ControlPointIds.RightConnectionPoint1:
+				case ControlPointIds.RightConnectionPoint2:
+				case ControlPointIds.RightConnectionPoint3:
+				case ControlPointIds.RightConnectionPoint4:
+				case ControlPointIds.RightConnectionPoint5:
+				case ControlPointIds.RightConnectionPoint6:
+				case ControlPointIds.BottomConnectionPoint1:
+				case ControlPointIds.BottomConnectionPoint2:
+				case ControlPointIds.BottomConnectionPoint3:
+				case ControlPointIds.BottomConnectionPoint4:
+				case ControlPointIds.BottomConnectionPoint5:
+					return ((controlPointCapability & ControlPointCapabilities.Connect) != 0 && IsConnectionPointEnabled(controlPointId));
 				default:
 					return base.HasControlPointCapability(controlPointId, controlPointCapability);
 			}
@@ -1796,7 +1903,7 @@ namespace Dataweb.NShape.SoftwareArchitectureShapes {
 
 		/// <override></override>
 		protected override void CalcCaptionBounds(int index, out Rectangle captionBounds) {
-			if (index != 0) throw new IndexOutOfRangeException();
+			if (index != 0) throw new ArgumentOutOfRangeException("index");
 			int left = (int)Math.Round(-Width / 2f);
 			int top = (int)Math.Round(-Height / 2f);
 			int w = (int)Math.Round((float)Width / 8);
@@ -1881,7 +1988,6 @@ namespace Dataweb.NShape.SoftwareArchitectureShapes {
 
 		/// <override></override>
 		public override Shape Clone() {
-			//Shape result = new DocumentSymbol(Type, (Template)null);
 			Shape result = new DocumentSymbol(Type, this.Template);
 			result.CopyFrom(this);
 			return result;
@@ -1891,14 +1997,14 @@ namespace Dataweb.NShape.SoftwareArchitectureShapes {
 		/// <override></override>
 		public override bool HasControlPointCapability(ControlPointId controlPointId, ControlPointCapabilities controlPointCapability) {
 			switch (controlPointId) {
-				case TopLeftControlPoint:
-				case TopRightControlPoint:
-				case BottomLeftControlPoint:
-				case BottomCenterControlPoint:
-				case BottomRightControlPoint:
-					return (controlPointCapability != ControlPointCapabilities.Connect 
-						&& base.HasControlPointCapability(controlPointId, controlPointCapability));
-				default: return base.HasControlPointCapability(controlPointId, controlPointCapability);
+				case ControlPointIds.TopLeftControlPoint:
+				case ControlPointIds.TopRightControlPoint:
+				case ControlPointIds.BottomLeftControlPoint:
+				case ControlPointIds.BottomCenterControlPoint:
+				case ControlPointIds.BottomRightControlPoint:
+					return ((controlPointCapability & ControlPointCapabilities.Resize) != 0);
+				default: 
+					return base.HasControlPointCapability(controlPointId, controlPointCapability);
 			}
 		}
 
@@ -1913,37 +2019,43 @@ namespace Dataweb.NShape.SoftwareArchitectureShapes {
 			if (base.CalculatePath()) {
 				Path.Reset();
 				Path.FillMode = System.Drawing.Drawing2D.FillMode.Winding;
-				int size = Width > 40 && Height > 40 ? 20 : Math.Min(Width / 2, Height / 2);
+				int currWidth = Width;
+				int currHeight = Height;
+				int size = currWidth > 40 && currHeight > 40 ? 20 : Math.Min(currWidth / 2, currHeight / 2);
+				int halfHeight = currHeight / 2;
+				int halfWidth = currWidth / 2;
 				// Rechteck zeichnen
 				Point[] points = new Point[5];
-				points[0].X = -Width / 2;
-				points[0].Y = -Height / 2;
-				points[1].X = -Width / 2 + Width - size;
-				points[1].Y = -Height / 2;
-				points[2].X = -Width / 2 + Width;
-				points[2].Y = -Height / 2 + size;
-				points[3].X = -Width / 2 + Width;
-				points[3].Y = -Height / 2 + Height;
-				points[4].X = -Width / 2;
-				points[4].Y = -Height / 2 + Height;
+				points[0].X = -halfWidth;
+				points[0].Y = -halfHeight;
+				points[1].X = -halfWidth + currWidth - size;
+				points[1].Y = -halfHeight;
+				points[2].X = -halfWidth + currWidth;
+				points[2].Y = -halfHeight + size;
+				points[3].X = -halfWidth + currWidth;
+				points[3].Y = -halfHeight + currHeight;
+				points[4].X = -halfWidth;
+				points[4].Y = -halfHeight + currHeight;
 				Path.StartFigure();
 				Path.AddLines(points);
 				Path.CloseFigure();
 				// Ecke hinzufügen
 				points = new Point[3];
-				points[0].X = -Width / 2 + Width - size;
-				points[0].Y = -Height / 2;
-				points[1].X = -Width / 2 + Width - size;
-				points[1].Y = -Height / 2 + size;
-				points[2].X = -Width / 2 + Width;
-				points[2].Y = -Height / 2 + size;
+				points[0].X = -halfWidth + currWidth - size;
+				points[0].Y = -halfHeight;
+				points[1].X = -halfWidth + currWidth - size;
+				points[1].Y = -halfHeight + size;
+				points[2].X = -halfWidth + currWidth;
+				points[2].Y = -halfHeight + size;
 				Path.StartFigure();
 				Path.AddLines(points);
-				for (int i = 1; i < Height / 8; ++i) {
-					int right = -Width / 2 + Width - 10;
+
+				int maxH = currHeight / 8;
+				for (int i = 1; i < maxH; ++i) {
+					int right = -halfWidth + currWidth - 10;
 					if (8 * i < size) right -= size;
 					Path.StartFigure();
-					Path.AddLine(-Width / 2 + 10, -Height / 2 + i * 8, right, -Height / 2 + i * 8);
+					Path.AddLine(-halfWidth + 10, -halfHeight + i * 8, right, -halfHeight + i * 8);
 				}
 				return true;
 			}
@@ -1951,178 +2063,12 @@ namespace Dataweb.NShape.SoftwareArchitectureShapes {
 		}
 
 
-		// ControlPoint Id Constants
-		private const int TopLeftControlPoint = 1;
-		private const int TopCenterControlPoint = 2;
-		private const int TopRightControlPoint = 3;
-		private const int MiddleLeftControlPoint = 4;
-		private const int MiddleRightControlPoint = 5;
-		private const int BottomLeftControlPoint = 6;
-		private const int BottomCenterControlPoint = 7;
-		private const int BottomRightControlPoint = 8;
-		private const int MiddleCenterControlPoint = 9;
-		
 		private Point[] shapePoints = new Point[6];
 	}
 
 
-	public class DataFlowArrow : PolylineBase {
-
-		/// <override></override>
-		public override Shape Clone() {
-			//Shape result = new DataFlowArrow(Type, (Template)null);
-			Shape result = new DataFlowArrow(Type, this.Template);
-			result.CopyFrom(this);
-			return result;
-		}
-
-
-		[Category("Appearance")]
-		[Description("Defines the line cap appearance of the line's beginning.\nUse the template editor to modify all shapes of a template.\nUse the design editor to modify and create styles.")]
-		[PropertyMappingId(PropertyIdStartCapStyle)]
-		[RequiredPermission(Permission.Present)]
-		public ICapStyle StartCapStyle {
-			get {
-				if (StartCapStyleInternal == null && Template == null) throw new NShapeException("Property StartCapStyle is not set.");
-				return StartCapStyleInternal == null ? ((DataFlowArrow)Template.Shape).StartCapStyle : StartCapStyleInternal;
-			}
-			set {
-				StartCapStyleInternal = (Template != null && value == ((DataFlowArrow)Template.Shape).StartCapStyle) ? null : value;
-			}
-		}
-
-
-		[Category("Appearance")]
-		[Description("Defines the line cap appearance of the line's ending.\nUse the template editor to modify all shapes of a template.\nUse the design editor to modify and create styles.")]
-		[PropertyMappingId(PropertyIdEndCapStyle)]
-		[RequiredPermission(Permission.Present)]
-		public ICapStyle EndCapStyle {
-			get {
-				if (EndCapStyleInternal == null && Template == null) throw new NShapeException("Property EndCapStyle is not set.");
-				return EndCapStyleInternal == null ? ((DataFlowArrow)Template.Shape).EndCapStyle : EndCapStyleInternal;
-			}
-			set {
-				EndCapStyleInternal = (Template != null && value == ((DataFlowArrow)Template.Shape).EndCapStyle) ? null : value;
-			}
-		}
-
-
-		protected internal DataFlowArrow(ShapeType shapeType, Template template)
-			: base(shapeType, template) {
-		}
-	}
-
-
-	public class DependencyArrow : PolylineBase {
-
-		/// <override></override>
-		public override Shape Clone() {
-			//Shape result = new DependencyArrow(Type, (Template)null);
-			Shape result = new DependencyArrow(Type, this.Template);
-			result.CopyFrom(this);
-			return result;
-		}
-
-
-		[Category("Appearance")]
-		[Description("Defines the line cap appearance of the line's beginning.\nUse the template editor to modify all shapes of a template.\nUse the design editor to modify and create styles.")]
-		[PropertyMappingId(PropertyIdStartCapStyle)]
-		[RequiredPermission(Permission.Present)]
-		public ICapStyle StartCapStyle {
-			get {
-				if (StartCapStyleInternal == null && Template == null) throw new NShapeException("Property StartCapStyle is not set.");
-				return StartCapStyleInternal == null ? ((DependencyArrow)Template.Shape).StartCapStyle : StartCapStyleInternal;
-			}
-			set {
-				StartCapStyleInternal = (Template != null && value == ((DependencyArrow)Template.Shape).StartCapStyle) ? null : value;
-			}
-		}
-
-
-		[Category("Appearance")]
-		[Description("Defines the line cap appearance of the line's ending.\nUse the template editor to modify all shapes of a template.\nUse the design editor to modify and create styles.")]
-		[PropertyMappingId(PropertyIdEndCapStyle)]
-		[RequiredPermission(Permission.Present)]
-		public ICapStyle EndCapStyle {
-			get {
-				if (EndCapStyleInternal == null && Template == null) throw new NShapeException("Property EndCapStyle is not set.");
-				return EndCapStyleInternal == null ? ((DependencyArrow)Template.Shape).EndCapStyle : EndCapStyleInternal;
-			}
-			set {
-				EndCapStyleInternal = (Template != null && value == ((DependencyArrow)Template.Shape).EndCapStyle) ? null : value;
-			}
-		}
-
-
-		protected internal DependencyArrow(ShapeType shapeType, Template template)
-			: base(shapeType, template) {
-		}
-
-	}
-
-
-	public class InterfaceUsageSymbol : PolylineBase {
-
-		/// <override></override>
-		public override Shape Clone() {
-			//InterfaceUsageSymbol result = new InterfaceUsageSymbol(Type, (Template)null);
-			InterfaceUsageSymbol result = new InterfaceUsageSymbol(Type, this.Template);
-			result.CopyFrom(this);
-			return result;
-		}
-
-
-		/// <override></override>
-		protected override void InitializeToDefault(IStyleSet styleSet) {
-			base.InitializeToDefault(styleSet);
-			if (Template == null) {
-				//EndCapStyle = styleSet.GetCapStyle("Fork Cap");
-				// @@Kurt
-				// Den Style "Fork Cap" gibt es nicht in den Standard-Designs. Da müssen wir uns erst noch was überlegen wie 
-				// man das Design um benötigte Styles erweitern kann (am Besten biim Registrieren der GeneralShapes)
-				EndCapStyleInternal = styleSet.CapStyles.Special2;
-			}
-		}
-		
-
-		protected internal InterfaceUsageSymbol(ShapeType shapeType, Template template)
-			: base(shapeType, template) {
-		}
-	}
-
-
-	public class InterfaceSymbol : PolylineBase {
-
-		/// <override></override>
-		public override Shape Clone() {
-			//Shape result = new InterfaceSymbol(Type, (Template)null);
-			Shape result = new InterfaceSymbol(Type, this.Template);
-			result.CopyFrom(this);
-			return result;
-		}
-
-
-		/// <override></override>
-		protected override void InitializeToDefault(IStyleSet styleSet) {
-			base.InitializeToDefault(styleSet);
-			if (Template == null) {
-				//StartEndCapStyle = styleSet.GetCapStyle("Circle Cap");
-				// @@Kurt
-				// Den Style "Circle Cap" gibt es nicht in den Standard-Designs. Da müssen wir uns erst noch was überlegen wie 
-				// man das Design um benötigte Styles erweitern kann (am Besten beim Registrieren der GeneralShapes)
-				EndCapStyleInternal = styleSet.CapStyles.Special1;
-			}
-		}
-
-
-		protected internal InterfaceSymbol(ShapeType shapeType, Template template)
-			: base(shapeType, template) {
-		}
-
-	}
-
-
 	public class VectorImage : CustomizableMetaFile {
+		
 		internal static VectorImage CreateInstance(ShapeType shapeType, Template template, 
 			string resourceBasename, Assembly resourceAssembly) {
 			return new VectorImage(shapeType, template, resourceBasename, resourceAssembly);
@@ -2131,7 +2077,6 @@ namespace Dataweb.NShape.SoftwareArchitectureShapes {
 
 		/// <override></override>
 		public override Shape Clone() {
-			//Shape result = new VectorImage(Type, (Template)null, resourceName, resourceAssembly);
 			Shape result = new VectorImage(Type, this.Template, resourceName, resourceAssembly);
 			result.CopyFrom(this);
 			return result;
@@ -2148,97 +2093,4 @@ namespace Dataweb.NShape.SoftwareArchitectureShapes {
 		}
 	}
 
-
-	public static class NShapeLibraryInitializer {
-
-		public static void Initialize(IRegistrar registrar) {
-			registrar.RegisterLibrary(namespaceName, preferredRepositoryVersion);
-			registrar.RegisterShapeType(new ShapeType("DataFlow", namespaceName, namespaceName, 
-				delegate(ShapeType shapeType, Template t) { return new DataFlowArrow(shapeType, t); }, 
-				DataFlowArrow.GetPropertyDefinitions));
-			registrar.RegisterShapeType(new ShapeType("Dependency", namespaceName, namespaceName, 
-				delegate(ShapeType shapeType, Template t) { return new DependencyArrow(shapeType, t); }, 
-				DependencyArrow.GetPropertyDefinitions));
-			registrar.RegisterShapeType(new ShapeType("Database", namespaceName, namespaceName, 
-				delegate(ShapeType shapeType, Template t) { return new DatabaseSymbol(shapeType, t); }, 
-				DatabaseSymbol.GetPropertyDefinitions));
-			registrar.RegisterShapeType(new ShapeType("Entity", namespaceName, namespaceName, 
-				delegate(ShapeType shapeType, Template t) { return new EntitySymbol(shapeType, t); }, 
-				EntitySymbol.GetPropertyDefinitions));
-			registrar.RegisterShapeType(new ShapeType("Annotation", namespaceName, namespaceName, 
-				delegate(ShapeType shapeType, Template t) { return new AnnotationSymbol(shapeType, t); }, 
-				AnnotationSymbol.GetPropertyDefinitions));
-			registrar.RegisterShapeType(new ShapeType("Cloud", namespaceName, namespaceName, 
-				delegate(ShapeType shapeType, Template t) { return new CloudSymbol(shapeType, t); }, 
-				CloudSymbol.GetPropertyDefinitions));
-			registrar.RegisterShapeType(new ShapeType("Class", namespaceName, namespaceName, 
-				delegate(ShapeType shapeType, Template t) { return new ClassSymbol(shapeType, t); }, 
-				ClassSymbol.GetPropertyDefinitions));
-			registrar.RegisterShapeType(new ShapeType("Component", namespaceName, namespaceName, 
-				delegate(ShapeType shapeType, Template t) { return new ComponentSymbol(shapeType, t); }, 
-				ComponentSymbol.GetPropertyDefinitions));
-			registrar.RegisterShapeType(new ShapeType("Document", namespaceName, namespaceName, 
-				delegate(ShapeType shapeType, Template t) { return new DocumentSymbol(shapeType, t); }, 
-				DocumentSymbol.GetPropertyDefinitions));
-			registrar.RegisterShapeType(new ShapeType("Interface", namespaceName, namespaceName, 
-				delegate(ShapeType shapeType, Template t) { return new InterfaceSymbol(shapeType, t); }, 
-				InterfaceSymbol.GetPropertyDefinitions));
-			registrar.RegisterShapeType(new ShapeType("InterfaceUsage", namespaceName, namespaceName, 
-				delegate(ShapeType shapeType, Template t) { return new InterfaceUsageSymbol(shapeType, t); }, 
-				InterfaceUsageSymbol.GetPropertyDefinitions));
-			registrar.RegisterShapeType(new ShapeType("Server", namespaceName, namespaceName, 
-				delegate(ShapeType shapeType, Template t) {
-				VectorImage result = VectorImage.CreateInstance(shapeType, t,
-					"Dataweb.NShape.SoftwareArchitectureShapes.Resources.Tower.emf", Assembly.GetExecutingAssembly());
-				result.Text = "Server";
-				return result;
-				}, VectorImage.GetPropertyDefinitions));
-			registrar.RegisterShapeType(new ShapeType("RTU", namespaceName, namespaceName, 
-				delegate(ShapeType shapeType, Template t) {
-				VectorImage result = VectorImage.CreateInstance(shapeType, t,
-					"Dataweb.NShape.SoftwareArchitectureShapes.Resources.RTU.emf", Assembly.GetExecutingAssembly());
-				result.Text = "RTU";
-				return result;
-			}, VectorImage.GetPropertyDefinitions));
-			registrar.RegisterShapeType(new ShapeType("Actor", namespaceName, namespaceName, 
-				delegate(ShapeType shapeType, Template t) {
-				VectorImage result = VectorImage.CreateInstance(shapeType, t,
-					"Dataweb.NShape.SoftwareArchitectureShapes.Resources.Actor.emf", Assembly.GetExecutingAssembly());
-				result.Text = "Actor";
-				return result;
-			}, VectorImage.GetPropertyDefinitions));
-			registrar.RegisterShapeType(new ShapeType("Monitor", namespaceName, namespaceName, 
-				delegate(ShapeType shapeType, Template t) {
-				VectorImage result = VectorImage.CreateInstance(shapeType, t,
-					"Dataweb.NShape.SoftwareArchitectureShapes.Resources.Monitor.emf", Assembly.GetExecutingAssembly());
-				result.Text = "Monitor";
-				return result;
-			}, VectorImage.GetPropertyDefinitions));
-			registrar.RegisterShapeType(new ShapeType("PC", namespaceName, namespaceName, 
-				delegate(ShapeType shapeType, Template t) {
-				VectorImage result = VectorImage.CreateInstance(shapeType, t,
-					"Dataweb.NShape.SoftwareArchitectureShapes.Resources.Desktop.emf", Assembly.GetExecutingAssembly());
-				result.Text = "PC";
-				return result;
-			}, VectorImage.GetPropertyDefinitions));
-			registrar.RegisterShapeType(new ShapeType("Tower", namespaceName, namespaceName, 
-				delegate(ShapeType shapeType, Template t) {
-				VectorImage result = VectorImage.CreateInstance(shapeType, t,
-					"Dataweb.NShape.SoftwareArchitectureShapes.Resources.Tower.emf", Assembly.GetExecutingAssembly());
-				result.Text = "Tower";
-				return result;
-			}, VectorImage.GetPropertyDefinitions));
-			registrar.RegisterShapeType(new ShapeType("Laptop", namespaceName, namespaceName,
-				delegate(ShapeType shapeType, Template t) {
-					VectorImage result = VectorImage.CreateInstance(shapeType, t,
-						"Dataweb.NShape.SoftwareArchitectureShapes.Resources.Laptop.emf", Assembly.GetExecutingAssembly());
-					result.Text = "Notebook";
-					return result;
-				}, VectorImage.GetPropertyDefinitions));
-		}
-
-
-		private const string namespaceName = "SoftwareArchitectureShapes";
-		private const int preferredRepositoryVersion = 3;
-	}
 }

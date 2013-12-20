@@ -115,7 +115,6 @@
     <Compile Include="..\CommonAssemblyInfo.cs">
       <Link>CommonAssemblyInfo.cs</Link>
     </Compile>
-    <Compile Include="Buffers.cs" />
     <Compile Include="CircularArcBase.cs" />
     <Compile Include="CursorProvider.cs" />
     <Compile Include="FlowLayouter.cs" />

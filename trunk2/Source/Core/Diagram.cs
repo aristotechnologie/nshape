@@ -1,5 +1,5 @@
 /******************************************************************************
-  Copyright 2009-2012 dataweb GmbH
+  Copyright 2009-2013 dataweb GmbH
   This file is part of the NShape framework.
   NShape is free software: you can redistribute it and/or modify it under the 
   terms of the GNU General Public License as published by the Free Software 
@@ -202,10 +202,10 @@ namespace Dataweb.NShape {
 
 		/// <override></override>
 		protected override void ClearCore() {
-			for (int i = shapes.Count - 1; i >= 0; --i) {
-				CheckOwnerboundsUpdateNeeded(shapes[i]);
-				shapes[i].Invalidate();
-				shapes[i].DisplayService = null;
+			foreach (Shape shape in shapes) {
+				CheckOwnerboundsUpdateNeeded(shape);
+				shape.Invalidate();
+				shape.DisplayService = null;
 			}
 			base.ClearCore();
 			DoUpdateOwnerBounds();
@@ -880,7 +880,7 @@ namespace Dataweb.NShape {
 				diagramBounds.Width = Width;
 				diagramBounds.Height = Height;
 				if (imageAttribs == null) imageAttribs = GdiHelpers.GetImageAttributes(imageLayout, imageGamma, imageTransparency, imageGrayScale, false, imageTransparentColor);
-				if (backImage.Image is Metafile)
+				if (!useBrushForBackgroundImage || backImage.Image is Metafile)
 					GdiHelpers.DrawImage(graphics, backImage.Image, imageAttribs, imageLayout, diagramBounds, diagramBounds);
 				else {
 					if (imageBrush == null) imageBrush = GdiHelpers.CreateTextureBrush(backImage.Image, imageAttribs);
@@ -1127,6 +1127,7 @@ namespace Dataweb.NShape {
 		private Color backColor = Color.WhiteSmoke;
 		private Color targetColor = Color.White;
 		private bool highQualityRendering = true;
+		private bool useBrushForBackgroundImage = true;
 		// Background image stuff
 		private NamedImage backImage;
 		private ImageLayoutMode imageLayout;

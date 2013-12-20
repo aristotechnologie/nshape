@@ -1,5 +1,5 @@
 ﻿/******************************************************************************
-  Copyright 2009-2012 dataweb GmbH
+  Copyright 2009-2013 dataweb GmbH
   This file is part of the NShape framework.
   NShape is free software: you can redistribute it and/or modify it under the 
   terms of the GNU General Public License as published by the Free Software 
@@ -118,7 +118,7 @@ namespace Dataweb.NShape.Advanced {
 			if (drawCacheIsInvalid) UpdateDrawCache(); 
 
 			int index = GetControlPointIndex(controlPointId);
-			return controlPoints[index];
+			return ControlPoints[index];
 		}
 
 
@@ -296,14 +296,11 @@ namespace Dataweb.NShape.Advanced {
 					CalcControlPoints();
 					Point tl = Point.Empty, tr = Point.Empty, bl = Point.Empty, br = Point.Empty;
 					for (int i = ControlPoints.Length - 1; i >= 0; --i) {
-						if (ControlPoints[i].X <= tl.X && ControlPoints[i].Y <= tl.Y)
-							tl = ControlPoints[i];
-						if (ControlPoints[i].X >= tr.X && ControlPoints[i].Y <= tr.Y)
-							tr = ControlPoints[i];
-						if (ControlPoints[i].X <= bl.X && ControlPoints[i].Y >= bl.Y)
-							bl = ControlPoints[i];
-						if (ControlPoints[i].X >= br.X && ControlPoints[i].Y >= br.Y)
-							br = ControlPoints[i];
+						Point pt = ControlPoints[i];
+						if (pt.X <= tl.X && pt.Y <= tl.Y) tl = pt;
+						if (pt.X >= tr.X && pt.Y <= tr.Y) tr = pt;
+						if (pt.X <= bl.X && pt.Y >= bl.Y) bl = pt;
+						if (pt.X >= br.X && pt.Y >= br.Y) br = pt;
 					}
 					if (Angle != 0) {
 						tl = Geometry.RotatePoint(Point.Empty, Geometry.TenthsOfDegreeToDegrees(Angle), tl);
@@ -386,7 +383,17 @@ namespace Dataweb.NShape.Advanced {
 		/// <ToBeCompleted></ToBeCompleted>
 		protected Point[] ControlPoints {
 			get { return controlPoints; }
-			//set { controlPoints = value; }
+		}
+
+
+		/// <summary>
+		/// Resizes (or creates) the underlying control point array for ControlPoints property.
+		/// </summary>
+		protected void ResizeControlPoints(int length) {
+			if (controlPoints == null)
+				controlPoints = new Point[length];
+			else if (controlPoints.Length != length)
+				Array.Resize(ref controlPoints, length);
 		}
 
 
@@ -402,7 +409,7 @@ namespace Dataweb.NShape.Advanced {
 		protected override void UpdateDrawCache() {
 			if (drawCacheIsInvalid) {
 				Debug.Assert(path != null);
-				Debug.Assert(controlPoints != null);
+				Debug.Assert(ControlPoints != null);
 				RecalcDrawCache();
 				TransformDrawCache(X, Y, Angle, X, Y);
 			}
@@ -448,7 +455,7 @@ namespace Dataweb.NShape.Advanced {
 						Matrix.RotateAt(Geometry.TenthsOfDegreeToDegrees(deltaAngle), rotationCenter, MatrixOrder.Append);
 					}
 					// transform controlPoints
-					if (controlPoints != null) Matrix.TransformPoints(controlPoints);
+					if (ControlPoints != null) Matrix.TransformPoints(ControlPoints);
 					// transform GraphicsPath
 					if (path != null) path.Transform(Matrix);
 				}
@@ -499,8 +506,6 @@ namespace Dataweb.NShape.Advanced {
 		/// <ToBeCompleted></ToBeCompleted>
 		protected const int PropertyIdFillStyle = 3;
 
-		/// <ToBeCompleted></ToBeCompleted>
-		protected Point[] controlPoints;
 		/// <summary>Tight fitting BoundingRectangle of the unrotated shape, used for transforming brushes</summary>
 		protected Rectangle boundingRectangleUnrotated = Geometry.InvalidRectangle;
 
@@ -512,6 +517,7 @@ namespace Dataweb.NShape.Advanced {
 		// GraphicsPath that will define the appearance of the shape
 		private GraphicsPath path = new GraphicsPath();	
 		private IFillStyle privateFillStyle = null;
+		private Point[] controlPoints;
 		#endregion
 	}
 

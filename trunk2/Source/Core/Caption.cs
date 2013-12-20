@@ -1,5 +1,5 @@
 ﻿/******************************************************************************
-  Copyright 2009-2012 dataweb GmbH
+  Copyright 2009-2013 dataweb GmbH
   This file is part of the NShape framework.
   NShape is free software: you can redistribute it and/or modify it under the 
   terms of the GNU General Public License as published by the Free Software 
@@ -451,7 +451,7 @@ namespace Dataweb.NShape.Advanced {
 
 		/// <ToBeCompleted></ToBeCompleted>
 		public virtual bool GetCaptionBounds(int index, out Point topLeft, out Point topRight, out Point bottomRight, out Point bottomLeft) {
-			if (index != 0) throw new IndexOutOfRangeException("index");
+			if (index != 0) throw new ArgumentOutOfRangeException("index");
 			//if (caption == null) {
 			//   topLeft = topRight = bottomLeft = bottomRight = Center;
 			//   return false;
@@ -467,7 +467,7 @@ namespace Dataweb.NShape.Advanced {
 
 		/// <ToBeCompleted></ToBeCompleted>
 		public virtual bool GetCaptionTextBounds(int index, out Point topLeft, out Point topRight, out Point bottomRight, out Point bottomLeft) {
-			if (index != 0) throw new IndexOutOfRangeException("index");
+			if (index != 0) throw new ArgumentOutOfRangeException("index");
 			bool result;
 			Rectangle captionBounds = Rectangle.Empty;
 			CalcCaptionBounds(index, out captionBounds);
@@ -531,7 +531,7 @@ namespace Dataweb.NShape.Advanced {
 
 		/// <ToBeCompleted></ToBeCompleted>
 		public virtual int FindCaptionFromPoint(int x, int y) {
-			for (int i = 0; i < CaptionCount; ++i) {
+			for (int i = CaptionCount - 1; i >= 0; --i) {
 				Point tl = Point.Empty, tr = Point.Empty, br = Point.Empty, bl = Point.Empty;
 				GetCaptionTextBounds(i, out tl, out tr, out br, out bl);
 				if (Geometry.QuadrangleContainsPoint(tl, tr, br, bl, x, y))
@@ -559,7 +559,7 @@ namespace Dataweb.NShape.Advanced {
 
 		/// <override></override>
 		protected override void LoadFieldsCore(IRepositoryReader reader, int version) {
-			base.LoadFieldsCore(reader, 1);
+			base.LoadFieldsCore(reader, version);
 
 			// ILabel members
 			this.privateCharacterStyle = reader.ReadCharacterStyle();

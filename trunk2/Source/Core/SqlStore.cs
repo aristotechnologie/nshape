@@ -1,5 +1,5 @@
 /******************************************************************************
-  Copyright 2009-2012 dataweb GmbH
+  Copyright 2009-2013 dataweb GmbH
   This file is part of the NShape framework.
   NShape is free software: you can redistribute it and/or modify it under the 
   terms of the GNU General Public License as published by the Free Software 
@@ -119,7 +119,9 @@ namespace Dataweb.NShape {
 			cmdText.Append("CREATE TABLE ProjectInfo (Id INT IDENTITY PRIMARY KEY, Name VARCHAR(40), Version INT);" + Environment.NewLine);
 			cmdText.Append("CREATE TABLE Project ("
 				+ "ProjectInfo INT REFERENCES ProjectInfo (Id) ON DELETE CASCADE ON UPDATE CASCADE,"
-				+ "Id INT IDENTITY PRIMARY KEY, LastSavedUtc DATETIME);" + Environment.NewLine);
+				+ "Id INT IDENTITY PRIMARY KEY, LastSavedUtc DATETIME");
+			if (Version >= 5) cmdText.Append(", Description VARCHAR(250)");
+			cmdText.Append(");" + Environment.NewLine);
 			cmdText.Append("CREATE TABLE Library ("
 				+ "Project INT REFERENCES Project (Id) ON DELETE CASCADE ON UPDATE CASCADE,"
 				+ "Name VARCHAR(40), AssemblyName VARCHAR(512), Version INT);" + Environment.NewLine);
@@ -391,21 +393,36 @@ namespace Dataweb.NShape {
 
 
 		private void CreateProjectCommands() {
+			string cmdText;
+			
+			cmdText = "SELECT P.Id, ProjectInfo, LastSavedUTC";
+			if (Version >= 5) cmdText += ", Description";
+			cmdText += " FROM Project P JOIN ProjectInfo PI ON P.ProjectInfo = PI.Id WHERE PI.Name = @Name";
 			SetCommand(ProjectSettings.EntityTypeName, RepositoryCommandType.SelectByName,
 				// DesignId must be the first column because the value is read by the cache
-				CreateCommand("SELECT P.Id, ProjectInfo, LastSavedUTC FROM Project P JOIN ProjectInfo PI ON P.ProjectInfo = PI.Id WHERE PI.Name = @Name",
-					CreateParameter("Name", DbType.String)));
+				CreateCommand(cmdText, CreateParameter("Name", DbType.String)));
+
+			cmdText = "INSERT INTO Project (ProjectInfo, LastSavedUTC";
+			if (Version >= 5) cmdText += ", Description";
+			cmdText += ") VALUES (@ProjectInfo, @LastSavedUTC";
+			if (Version >= 5) cmdText += ", @Description";
+			cmdText += "); SELECT CAST(IDENT_CURRENT('Project') AS INT)";			
 			SetCommand(ProjectSettings.EntityTypeName, RepositoryCommandType.Insert,
-				CreateCommand("INSERT INTO Project (ProjectInfo, LastSavedUTC) "
-					+ "VALUES (@ProjectInfo, @LastSavedUTC); "
-					+ "SELECT CAST(IDENT_CURRENT('Project') AS INT)",
+				CreateCommand(cmdText,
 					CreateParameter("ProjectInfo", DbType.Int32),
-					CreateParameter("LastSavedUTC", DbType.DateTime)));
+					CreateParameter("LastSavedUTC", DbType.DateTime),
+					CreateParameter("Description", DbType.String)));
+			
+			cmdText = "UPDATE Project SET LastSavedUTC = @LastSavedUTC";
+			if (Version >= 5) cmdText += ", Description = @Description";
+			cmdText += " WHERE Id = @Id";
 			SetCommand(ProjectSettings.EntityTypeName, RepositoryCommandType.Update,
-				CreateCommand("UPDATE Project SET LastSavedUTC = @LastSavedUTC WHERE Id = @Id",
+				CreateCommand(cmdText,
 					CreateParameter("Id", DbType.Int32),
 					CreateParameter("ProjectInfo", DbType.Int32),
-					CreateParameter("LastSavedUTC", DbType.DateTime)));
+					CreateParameter("LastSavedUTC", DbType.DateTime),
+					CreateParameter("Description", DbType.String)));
+			
 			SetCommand(ProjectSettings.EntityTypeName, RepositoryCommandType.Delete,
 				CreateCommand("DELETE FROM Project WHERE Id = @Id",
 					CreateParameter("Id", DbType.Int32)));

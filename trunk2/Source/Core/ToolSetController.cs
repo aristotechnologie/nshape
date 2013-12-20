@@ -1,5 +1,5 @@
 /******************************************************************************
-  Copyright 2009-2012 dataweb GmbH
+  Copyright 2009-2013 dataweb GmbH
   This file is part of the NShape framework.
   NShape is free software: you can redistribute it and/or modify it under the 
   terms of the GNU General Public License as published by the Free Software 
@@ -176,12 +176,8 @@ namespace Dataweb.NShape.Controllers {
 			// Clear selected and default tool
 			DoSelectTool(null, true, false);
 			defaultTool = null;
-			for (int i = tools.Count - 1; i >= 0; --i) {
-				//// Remove the diagramSetController's ActiveTool
-				//if (diagramSetController != null && diagramSetController.ActiveTool == tools[i])
-				//    diagramSetController.ActiveTool = null;
-				tools[i].Dispose();
-			}
+			foreach (Tool tool in Tools)
+				tool.Dispose();
 			tools.Clear();
 			toolBoxInitialized = false;
 			if (Cleared != null) Cleared(this, EventArgs.Empty);
@@ -258,15 +254,15 @@ namespace Dataweb.NShape.Controllers {
 			if (tool is TemplateTool)
 				((TemplateTool)tool).Template.Shape.DisplayService = this;
 			tool.RefreshIcons();
+			// Raise AddTool event first, then select the tool (which raises a ToolSelected event)
+			if (ToolAdded != null) {
+				toolEventArgs.Tool = tool;
+				ToolAdded(this, toolEventArgs);
+			}
 			if (isDefaultTool) {
 				defaultTool = tool;
 				// Select the new default tool in order to refresh the DiagramController's ActiveTool
 				SelectTool(defaultTool, true);
-			}
-			//
-			if (ToolAdded != null) {
-				toolEventArgs.Tool = tool;
-				ToolAdded(this, toolEventArgs);
 			}
 		}
 

@@ -1,5 +1,5 @@
 ﻿/******************************************************************************
-  Copyright 2009-2012 dataweb GmbH
+  Copyright 2009-2013 dataweb GmbH
   This file is part of the NShape framework.
   NShape is free software: you can redistribute it and/or modify it under the 
   terms of the GNU General Public License as published by the Free Software 
@@ -189,9 +189,8 @@ namespace Dataweb.NShape.WinFormsUI {
 			if (disposing) {
 				// dispose drawing stuff
 				formatter.Dispose();
-				int cnt = fonts.Count;
-				for (int i = 0; i < cnt; ++i)
-					fonts[i].Dispose();
+				foreach (Font font in fonts)
+					font.Dispose();
 				fonts.Clear();
 
 				if (components != null)
@@ -214,7 +213,7 @@ namespace Dataweb.NShape.WinFormsUI {
 		protected override void OnMouseUp(MouseEventArgs e) {
 			base.OnMouseUp(e);
 			if (e.Button == MouseButtons.Left) {
-				for (int i = 0; i < Items.Count; ++i) {
+				for (int i = Items.Count - 1; i >= 0; --i) {
 					if (Geometry.RectangleContainsPoint(GetItemRectangle(i), e.Location)) {
 						ExecuteSelection();
 						break;
@@ -354,19 +353,18 @@ namespace Dataweb.NShape.WinFormsUI {
 			formatter.Alignment = StringAlignment.Near;
 			formatter.LineAlignment = StringAlignment.Near;
 			int fontSize = 10;
-			int cnt = FontFamily.Families.Length;
-			for (int i = 0; i < cnt; ++i) {
+			foreach (FontFamily fontFamily in FontFamily.Families) {
 				Font font = null;
-				if (FontFamily.Families[i].IsStyleAvailable(FontStyle.Regular))
-					font = new Font(FontFamily.Families[i].Name, fontSize, FontStyle.Regular);
-				else if (FontFamily.Families[i].IsStyleAvailable(FontStyle.Italic))
-					font = new Font(FontFamily.Families[i].Name, fontSize, FontStyle.Italic);
-				else if (FontFamily.Families[i].IsStyleAvailable(FontStyle.Bold))
-					font = new Font(FontFamily.Families[i].Name, fontSize, FontStyle.Bold);
-				else if (FontFamily.Families[i].IsStyleAvailable(FontStyle.Strikeout))
-					font = new Font(FontFamily.Families[i].Name, fontSize, FontStyle.Strikeout);
-				else if (FontFamily.Families[i].IsStyleAvailable(FontStyle.Underline))
-					font = new Font(FontFamily.Families[i].Name, fontSize, FontStyle.Underline);
+				if (fontFamily.IsStyleAvailable(FontStyle.Regular))
+					font = new Font(fontFamily.Name, fontSize, FontStyle.Regular);
+				else if (fontFamily.IsStyleAvailable(FontStyle.Italic))
+					font = new Font(fontFamily.Name, fontSize, FontStyle.Italic);
+				else if (fontFamily.IsStyleAvailable(FontStyle.Bold))
+					font = new Font(fontFamily.Name, fontSize, FontStyle.Bold);
+				else if (fontFamily.IsStyleAvailable(FontStyle.Strikeout))
+					font = new Font(fontFamily.Name, fontSize, FontStyle.Strikeout);
+				else if (fontFamily.IsStyleAvailable(FontStyle.Underline))
+					font = new Font(fontFamily.Name, fontSize, FontStyle.Underline);
 				else
 					font = Font;
 				fonts.Add(font);

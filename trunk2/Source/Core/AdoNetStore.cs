@@ -1,5 +1,5 @@
 /******************************************************************************
-  Copyright 2009-2012 dataweb GmbH
+  Copyright 2009-2013 dataweb GmbH
   This file is part of the NShape framework.
   NShape is free software: you can redistribute it and/or modify it under the 
   terms of the GNU General Public License as published by the Free Software 
@@ -1066,7 +1066,8 @@ namespace Dataweb.NShape {
 						((IDbDataParameter)cmdCmd.Parameters[1]).Value = item.Key.EntityTypeName;
 						((IDbDataParameter)cmdCmd.Parameters[2]).Value = item.Value.CommandText;
 						int cmdId = (int)cmdCmd.ExecuteScalar();
-						for (int i = 0; i < item.Value.Parameters.Count; ++i) {
+						int paramCnt = item.Value.Parameters.Count;
+						for (int i = 0; i < paramCnt; ++i) {
 							IDataParameter p = (IDataParameter)item.Value.Parameters[i];
 							((IDbDataParameter)paramCmd.Parameters[0]).Value = cmdId;
 							((IDbDataParameter)paramCmd.Parameters[1]).Value = i + 1;

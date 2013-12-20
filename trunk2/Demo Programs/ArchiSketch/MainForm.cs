@@ -182,7 +182,7 @@ namespace ArchiSketch {
 		private void toolSetController_ToolSelected(object sender, ToolEventArgs e) {
 			ToolStripButton button = FindToolStripButton(e.Tool);
 			UncheckAllOtherButtons(button);
-			button.Checked = true;
+			if (button != null) button.Checked = true;
 		}
 
 		#endregion
@@ -257,6 +257,7 @@ namespace ArchiSketch {
 					ToolStripButton tsb = (ToolStripButton)tsi;
 					if (tsb.Tag == toolSetController.SelectedTool) {
 						result = tsb;
+						break;
 					}
 				}
 			return result;

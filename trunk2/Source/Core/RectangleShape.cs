@@ -1,5 +1,5 @@
 ﻿/******************************************************************************
-  Copyright 2009-2012 dataweb GmbH
+  Copyright 2009-2013 dataweb GmbH
   This file is part of the NShape framework.
   NShape is free software: you can redistribute it and/or modify it under the 
   terms of the GNU General Public License as published by the Free Software 
@@ -15,6 +15,7 @@
 using System;
 using System.Collections.Generic;
 using System.ComponentModel;
+using System.Diagnostics;
 using System.Drawing;
 using System.Drawing.Drawing2D;
 
@@ -24,7 +25,32 @@ namespace Dataweb.NShape.Advanced {
 	/// <remarks>RequiredPermissions set</remarks>
 	public abstract class RectangleBase : CaptionedShapeBase {
 
-		#region Properties
+		/// <summary>
+		/// Provides constants for the control point id's of the shape.
+		/// </summary>
+		public class ControlPointIds {
+			/// <summary>ControlPointId of the top left control point.</summary>
+			public const int TopLeftControlPoint = 1;
+			/// <summary>ControlPointId of the top center control point.</summary>
+			public const int TopCenterControlPoint = 2;
+			/// <summary>ControlPointId of the top right control point.</summary>
+			public const int TopRightControlPoint = 3;
+			/// <summary>ControlPointId of the middle left control point.</summary>
+			public const int MiddleLeftControlPoint = 4;
+			/// <summary>ControlPointId of the middle right control point.</summary>
+			public const int MiddleRightControlPoint = 5;
+			/// <summary>ControlPointId of the bottom left control point.</summary>
+			public const int BottomLeftControlPoint = 6;
+			/// <summary>ControlPointId of the bottom center control point.</summary>
+			public const int BottomCenterControlPoint = 7;
+			/// <summary>ControlPointId of the bottom right control point.</summary>
+			public const int BottomRightControlPoint = 8;
+			/// <summary>ControlPointId of the center control point.</summary>
+			public const int MiddleCenterControlPoint = 9;
+		}
+
+
+		#region [Public] Properties
 
 		/// <ToBeCompleted></ToBeCompleted>
 		[Category("Layout")]
@@ -154,23 +180,21 @@ namespace Dataweb.NShape.Advanced {
 		/// <override></override>
 		public override bool HasControlPointCapability(ControlPointId controlPointId, ControlPointCapabilities controlPointCapability) {
 			switch (controlPointId) {
-				case TopLeftControlPoint:
-				case TopCenterControlPoint:
-				case TopRightControlPoint:
-				case MiddleLeftControlPoint:
-				case MiddleRightControlPoint:
-				case BottomLeftControlPoint:
-				case BottomCenterControlPoint:
-				case BottomRightControlPoint:
+				case ControlPointIds.TopLeftControlPoint:
+				case ControlPointIds.TopCenterControlPoint:
+				case ControlPointIds.TopRightControlPoint:
+				case ControlPointIds.MiddleLeftControlPoint:
+				case ControlPointIds.MiddleRightControlPoint:
+				case ControlPointIds.BottomLeftControlPoint:
+				case ControlPointIds.BottomCenterControlPoint:
+				case ControlPointIds.BottomRightControlPoint:
 					return ((controlPointCapability & ControlPointCapabilities.Resize) > 0
-							|| ((controlPointCapability & ControlPointCapabilities.Connect) > 0
-								&& IsConnectionPointEnabled(controlPointId)));
+							|| ((controlPointCapability & ControlPointCapabilities.Connect) > 0 && IsConnectionPointEnabled(controlPointId)));
+				case ControlPointIds.MiddleCenterControlPoint:
 				case ControlPointId.Reference:
-				case MiddleCenterControlPoint:
-					return ((controlPointCapability & ControlPointCapabilities.Reference) > 0
-							|| (controlPointCapability & ControlPointCapabilities.Rotate) > 0
-							|| ((controlPointCapability & ControlPointCapabilities.Connect) > 0 
-								&& IsConnectionPointEnabled(controlPointId)));
+					return ((controlPointCapability & ControlPointCapabilities.Rotate) > 0
+						|| (controlPointCapability & ControlPointCapabilities.Reference) > 0)
+						|| ((controlPointCapability & ControlPointCapabilities.Connect) > 0 && IsConnectionPointEnabled(controlPointId));
 				default:
 					return base.HasControlPointCapability(controlPointId, controlPointCapability);
 			}
@@ -406,44 +430,44 @@ namespace Dataweb.NShape.Advanced {
 			int width = size.Width; int height = size.Height;
 			int newWidth = -1, newHeight = -1;
 			switch (pointId) {
-				case TopLeftControlPoint:
+				case ControlPointIds.TopLeftControlPoint:
 					if (!Geometry.MoveRectangleTopLeft(width, height, transformedDeltaX, transformedDeltaY, cos, sin, modifiers, out dx, out dy, out newWidth, out newHeight))
 						result = false;
 					break;
-				case TopCenterControlPoint:
+				case ControlPointIds.TopCenterControlPoint:
 					result = (transformedDeltaX == 0);
 					if (!Geometry.MoveRectangleTop(width, height, 0, transformedDeltaY, cos, sin, modifiers, out dx, out dy, out newWidth, out newHeight))
 						result = false;
 					break;
-				case TopRightControlPoint:
+				case ControlPointIds.TopRightControlPoint:
 					if (!Geometry.MoveRectangleTopRight(width, height, transformedDeltaX, transformedDeltaY, cos, sin, modifiers, out dx, out dy, out newWidth, out newHeight))
 						result = false;
 					break;
-				case MiddleLeftControlPoint:
+				case ControlPointIds.MiddleLeftControlPoint:
 					result = (transformedDeltaY == 0);
 					if (!Geometry.MoveRectangleLeft(width, height, transformedDeltaX, 0, cos, sin, modifiers, out dx, out dy, out newWidth, out newHeight))
 						result = false;
 					break;
-				case MiddleRightControlPoint:
+				case ControlPointIds.MiddleRightControlPoint:
 					result = (transformedDeltaY == 0);
 					if (!Geometry.MoveRectangleRight(width, height, transformedDeltaX, 0, cos, sin, modifiers, out dx, out dy, out newWidth, out newHeight))
 						result = false;
 					break;
-				case BottomLeftControlPoint:
+				case ControlPointIds.BottomLeftControlPoint:
 					if (!Geometry.MoveRectangleBottomLeft(width, height, transformedDeltaX, transformedDeltaY, cos, sin, modifiers, out dx, out dy, out newWidth, out newHeight))
 						result = false;
 					break;
-				case BottomCenterControlPoint:
+				case ControlPointIds.BottomCenterControlPoint:
 					result = (transformedDeltaX == 0);
 					if (!Geometry.MoveRectangleBottom(width, height, 0, transformedDeltaY, cos, sin, modifiers, out dx, out dy, out newWidth, out newHeight))
 						result = false;
 					break;
-				case BottomRightControlPoint:
+				case ControlPointIds.BottomRightControlPoint:
 					if (!Geometry.MoveRectangleBottomRight(width, height, transformedDeltaX, transformedDeltaY, cos, sin, modifiers, out dx, out dy, out newWidth, out newHeight))
 						result = false;
 					break;
 				default:
-					throw new IndexOutOfRangeException();
+					throw new ArgumentOutOfRangeException("pointId");
 			}
 			System.Diagnostics.Debug.Assert(newWidth >= 0 && newHeight >= 0);
 			// Perform Resizing
@@ -492,7 +516,7 @@ namespace Dataweb.NShape.Advanced {
 
 		/// <override></override>
 		protected override void CalcCaptionBounds(int index, out Rectangle captionBounds) {
-			if (index != 0) throw new IndexOutOfRangeException();
+			if (index != 0) throw new ArgumentOutOfRangeException("index");
 			captionBounds = Rectangle.Empty;
 			captionBounds.X = (int)Math.Round(-Width / 2f);
 			captionBounds.Y = (int)Math.Round(-Height / 2f);
@@ -555,17 +579,6 @@ namespace Dataweb.NShape.Advanced {
 		/// <ToBeCompleted></ToBeCompleted>
 		protected const int PropertyIdHeight = 8;
 
-		// ControlPoint Id Constants
-		private const int TopLeftControlPoint = 1;
-		private const int TopCenterControlPoint = 2;
-		private const int TopRightControlPoint = 3;
-		private const int MiddleLeftControlPoint = 4;
-		private const int MiddleRightControlPoint = 5;
-		private const int BottomLeftControlPoint = 6;
-		private const int BottomCenterControlPoint = 7;
-		private const int BottomRightControlPoint = 8;
-		private const int MiddleCenterControlPoint = 9;
-
 		private Size size = Size.Empty;
 		private PointF[] rotatedBounds = new PointF[4];
 
@@ -574,24 +587,76 @@ namespace Dataweb.NShape.Advanced {
 
 
 	/// <ToBeCompleted></ToBeCompleted>
-	public abstract class EllipseBase : RectangleBase {
+	public abstract class BoxBase : RectangleBase {
 
 		/// <override></override>
-		protected internal override int ControlPointCount { get { return 13; } }
+		protected internal BoxBase(ShapeType shapeType, Template template)
+			: base(shapeType, template) {
+		}
+
+
+		/// <override></override>
+		protected internal BoxBase(ShapeType shapeType, IStyleSet styleSet)
+			: base(shapeType, styleSet) {
+		}
+
+	}
+
+
+	/// <ToBeCompleted></ToBeCompleted>
+	public abstract class EllipseBase : RectangleBase {
+
+		/// <summary>
+		/// Provides constants for the control point id's of the shape.
+		/// </summary>
+		new public class ControlPointIds {
+			/// <summary>ControlPointId of the top left control point.</summary>
+			public const int TopLeftControlPoint = 1;
+			/// <summary>ControlPointId of the top center control point.</summary>
+			public const int TopCenterControlPoint = 2;
+			/// <summary>ControlPointId of the top right control point.</summary>
+			public const int TopRightControlPoint = 3;
+			/// <summary>ControlPointId of the middle left control point.</summary>
+			public const int MiddleLeftControlPoint = 4;
+			/// <summary>ControlPointId of the middle right control point.</summary>
+			public const int MiddleRightControlPoint = 5;
+			/// <summary>ControlPointId of the bottom left control point.</summary>
+			public const int BottomLeftControlPoint = 6;
+			/// <summary>ControlPointId of the bottom center control point.</summary>
+			public const int BottomCenterControlPoint = 7;
+			/// <summary>ControlPointId of the bottom right control point.</summary>
+			public const int BottomRightControlPoint = 8;
+			/// <summary>ControlPointId of the center control point.</summary>
+			public const int MiddleCenterControlPoint = 9;
+			/// <summary>ControlPointId of the top left connection point.</summary>
+			public const int TopLeftConnectionPoint = 10;
+			/// <summary>ControlPointId of the top right connection point.</summary>
+			public const int TopRightConnectionPoint = 11;
+			/// <summary>ControlPointId of the bottom left connection point.</summary>
+			public const int BottomLeftConnectionPoint = 12;
+			/// <summary>ControlPointId of the bottom right connection point.</summary>
+			public const int BottomRightConnectionPoint = 13;
+		}
+
+
+		/// <override></override>
+		protected internal override int ControlPointCount {
+			get { return 13; }
+		}
 
 
 		/// <override></override>
 		public override bool HasControlPointCapability(ControlPointId controlPointId, ControlPointCapabilities controlPointCapability) {
 			switch (controlPointId) {
-				case TopLeftControlPoint:
-				case TopRightControlPoint:
-				case BottomLeftControlPoint:
-				case BottomRightControlPoint:
+				case ControlPointIds.TopLeftControlPoint:
+				case ControlPointIds.TopRightControlPoint:
+				case ControlPointIds.BottomLeftControlPoint:
+				case ControlPointIds.BottomRightControlPoint:
 					return (controlPointCapability & ControlPointCapabilities.Resize) != 0;
-				case 10:
-				case 11:
-				case 12:
-				case 13:
+				case ControlPointIds.TopLeftConnectionPoint:
+				case ControlPointIds.TopRightConnectionPoint:
+				case ControlPointIds.BottomLeftConnectionPoint:
+				case ControlPointIds.BottomRightConnectionPoint:
 					return ((controlPointCapability & ControlPointCapabilities.Connect) != 0 && IsConnectionPointEnabled(controlPointId));
 				default:
 					return base.HasControlPointCapability(controlPointId, controlPointCapability);
@@ -719,7 +784,7 @@ namespace Dataweb.NShape.Advanced {
 
 		/// <override></override>
 		protected override void CalcCaptionBounds(int index, out Rectangle captionBounds) {
-			if (index != 0) throw new IndexOutOfRangeException();
+			if (index != 0) throw new ArgumentOutOfRangeException("index");
 			captionBounds = Rectangle.Empty;
 			captionBounds.X = (int)Math.Round((-Width / 2f) + (Width / 8f));
 			captionBounds.Y = (int)Math.Round((-Height / 2f) + (Height / 8f));
@@ -727,21 +792,44 @@ namespace Dataweb.NShape.Advanced {
 			captionBounds.Height = (int)Math.Round(Height - (Height / 4f));
 		}
 
-
-		#region Fields
-
-		// ControlPoint Id Constants
-		private const int TopLeftControlPoint = 1;
-		private const int TopRightControlPoint = 3;
-		private const int BottomLeftControlPoint = 6;
-		private const int BottomRightControlPoint = 8;
-
-		#endregion
 	}
 
 
 	/// <ToBeCompleted></ToBeCompleted>
 	public abstract class DiamondBase : RectangleBase {
+
+		/// <summary>
+		/// Provides constants for the control point id's of the shape.
+		/// </summary>
+		new public class ControlPointIds {
+			/// <summary>ControlPointId of the top left control point.</summary>
+			public const int TopLeftControlPoint = 1;
+			/// <summary>ControlPointId of the top center control point.</summary>
+			public const int TopCenterControlPoint = 2;
+			/// <summary>ControlPointId of the top right control point.</summary>
+			public const int TopRightControlPoint = 3;
+			/// <summary>ControlPointId of the middle left control point.</summary>
+			public const int MiddleLeftControlPoint = 4;
+			/// <summary>ControlPointId of the middle right control point.</summary>
+			public const int MiddleRightControlPoint = 5;
+			/// <summary>ControlPointId of the bottom left control point.</summary>
+			public const int BottomLeftControlPoint = 6;
+			/// <summary>ControlPointId of the bottom center control point.</summary>
+			public const int BottomCenterControlPoint = 7;
+			/// <summary>ControlPointId of the bottom right control point.</summary>
+			public const int BottomRightControlPoint = 8;
+			/// <summary>ControlPointId of the center control point.</summary>
+			public const int MiddleCenterControlPoint = 9;
+			/// <summary>ControlPointId of the top left connection point.</summary>
+			public const int TopLeftConnectionPoint = 10;
+			/// <summary>ControlPointId of the top right connection point.</summary>
+			public const int TopRightConnectionPoint = 11;
+			/// <summary>ControlPointId of the bottom left connection point.</summary>
+			public const int BottomLeftConnectionPoint = 12;
+			/// <summary>ControlPointId of the bottom right connection point.</summary>
+			public const int BottomRightConnectionPoint = 13;
+		}
+
 
 		/// <override></override>
 		public override Point CalculateConnectionFoot(int startX, int startY) {
@@ -775,15 +863,15 @@ namespace Dataweb.NShape.Advanced {
 		/// <override></override>
 		public override bool HasControlPointCapability(ControlPointId controlPointId, ControlPointCapabilities controlPointCapability) {
 			switch (controlPointId) {
-				case TopLeftControlPoint:
-				case TopRightControlPoint:
-				case BottomLeftControlPoint:
-				case BottomRightControlPoint:
+				case ControlPointIds.TopLeftControlPoint:
+				case ControlPointIds.TopRightControlPoint:
+				case ControlPointIds.BottomLeftControlPoint:
+				case ControlPointIds.BottomRightControlPoint:
 					return (controlPointCapability & ControlPointCapabilities.Resize) != 0;
-				case 10:
-				case 11:
-				case 12:
-				case 13:
+				case ControlPointIds.TopLeftConnectionPoint:
+				case ControlPointIds.TopRightConnectionPoint:
+				case ControlPointIds.BottomLeftConnectionPoint:
+				case ControlPointIds.BottomRightConnectionPoint:
 					return ((controlPointCapability & ControlPointCapabilities.Connect) != 0 && IsConnectionPointEnabled(controlPointId));
 				default:
 					return base.HasControlPointCapability(controlPointId, controlPointCapability);
@@ -848,7 +936,7 @@ namespace Dataweb.NShape.Advanced {
 
 		/// <override></override>
 		protected override void CalcCaptionBounds(int index, out Rectangle captionBounds) {
-			if (index != 0) throw new IndexOutOfRangeException();
+			if (index != 0) throw new ArgumentOutOfRangeException("index");
 			float insetX = Width / 8f;
 			float insetY = Height / 8f;
 			captionBounds = Rectangle.Empty;
@@ -969,18 +1057,29 @@ namespace Dataweb.NShape.Advanced {
 		/// <ToBeCompleted></ToBeCompleted>
 		protected Point[] pointBuffer = new Point[4];
 
-		// ControlPoint Id Constants
-		private const int TopLeftControlPoint = 1;
-		private const int TopRightControlPoint = 3;
-		private const int BottomLeftControlPoint = 6;
-		private const int BottomRightControlPoint = 8;
-
 		#endregion
 	}
 
 
 	/// <ToBeCompleted></ToBeCompleted>
 	public abstract class IsoscelesTriangleBase : RectangleBase {
+
+		/// <summary>
+		/// Provides constants for the control point id's of the shape.
+		/// </summary>
+		new public class ControlPointIds {
+			/// <summary>ControlPointId of the top center control point.</summary>
+			public const int TopCenterControlPoint = 1;
+			/// <summary>ControlPointId of the bottom left control point.</summary>
+			public const int BottomLeftControlPoint = 2;
+			/// <summary>ControlPointId of the bottom center control point.</summary>
+			public const int BottomCenterControlPoint = 3;
+			/// <summary>ControlPointId of the bottom right control point.</summary>
+			public const int BottomRightControlPoint = 4;
+			/// <summary>ControlPointId of the center control point.</summary>
+			public const int BalancePointControlPoint = 5;
+		}
+
 
 		/// <override></override>
 		protected internal override void InitializeToDefault(IStyleSet styleSet) {
@@ -999,19 +1098,19 @@ namespace Dataweb.NShape.Advanced {
 		/// <override></override>
 		public override bool HasControlPointCapability(ControlPointId controlPointId, ControlPointCapabilities controlPointCapability) {
 			switch (controlPointId) {
+				case ControlPointIds.TopCenterControlPoint:
+				case ControlPointIds.BottomLeftControlPoint:
+				case ControlPointIds.BottomCenterControlPoint:
+				case ControlPointIds.BottomRightControlPoint:
+					return ((controlPointCapability & ControlPointCapabilities.Resize) != 0
+						|| ((controlPointCapability & ControlPointCapabilities.Connect) != 0 && IsConnectionPointEnabled(controlPointId)));
 				case ControlPointId.Reference:
-				case RotatePointControlPoint:
+				case ControlPointIds.BalancePointControlPoint:
 					return ((controlPointCapability & ControlPointCapabilities.Reference) != 0
-								|| (controlPointCapability & ControlPointCapabilities.Rotate) != 0
-								|| ((controlPointCapability & ControlPointCapabilities.Connect) != 0
-										&& IsConnectionPointEnabled(controlPointId)));
+						|| (controlPointCapability & ControlPointCapabilities.Rotate) != 0
+						|| ((controlPointCapability & ControlPointCapabilities.Connect) != 0 && IsConnectionPointEnabled(controlPointId)));
 				default:
-					if (controlPointId > 0 && controlPointId < RotatePointControlPoint)
-						return ((controlPointCapability & ControlPointCapabilities.Resize) != 0
-									|| ((controlPointCapability & ControlPointCapabilities.Connect) != 0
-											&& IsConnectionPointEnabled(controlPointId)));
-					else
-						return base.HasControlPointCapability(controlPointId, controlPointCapability);
+					return base.HasControlPointCapability(controlPointId, controlPointCapability);
 			}
 		}
 
@@ -1076,23 +1175,23 @@ namespace Dataweb.NShape.Advanced {
 			int width = Width;
 			int height = Height;
 			switch (pointId) {
-				case TopCenterControlPoint:
+				case ControlPointIds.TopCenterControlPoint:
 					result = (transformedDeltaX == 0);
 					if (!Geometry.MoveRectangleTop(width, height, 0, centerPosFactorX, centerPosFactorY, DivFactorX, DivFactorY, transformedDeltaX, transformedDeltaY, cos, sin, modifiers, out dx, out dy, out width, out height))
 						result = false;
 					break;
 
-				case BottomLeftControlPoint:
+				case ControlPointIds.BottomLeftControlPoint:
 					if (!Geometry.MoveRectangleBottomLeft(width, height, 0, 0, centerPosFactorX, centerPosFactorY, DivFactorX, DivFactorY, transformedDeltaX, transformedDeltaY, cos, sin, modifiers, out dx, out dy, out width, out height))
 						result = false;
 					break;
 
-				case BottomRightControlPoint:
+				case ControlPointIds.BottomRightControlPoint:
 					if (!Geometry.MoveRectangleBottomRight(width, height, 0, 0, centerPosFactorX, centerPosFactorY, DivFactorX, DivFactorY, transformedDeltaX, transformedDeltaY, cos, sin, modifiers, out dx, out dy, out width, out height))
 						result = false;
 					break;
 
-				case BottomCenterControlPoint:
+				case ControlPointIds.BottomCenterControlPoint:
 					result = (transformedDeltaX == 0);
 					if (!Geometry.MoveRectangleBottom(width, height, 0, centerPosFactorX, centerPosFactorY, DivFactorX, DivFactorY, transformedDeltaX, transformedDeltaY, cos, sin, modifiers, out dx, out dy, out width, out height))
 						result = false;
@@ -1235,12 +1334,6 @@ namespace Dataweb.NShape.Advanced {
 		
 		private const float centerPosFactorX = 0.5f;
 		private const float centerPosFactorY = 0.66666666f;
-
-		private const int TopCenterControlPoint = 1;
-		private const int BottomLeftControlPoint = 2;
-		private const int BottomCenterControlPoint = 3;
-		private const int BottomRightControlPoint = 4;
-		private const int RotatePointControlPoint = 5;
 
 		#endregion
 	}

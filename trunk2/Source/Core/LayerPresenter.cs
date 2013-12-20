@@ -1,5 +1,5 @@
 ﻿/******************************************************************************
-  Copyright 2009-2012 dataweb GmbH
+  Copyright 2009-2013 dataweb GmbH
   This file is part of the NShape framework.
   NShape is free software: you can redistribute it and/or modify it under the 
   terms of the GNU General Public License as published by the Free Software 
@@ -142,7 +142,7 @@ namespace Dataweb.NShape.Controllers {
 		/// Returns a collection of <see cref="T:Dataweb.NShape.Advanced.MenuItemDef" /> for constructing context menus etc.
 		/// </summary>
 		protected IEnumerable<MenuItemDef> GetMenuItemDefs() {
-			if (layerController == null || diagramPresenter == null)
+			if (layerController == null || diagramPresenter == null || diagramPresenter.Diagram == null)
 				yield break;
 
 			string pluralPostFix = (selectedLayers.Count > 1) ? "s" : string.Empty;
@@ -208,32 +208,32 @@ namespace Dataweb.NShape.Controllers {
 		/// <ToBeCompleted></ToBeCompleted>
 		protected void ShowSelectedLayers() {
 			AssertLayerControllerIsSet();
-			for (int i = selectedLayers.Count - 1; i >= 0; --i)
-				diagramPresenter.SetLayerVisibility(selectedLayers[i].Id, true);
+			foreach (Layer selectedLayer in selectedLayers)
+				diagramPresenter.SetLayerVisibility(selectedLayer.Id, true);
 		}
 
 
 		/// <ToBeCompleted></ToBeCompleted>
 		protected void HideSelectedLayers() {
 			AssertLayerControllerIsSet();
-			for (int i = selectedLayers.Count - 1; i >= 0; --i)
-				diagramPresenter.SetLayerVisibility(selectedLayers[i].Id, false);
+			foreach (Layer selectedLayer in selectedLayers)
+				diagramPresenter.SetLayerVisibility(selectedLayer.Id, true);
 		}
 
 
 		/// <ToBeCompleted></ToBeCompleted>
 		protected void ActivateSelectedLayers() {
 			AssertLayerControllerIsSet();
-			for (int i = selectedLayers.Count - 1; i >= 0; --i)
-				diagramPresenter.SetLayerActive(selectedLayers[i].Id, true);
+			foreach (Layer selectedLayer in selectedLayers)
+				diagramPresenter.SetLayerActive(selectedLayer.Id, true);
 		}
 
 
 		/// <ToBeCompleted></ToBeCompleted>
 		protected void DeactivateSelectedLayers() {
 			AssertLayerControllerIsSet();
-			for (int i = selectedLayers.Count - 1; i >= 0; --i)
-				diagramPresenter.SetLayerActive(selectedLayers[i].Id, false);
+			foreach (Layer selectedLayer in selectedLayers)
+				diagramPresenter.SetLayerActive(selectedLayer.Id, false);
 		}
 
 
@@ -356,8 +356,8 @@ namespace Dataweb.NShape.Controllers {
 
 		private LayerIds GetSelectedLayerIds() {
 			LayerIds result = LayerIds.None;
-			for (int i = selectedLayers.Count - 1; i >= 0; --i)
-				result |= selectedLayers[i].Id;
+			foreach (Layer selectedLayer in selectedLayers)
+				result |= selectedLayer.Id;
 			return result;
 		}
 

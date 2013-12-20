@@ -1,5 +1,5 @@
 /******************************************************************************
-  Copyright 2009-2012 dataweb GmbH
+  Copyright 2009-2013 dataweb GmbH
   This file is part of the NShape framework.
   NShape is free software: you can redistribute it and/or modify it under the 
   terms of the GNU General Public License as published by the Free Software 
@@ -237,9 +237,8 @@ namespace Dataweb.NShape.WinFormsUI {
 			
 			// if the user has insufficient privileges, deactivate all controls
 			if (!templateController.Project.SecurityManager.IsGranted(Permission.Templates)) {
-				int cnt = Controls.Count;
-				for (int i = 0; i < cnt; ++i)
-					Controls[i].Enabled = false;
+				foreach (Control ctrl in Controls)
+					ctrl.Enabled = false;
 			}
 
 			// Set current Design for the Style UITypeEditor
@@ -380,7 +379,8 @@ namespace Dataweb.NShape.WinFormsUI {
 					string terminalName = template.GetMappedTerminalName(ControlPointId.None);
 					TerminalColumn.Items.Add(terminalName ?? deactivatedTag);
 					if (modelObject != null) {
-						for (int i = 1; i <= modelObject.Type.MaxTerminalId; ++i)
+						int maxTerminalId = modelObject.Type.MaxTerminalId;
+						for (int i = 1; i <= maxTerminalId; ++i)
 							TerminalColumn.Items.Add(modelObject.Type.GetTerminalName(i));
 					}
 
@@ -534,9 +534,9 @@ namespace Dataweb.NShape.WinFormsUI {
 		private void InitPropertyColumn(DataGridViewComboBoxColumn column, List<PropertyInfo> propertyInfos){
 			column.Items.Clear();
 			// Add all mappable properties
-			for (int i = 0; i < propertyInfos.Count; ++i) {
-				if (GetPropertyId(propertyInfos[i]).HasValue)
-					column.Items.Add(propertyInfos[i].Name);
+			foreach (PropertyInfo propertyInfo in propertyInfos) {
+				if (GetPropertyId(propertyInfo).HasValue)
+					column.Items.Add(propertyInfo.Name);
 			}
 			// Insert empty item
 			if (column.Items.Count > 0) column.Items.Insert(0, string.Empty);
@@ -626,12 +626,13 @@ namespace Dataweb.NShape.WinFormsUI {
 		/// Checks if the shape property is already mapped to another model property
 		/// </summary>
 		private bool IsShapePropertyMapped(int rowIndex) {
-			object currentCellValue = propertyMappingGrid.Rows[rowIndex].Cells[shapeColumnIdx].Value;
+			DataGridViewRow currRow = propertyMappingGrid.Rows[rowIndex];
+			object currentCellValue = currRow.Cells[shapeColumnIdx].Value;
 			string currentValStr = string.Format("{0}", currentCellValue);
 			if (!string.IsNullOrEmpty(currentValStr)) {
-				for (int i = 0; i < propertyMappingGrid.Rows.Count; ++i) {
-					if (i == rowIndex) continue;
-					string cellValStr = string.Format("{0}", propertyMappingGrid.Rows[i].Cells[shapeColumnIdx].Value);
+				foreach (DataGridViewRow row in propertyMappingGrid.Rows) {
+					if (row == currRow) continue;
+					string cellValStr = string.Format("{0}", row.Cells[shapeColumnIdx].Value);
 					if (cellValStr == currentValStr)
 						return true;
 				}
@@ -644,12 +645,13 @@ namespace Dataweb.NShape.WinFormsUI {
 		/// Checks if the shape property is already mapped to another model property
 		/// </summary>
 		private bool IsModelPropertyMapped(int rowIndex) {
-			object currentCellValue = propertyMappingGrid.Rows[rowIndex].Cells[modelColumnIdx].Value;
+			DataGridViewRow currRow = propertyMappingGrid.Rows[rowIndex];
+			object currentCellValue = currRow.Cells[modelColumnIdx].Value;
 			string currentValStr = string.Format("{0}", currentCellValue);
 			if (!string.IsNullOrEmpty(currentValStr)) {
-				for (int i = 0; i < propertyMappingGrid.Rows.Count; ++i) {
-					if (i == rowIndex) continue;
-					string cellValStr = string.Format("{0}", propertyMappingGrid.Rows[i].Cells[modelColumnIdx].Value);
+				foreach (DataGridViewRow row in propertyMappingGrid.Rows) {
+					if (row == currRow) continue;
+					string cellValStr = string.Format("{0}", row.Cells[modelColumnIdx].Value);
 					if (cellValStr == currentValStr) return true;
 				}
 			}
@@ -786,18 +788,18 @@ namespace Dataweb.NShape.WinFormsUI {
 		/// </summary>
 		private void UpdateNumericModelMapping(NumericModelMapping numericMapping, int rowIndex) {
 			object cellValue;
-			for (int i = 0; i < valueMappingGrid.Rows.Count; ++i) {
-				if (string.Compare((string)valueMappingGrid.Rows[i].Cells[mappingPropertyNameCol].Value, titleSlope) == 0) {
+			foreach (DataGridViewRow row in valueMappingGrid.Rows) {
+				if (string.Compare((string)row.Cells[mappingPropertyNameCol].Value, titleSlope) == 0) {
 					// Get slope value
-					cellValue = valueMappingGrid.Rows[i].Cells[mappingPropertyValueCol].Value;
+					cellValue = row.Cells[mappingPropertyValueCol].Value;
 					if (cellValue is float)	
 						numericMapping.Slope = (float)cellValue;
 					else if (cellValue is int)
 						numericMapping.Slope = (int)cellValue;
 					else Debug.Fail("Unsupported cell ValueType");
-				} else if (string.Compare((string)valueMappingGrid.Rows[i].Cells[mappingPropertyNameCol].Value, titleIntercept) == 0) {
+				} else if (string.Compare((string)row.Cells[mappingPropertyNameCol].Value, titleIntercept) == 0) {
 					// Get intercept value
-					cellValue = valueMappingGrid.Rows[i].Cells[mappingPropertyValueCol].Value;
+					cellValue = row.Cells[mappingPropertyValueCol].Value;
 					if (cellValue is float)
 						numericMapping.Intercept = (float)cellValue;
 					else if (cellValue is int)
@@ -848,15 +850,15 @@ namespace Dataweb.NShape.WinFormsUI {
 
 			int rangeColIdx = 0;
 			int styleColIdx = 1;
-			for (int i = 0; i < valueMappingGrid.Rows.Count; ++i) {
-				object rangeValue = valueMappingGrid.Rows[i].Cells[rangeColIdx].Value;
-				object styleName = valueMappingGrid.Rows[i].Cells[styleColIdx].Value;
+			foreach (DataGridViewRow row in valueMappingGrid.Rows) {
+				object rangeValue = row.Cells[rangeColIdx].Value;
+				object styleName = row.Cells[styleColIdx].Value;
 				IStyle style = null;
 				// Find style
-				if (valueMappingGrid.Rows[i].Cells[styleColIdx].Value != null) {
+				if (row.Cells[styleColIdx].Value != null) {
 					PropertyInfo shapePropInfo = FindPropertyInfo(shapePropertyInfos, styleMapping.ShapePropertyId);
 					// Get Style value
-					string styleTitle = valueMappingGrid.Rows[i].Cells[styleColIdx].Value.ToString();
+					string styleTitle = row.Cells[styleColIdx].Value.ToString();
 					foreach (IStyle s in TemplateController.Project.Design.Styles) {
 						Type styleType = s.GetType();
 						if (!IsOfType(styleType, shapePropInfo.PropertyType)) continue;
@@ -887,7 +889,8 @@ namespace Dataweb.NShape.WinFormsUI {
 		private void MaintainEmptyRows(DataGridView dataGrid, bool keepLastRowEmpty) {
 			// Remove all empty rows
 			for (int i = dataGrid.Rows.Count - 1; i >= 0; --i) {
-				if (IsRowEmpty(dataGrid.Rows, i)) dataGrid.Rows.RemoveAt(i);
+				if (IsRowEmpty(dataGrid.Rows[i])) 
+					dataGrid.Rows.RemoveAt(i);
 			}
 			// Add an empty row if desired
 			if (keepLastRowEmpty) dataGrid.Rows.Add();
@@ -897,13 +900,14 @@ namespace Dataweb.NShape.WinFormsUI {
 		/// <summary>
 		/// Checks if the given Row contans values
 		/// </summary>
-		private bool IsRowEmpty(DataGridViewRowCollection rows, int rowIndex) {
-			for (int i = 0; i < rows[rowIndex].Cells.Count; ++i) {
-				string valStr = string.Format("{0}", rows[rowIndex].Cells[i].Value);
+		private bool IsRowEmpty(DataGridViewRow row) {
+			for (int i = 0; i < row.Cells.Count; ++i) {
+				string valStr = string.Format("{0}", row.Cells[i].Value);
 				if (!string.IsNullOrEmpty(valStr)) return false;
 			}
 			return true;
 		}
+
 
 		#endregion
 
@@ -946,8 +950,8 @@ namespace Dataweb.NShape.WinFormsUI {
 				ShapeType shapeType = templateController.WorkTemplate.Shape.Type;
 				foreach (Shape shape in templateController.Shapes) {
 					if (shape.Type == shapeType) {
-						for (int i = 0; i < shapeComboBox.Items.Count; ++i) {
-							ShapeItem item = (ShapeItem)shapeComboBox.Items[i];
+						foreach (object cboItem in  shapeComboBox.Items) {
+							ShapeItem item = (ShapeItem)cboItem;
 							if (item.Shape == shape) {
 								shapeComboBox.SelectedIndex = item.Index;
 								break;
@@ -1160,8 +1164,8 @@ namespace Dataweb.NShape.WinFormsUI {
 				int cnt = grid.Columns.Count;
 				if (cnt > 0) {
 					int colWidth = (grid.ClientRectangle.Width / cnt) - 4;
-					for (int i = 0; i < cnt; ++i)
-						grid.Columns[i].Width = colWidth;
+					foreach (DataGridViewColumn col in grid.Columns)
+						col.Width = colWidth;
 					grid.Invalidate();
 				}
 			}
@@ -1246,18 +1250,17 @@ namespace Dataweb.NShape.WinFormsUI {
 
 		private void GetPropertyInfos(Type type, IList<PropertyInfo> propertyInfos) {
 			propertyInfos.Clear();
-			PropertyInfo[] piArray = type.GetProperties(bindingFlags);
-			for (int i = 0; i < piArray.Length; ++i)
-				propertyInfos.Add(piArray[i]);
+			foreach (PropertyInfo propertyInfo in type.GetProperties(bindingFlags))
+				propertyInfos.Add(propertyInfo);
 		}
 
 
 		// Find PropertyInfo with the given name
 		private PropertyInfo FindPropertyInfo(IList<PropertyInfo> propertyInfos, string propertyName) {
 			PropertyInfo result = null;
-			for (int i = 0; i < propertyInfos.Count; ++i) {
-				if (propertyInfos[i].Name == propertyName) {
-					result = propertyInfos[i];
+			foreach (PropertyInfo propertyInfo in propertyInfos) {
+				if (propertyInfo.Name == propertyName) {
+					result = propertyInfo;
 					break;
 				}
 			}
@@ -1268,10 +1271,10 @@ namespace Dataweb.NShape.WinFormsUI {
 		// Find propertyInfo with the given PropertyId
 		private PropertyInfo FindPropertyInfo(IList<PropertyInfo> propertyInfos, int propertyId) {
 			PropertyInfo result = null;
-			for (int i = 0; i < propertyInfos.Count; ++i) {
-				int? id = GetPropertyId(propertyInfos[i]);
+			foreach (PropertyInfo propertyInfo in propertyInfos) {
+				int? id = GetPropertyId(propertyInfo);
 				if (id.HasValue && id.Value == propertyId) {
-					result = propertyInfos[i];
+					result = propertyInfo;
 					break;
 				}
 			}

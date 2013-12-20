@@ -1,5 +1,5 @@
 ﻿/******************************************************************************
-  Copyright 2009-2012 dataweb GmbH
+  Copyright 2009-2013 dataweb GmbH
   This file is part of the NShape framework.
   NShape is free software: you can redistribute it and/or modify it under the 
   terms of the GNU General Public License as published by the Free Software 
@@ -132,12 +132,14 @@ namespace Dataweb.NShape.Advanced {
 			Geometry.CalcDroppedPerpendicularFoot(x, y, knee1.X, knee1.Y, knee2.X, knee2.Y, out fX, out fY);
 			result.A = segmentIndex;
 			// B is the distance of p to knee1 in percent of the total length
-			result.B = 100 * Geometry.DistancePointPointFast(fX, fY, knee1.X, knee1.Y) / Geometry.DistancePointPointFast(knee2.X, knee2.Y, knee1.X, knee1.Y);
+			int kneeDist = Geometry.DistancePointPointFast(knee2.X, knee2.Y, knee1.X, knee1.Y);
+			if (kneeDist != 0)
+				result.B = 100 * Geometry.DistancePointPointFast(fX, fY, knee1.X, knee1.Y) / kneeDist;
+			else result.B = 0;
 			// C is the distance of p to knee1 - knee2
 			result.C = Geometry.DistancePointPointFast(x, y, fX, fY);
 			return result;
 		}
-
 
 		/// <summary>Overriden method. Check base class for documentation.</summary>
 		/// <remarks>Connection foot is simple the nearest point on the nearest segment</remarks>
@@ -167,7 +169,7 @@ namespace Dataweb.NShape.Advanced {
 			ControlPointId result = ControlPointId.None;
 			//
 			// We first search for a hit control point
-			for (int cpIdx = 0; cpIdx < ControlPointCount; ++cpIdx) {
+			for (int cpIdx = ControlPointCount - 1; cpIdx >= 0; --cpIdx) {
 				// Get positions of the current control points and test on hit.
 				LineControlPoint ctrlPoint = GetControlPoint(cpIdx);
 				Point currPos = ctrlPoint.GetPosition();
@@ -394,7 +396,7 @@ namespace Dataweb.NShape.Advanced {
 			// Find position where to insert the new point
 			int pointIndex = GetControlPointIndex(beforePointId);
 			if (pointIndex < 0 || pointIndex > ControlPointCount)
-				throw new IndexOutOfRangeException();
+				throw new ArgumentOutOfRangeException("beforePointId");
 
 			// Create new vertex
 			newPointId = GetNewControlPointId();
@@ -411,7 +413,7 @@ namespace Dataweb.NShape.Advanced {
 			// Find position where to insert the new point
 			int pointIndex = GetControlPointIndex(beforePointId);
 			if (pointIndex < 0 || pointIndex > ControlPointCount)
-				throw new IndexOutOfRangeException();
+				throw new ArgumentOutOfRangeException("beforePointId");
 
 			// Create new vertex
 			newPointId = GetNewControlPointId();

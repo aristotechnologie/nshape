@@ -202,7 +202,7 @@
 			this.display.SelectionInteriorColor = System.Drawing.Color.WhiteSmoke;
 			this.display.SelectionNormalColor = System.Drawing.Color.DarkGreen;
 			this.display.ShowDefaultContextMenu = false;
-			this.display.ShowGrid = false;
+			this.display.IsGridVisible = false;
 			this.display.ShowScrollBars = true;
 			this.display.Size = new System.Drawing.Size(862, 620);
 			this.display.SnapDistance = 5;

@@ -1,5 +1,5 @@
 ﻿/******************************************************************************
-  Copyright 2009-2012 dataweb GmbH
+  Copyright 2009-2013 dataweb GmbH
   This file is part of the NShape framework.
   NShape is free software: you can redistribute it and/or modify it under the 
   terms of the GNU General Public License as published by the Free Software 
@@ -645,27 +645,30 @@ namespace Dataweb.NShape.Advanced {
 
 		/// <override></override>
 		protected override bool RotateCore(int angle, int x, int y) {
-			bool result = false;
-			if (IsConnected(1, null) != ControlPointId.None || IsConnected(2, null) != ControlPointId.None)
+			bool result;
+			// If any of the two glue points is connected, the default result is "false"
+			if (IsConnected(ControlPointId.FirstVertex, null) != ControlPointId.None
+				|| IsConnected(ControlPointId.LastVertex, null) != ControlPointId.None)
 				result = false;
-			else {
-				Point rotationCenter = Point.Empty;
-				// Prepare transformation matrix and transform vertices
-				rotationCenter.Offset(x, y);
-				Matrix.Reset();
-				Matrix.RotateAt(Geometry.TenthsOfDegreeToDegrees(angle), rotationCenter);
-				// Rotate vertices
-				Point[] vertex = new Point[1];
-				for (int i = controlPoints.Count - 1; i >= 0; --i) {
-					if (controlPoints[i] is VertexControlPoint) {
-						vertex[0] = controlPoints[i].GetPosition();
-						Matrix.TransformPoints(vertex);
-						controlPoints[i].SetPosition(vertex[0]);
-					}
+			else result = true;
+
+			Point rotationCenter = Point.Empty;
+			// Prepare transformation matrix and transform vertices
+			rotationCenter.Offset(x, y);
+			Matrix.Reset();
+			Matrix.RotateAt(Geometry.TenthsOfDegreeToDegrees(angle), rotationCenter);
+			// Rotate vertices
+			Point[] vertex = new Point[1];
+			foreach (LineControlPoint linePt in controlPoints) {
+				if (linePt is VertexControlPoint) {
+					vertex[0] = linePt.GetPosition();
+					Matrix.TransformPoints(vertex);
+					linePt.SetPosition(vertex[0]);
 				}
-				InvalidateDrawCache();
-				result = true;
 			}
+			ControlPointsHaveMoved();
+
+			InvalidateDrawCache();
 			return result;
 		}
 
@@ -696,10 +699,10 @@ namespace Dataweb.NShape.Advanced {
 
 			// Move vertices
 			Point p = Point.Empty;
-			for (int i = controlPoints.Count - 1; i >= 0; --i) {
-				if (controlPoints[i] is DynamicConnectionPoint) 
+			foreach (LineControlPoint linePt in controlPoints) {
+				if (linePt is DynamicConnectionPoint) 
 					continue;
-				controlPoints[i].Offset(deltaX, deltaY);
+				linePt.Offset(deltaX, deltaY);
 			}
 			// Move CapBounds (if calculated)
 			if (Geometry.IsValid(startCapBounds)) startCapBounds.Offset(deltaX, deltaY);
@@ -878,6 +881,7 @@ namespace Dataweb.NShape.Advanced {
 		protected bool StartCapIntersectsWith(Rectangle rectangle) {
 			if (IsShapedLineCap(StartCapStyleInternal)) {
 				if (Geometry.RectangleIntersectsWithRectangle(startCapBounds, rectangle)) {
+					if (startCapPointBuffer == null) UpdateDrawCache();
 					if (Geometry.PolygonIntersectsWithRectangle(startCapPointBuffer, rectangle))
 						return true;
 				}
@@ -892,6 +896,7 @@ namespace Dataweb.NShape.Advanced {
 		protected bool EndCapIntersectsWith(Rectangle rectangle) {
 			if (IsShapedLineCap(EndCapStyleInternal)) {
 				if (Geometry.RectangleIntersectsWithRectangle(endCapBounds, rectangle)) {
+					if (endCapPointBuffer == null) UpdateDrawCache();
 					if (Geometry.PolygonIntersectsWithRectangle(endCapPointBuffer, rectangle))
 						return true;
 				}
@@ -905,10 +910,16 @@ namespace Dataweb.NShape.Advanced {
 		/// </summary>
 		protected bool StartCapContainsPoint(int pointX, int pointY) {
 			if (Geometry.RectangleContainsPoint(startCapBounds, pointX, pointY)) {
-				if (startCapPointBuffer == null) 
-					CalcCapPoints(GetControlPointIndex(ControlPointId.FirstVertex), StartCapAngle, StartCapStyleInternal, LineStyle, ref startCapBounds, ref startCapPointBuffer);
-				if (Geometry.ConvexPolygonContainsPoint(startCapPointBuffer, pointX, pointY))
-					return true;
+				if (startCapPointBuffer == null) UpdateDrawCache();
+				if (Geometry.PolygonIsConvex(startCapPointBuffer)) {
+					// Check convex polygon
+					if (Geometry.ConvexPolygonContainsPoint(startCapPointBuffer, pointX, pointY))
+						return true;
+				} else {
+					// Check non-convex polygon
+					if (Geometry.PolygonContainsPoint(startCapPointBuffer, pointX, pointY))
+					    return true;
+				}
 			}
 			return false;
 		}
@@ -919,10 +930,16 @@ namespace Dataweb.NShape.Advanced {
 		/// </summary>
 		protected bool EndCapContainsPoint(int pointX, int pointY) {
 			if (Geometry.RectangleContainsPoint(endCapBounds, pointX, pointY)) {
-				if (endCapPointBuffer == null)
-					CalcCapPoints(GetControlPointIndex(ControlPointId.LastVertex), endCapAngle, EndCapStyleInternal, LineStyle, ref endCapBounds, ref endCapPointBuffer);
-				if (Geometry.ConvexPolygonContainsPoint(endCapPointBuffer, pointX, pointY))
-					return true;
+				if (endCapPointBuffer == null) UpdateDrawCache();
+				if (Geometry.PolygonIsConvex(endCapPointBuffer)) {
+					// Check convex polygon
+					if (Geometry.ConvexPolygonContainsPoint(endCapPointBuffer, pointX, pointY))
+						return true;
+				} else {
+					// Check non-convex polygon
+					if (Geometry.PolygonContainsPoint(endCapPointBuffer, pointX, pointY))
+						return true;
+				}
 			}
 			return false;
 		}
@@ -998,6 +1015,8 @@ namespace Dataweb.NShape.Advanced {
 		/// Constructs a new instance.
 		/// </summary>
 		protected virtual void Construct() {
+            if (controlPoints != null) 
+                throw new InvalidOperationException("Construct() was already called and must not be called twice.");
 			controlPoints = new List<LineControlPoint>(MinVertexCount);
 			for (int i = MinVertexCount - 1; i >= 0; --i)
 				InsertControlPoint(0, CreateVertex(i + 1, Point.Empty));
@@ -1476,8 +1495,8 @@ namespace Dataweb.NShape.Advanced {
 
 		private void MaintainVertexCount() {
 			int vtxCnt = 0;
-			for (int i = controlPoints.Count - 1; i >= 0; --i)
-				if (controlPoints[i] is VertexControlPoint)
+			foreach (LineControlPoint linePt in controlPoints)
+				if (linePt is VertexControlPoint)
 					++vtxCnt;
 			vertexCount = vtxCnt;
 		}

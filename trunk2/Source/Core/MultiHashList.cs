@@ -1,5 +1,5 @@
 ﻿/******************************************************************************
-  Copyright 2009-2012 dataweb GmbH
+  Copyright 2009-2013 dataweb GmbH
   This file is part of the NShape framework.
   NShape is free software: you can redistribute it and/or modify it under the 
   terms of the GNU General Public License as published by the Free Software 
@@ -79,7 +79,8 @@ namespace Dataweb.Utilities {
 		/// <ToBeCompleted></ToBeCompleted>
 		public void Clear() {
 			// Clear list by overwriting all items with null
-			for (int i = list.Count - 1; i >= 0; --i) list[i] = null;
+			for (int i = list.Count - 1; i >= 0; --i) 
+				list[i] = null;
 		}
 
 

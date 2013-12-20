@@ -323,6 +323,7 @@ namespace ArchiSketch {
 			this.display.DiagramSetController = this.diagramSetController;
 			this.display.Dock = System.Windows.Forms.DockStyle.Fill;
 			this.display.GridColor = System.Drawing.Color.Gainsboro;
+			this.display.GridSize = 19;
 			this.display.ImeMode = System.Windows.Forms.ImeMode.NoControl;
 			this.display.Location = new System.Drawing.Point(0, 0);
 			this.display.Name = "display";

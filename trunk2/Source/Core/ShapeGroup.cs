@@ -1,5 +1,5 @@
 ﻿/******************************************************************************
-  Copyright 2009-2012 dataweb GmbH
+  Copyright 2009-2013 dataweb GmbH
   This file is part of the NShape framework.
   NShape is free software: you can redistribute it and/or modify it under the 
   terms of the GNU General Public License as published by the Free Software 
@@ -57,12 +57,10 @@ namespace Dataweb.NShape.Advanced {
 
 			this.permissionSetName = source.SecurityDomainName;
 			this.tag = source.Tag;
+			this.data = source.Data;
 			this.displayService = source.DisplayService;
 			//this.Parent = source.Parent;
 			
-			//this.location.X = source.X;
-			//this.location.Y = source.Y;
-
 			// Do not recalculate Center after adding the children because in case the group is rotated, 
 			// the rotation center would not be the same.
 			if (source.Children != null)
@@ -130,8 +128,8 @@ namespace Dataweb.NShape.Advanced {
 					}
 					if (value is ShapeGroup)
 						owner = ((ShapeGroup)value).children;
-					else if (value.Children is ShapeAggregation)
-						owner = (ShapeAggregation)value.Children;
+					else if (value.children is ShapeAggregation)
+						owner = (ShapeAggregation)value.children;
 					else throw new ArgumentException(string.Format("{0}'s Children property must be a {1}", value.GetType().Name, typeof(ShapeAggregation).Name));
 				} else owner = null;
 			}
@@ -148,6 +146,13 @@ namespace Dataweb.NShape.Advanced {
 		public override object Tag {
 			get { return tag; }
 			set { tag = value; }
+		}
+
+
+		/// <override></override>
+		public override string Data {
+			get { return data; }
+			set { data = value; }
 		}
 
 
@@ -180,6 +185,12 @@ namespace Dataweb.NShape.Advanced {
 		public override void NotifyModelChanged(int modelPropertyId) {
 			for (int i = children.Count - 1; i >= 0; --i)
 				NotifyModelChanged(modelPropertyId);
+		}
+
+
+		/// <override></override>
+		public override bool CanConnect(ControlPointId gluePointId, Shape targetShape, ControlPointId targetPointId) {
+			return false;
 		}
 
 
@@ -223,8 +234,10 @@ namespace Dataweb.NShape.Advanced {
 		public override RelativePosition CalculateRelativePosition(int x, int y) {
 			if (!Geometry.IsValid(x, y)) throw new ArgumentOutOfRangeException("x, y");
 			RelativePosition result = RelativePosition.Empty;
-			result.A = x - X;
-			result.B = y - Y;
+			// Calculate unrotated position of x/y
+			Point pos = Geometry.RotatePoint(X, Y, Geometry.TenthsOfDegreeToDegrees(-Angle), x, y);
+			result.A = pos.X - X;
+			result.B = pos.Y - Y;
 			return result;
 		}
 
@@ -234,7 +247,8 @@ namespace Dataweb.NShape.Advanced {
 			if (relativePosition == RelativePosition.Empty) throw new ArgumentOutOfRangeException("relativePosition");
 			Point result = Point.Empty;
 			result.X = relativePosition.A + X;
-			result.Y = relativePosition.A + Y;
+			result.Y = relativePosition.B + Y;
+			result = Geometry.RotatePoint(X, Y, Geometry.TenthsOfDegreeToDegrees(Angle), result);
 			return result;
 		}
 
@@ -400,27 +414,12 @@ namespace Dataweb.NShape.Advanced {
 		}
 
 
-		///// <override></override>
-		//public override bool MoveTo(int toX, int toY) {
-		//    bool result = false;
-		//    Invalidate();
-		//    if (Owner != null) Owner.NotifyChildMoving(this);
-
-		//    result = children.NotifyParentMoved(toX - X, toY - Y);
-
-		//    if (Owner != null) Owner.NotifyChildMoved(this);
-		//    Invalidate();
-		//    return result;
-		//}
-
-
 		/// <override></override>
 		public override bool MoveBy(int deltaX, int deltaY) {
 			bool result = false;
 			Invalidate();
 			if (Owner != null) Owner.NotifyChildMoving(this);
 
-			//location.Offset(deltaX, deltaY);
 			result = children.NotifyParentMoved(deltaX, deltaY);
 
 			if (Owner != null) Owner.NotifyChildMoved(this);
@@ -449,10 +448,10 @@ namespace Dataweb.NShape.Advanced {
 			// Notify Owner
 			if (Owner != null) Owner.NotifyChildRotating(this);
 
-			// First, perform rotation around the center point...
+			// First, calculate the (normalized) rotation angle
 			angle = (3600 + angle + deltaAngle) % 3600;
-			// ...then, rotate the shape's center around the given rotation center and 
-			// move the shape (including its children) to this point
+			// Then, calculate the new position of the center point (when performing an excentered rotation)
+			// and move the shape (including its children) to the new center point
 			if (x != X || y != Y) {
 				int toX = X;
 				int toY = Y;
@@ -460,7 +459,7 @@ namespace Dataweb.NShape.Advanced {
 				if (!MoveTo(toX, toY)) result = false;
 			}
 
-			// Notify children and owner
+			// Notify children and owner (calls rotate for all children)
 			if (!children.NotifyParentRotated(deltaAngle, X, Y)) result = false;
 			if (Owner != null) Owner.NotifyChildRotated(this);
 			return result;
@@ -504,8 +503,8 @@ namespace Dataweb.NShape.Advanced {
 		/// <override></override>
 		public override bool HasControlPointCapability(ControlPointId controlPointId, ControlPointCapabilities controlPointCapability) {
 			if (controlPointId == RotatePointId || controlPointId == ControlPointId.Reference)
-				return ((controlPointCapability & ControlPointCapabilities.Rotate) > 0
-					|| (controlPointCapability & ControlPointCapabilities.Reference) > 0);
+			    return ((controlPointCapability & ControlPointCapabilities.Rotate) > 0
+			        || (controlPointCapability & ControlPointCapabilities.Reference) > 0);
 			return false;
 		}
 
@@ -646,7 +645,7 @@ namespace Dataweb.NShape.Advanced {
 			yield return new EntityFieldDefinition("ZOrder", typeof(int));
 			yield return new EntityFieldDefinition("Layers", typeof(int));
 			yield return new EntityFieldDefinition("Angle", typeof(int));
-			// yield return new EntityInnerObjectsDefinition(childPosPropertyName, "Core.Point", pointAttrNames, pointAttrTypes);
+			if (version >= 5) yield return new EntityFieldDefinition("Data", typeof(string));
 		}
 
 
@@ -671,6 +670,7 @@ namespace Dataweb.NShape.Advanced {
 			ZOrder = reader.ReadInt32();
 			Layers = (LayerIds)reader.ReadInt32();
 			angle = reader.ReadInt32();
+			if (version >= 5) data = reader.ReadString();
 		}
 
 
@@ -689,6 +689,7 @@ namespace Dataweb.NShape.Advanced {
 			writer.WriteInt32(ZOrder);
 			writer.WriteInt32((int)Layers);
 			writer.WriteInt32(angle);
+			if (version >= 5) writer.WriteString(data);
 		}
 
 
@@ -710,7 +711,6 @@ namespace Dataweb.NShape.Advanced {
 
 		/// <override></override>
 		public override Shape Clone() {
-			//Shape result = new ShapeGroup(Type, (Template)null);
 			Shape result = new ShapeGroup(Type, this.Template);
 			result.CopyFrom(this);
 			return result;
@@ -803,9 +803,10 @@ namespace Dataweb.NShape.Advanced {
 		private IDisplayService displayService;
 		private char permissionSetName = 'A';
 		private ShapeCollection owner = null;
-		private GroupShapeAggregation children;
+		private new GroupShapeAggregation children;
 		private object id = null;
 		private object tag = null;
+		private string data = null;
 		private object internalTag;
 		//private Point location;
 		

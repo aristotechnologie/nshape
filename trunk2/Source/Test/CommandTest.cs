@@ -1,11 +1,25 @@
-﻿using System;
+﻿/******************************************************************************
+  Copyright 2009-2013 dataweb GmbH
+  This file is part of the NShape framework.
+  NShape is free software: you can redistribute it and/or modify it under the 
+  terms of the GNU General Public License as published by the Free Software 
+  Foundation, either version 3 of the License, or (at your option) any later 
+  version.
+  NShape is distributed in the hope that it will be useful, but WITHOUT ANY
+  WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR 
+  A PARTICULAR PURPOSE.  See the GNU General Public License for more details.
+  You should have received a copy of the GNU General Public License along with 
+  NShape. If not, see <http://www.gnu.org/licenses/>.
+******************************************************************************/
+
+using System;
 using System.Collections.Generic;
 using System.Drawing;
+using System.Reflection;
 using Dataweb.NShape;
 using Dataweb.NShape.Advanced;
 using Dataweb.NShape.Commands;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
-using System.Reflection;
 
 
 namespace NShapeTest {
@@ -66,10 +80,30 @@ namespace NShapeTest {
 				() => Assert.IsTrue(Contains(project.Repository.GetDiagrams(), diagram)),
 				() => Assert.IsFalse(Contains(project.Repository.GetDiagrams(), diagram)));
 
-			// Dataweb.NShape.Commands.CreateShapeCommand
+
+			// Create test shapes
 			List<Shape> shapes = CreateShapes(project);
-			ExecTest(project, new CreateShapesCommand(diagram, LayerIds.None, shapes, false, false), 
-				() => Assert.IsTrue(Contains(diagram.Shapes, shapes)),
+			
+			// Dataweb.NShape.Commands.CreateShapeCommand
+			//ExecTest(project, new CreateShapesCommand(diagram, LayerIds.None, shapes, false, false), 
+			//    () => Assert.IsTrue(Contains(diagram.Shapes, shapes)),
+			//    () => Assert.IsFalse(Contains(diagram.Shapes, shapes)));
+
+			// Dataweb.NShape.Commands.CreateShapeCommand
+			// Test ZOrder assignment
+			ExecTest(project, new CreateShapesCommand(diagram, LayerIds.None, shapes, false, false),
+				() => {
+					// a) Check whether all shapes are in the diagram
+					Assert.IsTrue(Contains(diagram.Shapes, shapes));
+					// b) Check whether ZOrder assignment is valid
+					Shape prevShape = null;
+					foreach (Shape s in diagram.Shapes) {
+						if (prevShape == null)
+							prevShape = s;
+						else
+							Assert.IsTrue(s.ZOrder < prevShape.ZOrder);
+					}
+				},
 				() => Assert.IsFalse(Contains(diagram.Shapes, shapes)));
 
 			// Dataweb.NShape.Commands.DeleteShapesCommand

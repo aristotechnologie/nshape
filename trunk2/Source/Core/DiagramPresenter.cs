@@ -1,5 +1,5 @@
 ﻿/******************************************************************************
-  Copyright 2009-2012 dataweb GmbH
+  Copyright 2009-2013 dataweb GmbH
   This file is part of the NShape framework.
   NShape is free software: you can redistribute it and/or modify it under the 
   terms of the GNU General Public License as published by the Free Software 
@@ -52,6 +52,7 @@ namespace Dataweb.NShape.Controllers {
 			this.shape = shape;
 			this.mouseEventArgs = mouseEventArgs;
 		}
+
 
 		/// <summary>
 		/// Initializing a new instance of <see cref="T:Dataweb.NShape.Controllers.DiagramPresenterShapeClickEventArgs" />
@@ -206,6 +207,11 @@ namespace Dataweb.NShape.Controllers {
 		Diagram Diagram { get; }
 
 		/// <summary>
+		/// The currently active tool for manipulating the current diagram.
+		/// </summary>
+		Tool ActiveTool { get; set; }
+
+		/// <summary>
 		/// Gets the display service of this diagram presenter.
 		/// </summary>
 		IDisplayService DisplayService { get; }
@@ -269,7 +275,7 @@ namespace Dataweb.NShape.Controllers {
 		/// Specifies whether grid lines should be visible.
 		/// </summary>
 		[Category("Appearance")]
-		bool ShowGrid { get; set; }
+		bool IsGridVisible { get; set; }
 
 		/// <summary>
 		/// Specifies the shape of grips used for resizing shapes.
@@ -647,7 +653,8 @@ namespace Dataweb.NShape.Controllers {
 		/// Ensures that the given area is visible. 
 		/// If the given area is outside the displayed area, the diagram will be scrolled and/or zoomed.
 		/// </summary>
-		void EnsureVisible(Rectangle area);
+		/// <param name="viewArea">The area (in diagram coordinates) that should be visible.</param>
+		void EnsureVisible(Rectangle viewArea);
 
 		/// <summary>
 		/// Sets a previously registered cursor.

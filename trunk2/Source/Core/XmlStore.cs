@@ -1,5 +1,5 @@
 /******************************************************************************
-  Copyright 2009-2012 dataweb GmbH
+  Copyright 2009-2013 dataweb GmbH
   This file is part of the NShape framework.
   NShape is free software: you can redistribute it and/or modify it under the 
   terms of the GNU General Public License as published by the Free Software 
@@ -37,7 +37,11 @@ namespace Dataweb.NShape {
 	[ToolboxBitmap(typeof(XmlStore), "XmlStore.bmp")]
 	public class XmlStore : Store {
 
-		/// <ToBeCompleted></ToBeCompleted>
+		/// <summary>Defines the default extension of the backup file created when setting BackupFileGenerationMode to "BakFile".</summary>
+		public const string DefaultBackupFileExtension = ".bak";
+
+
+		/// <summary>Defines the behavior of automatic backup file generation.</summary>
 		public enum BackupFileGenerationMode {
 			/// <summary>No backup file(s) will be created when saving contents to an existing XML repository file.</summary>
 			None,
@@ -129,6 +133,20 @@ namespace Dataweb.NShape {
 
 
 		/// <summary>
+		/// Specifies whether a backup for the current contents should be created when saving changes to file.
+		/// </summary>
+		[Category("NShape")]
+		[DefaultValue(DefaultBackupFileExtension)]
+		public string BackupFileExtension {
+			get { return backupFileExtension; }
+			set {
+				if (string.IsNullOrEmpty(value)) throw new ArgumentNullException("value");
+				backupFileExtension = value; 
+			}
+		}
+
+
+		/// <summary>
 		/// Retrieves the file path of the project xml file.
 		/// </summary>
 		[Browsable(false)]
@@ -211,7 +229,7 @@ namespace Dataweb.NShape {
 		public override void Close(IStoreCache storeCache) {
 			isOpen = false;
 			isOpenComplete = false;
-			CloseFile();
+			Close();
 			base.Close(storeCache);
 		}
 
@@ -219,16 +237,13 @@ namespace Dataweb.NShape {
 		/// <override></override>
 		public override void Erase() {
 			if (File.Exists(ProjectFilePath)) {
-				CreateBackupFiles(ProjectFilePath);
+				if (BackupGenerationMode != BackupFileGenerationMode.None)
+					CreateBackupFiles(ProjectFilePath);
+
+				// Delete project file and (optional) image directory
 				File.Delete(ProjectFilePath);
-				// The if prevents exceptions during debugging. The catch concurrency problems.
-				if (Directory.Exists(ImageDirectory)) {
-					try {
-						Directory.Delete(ImageDirectory, true);
-					} catch (DirectoryNotFoundException) {
-						// It's ok if the directory does not exist
-					}
-				}
+				if (Directory.Exists(ImageDirectory))
+					Directory.Delete(ImageDirectory, true);
 			}
 		}
 
@@ -334,7 +349,7 @@ namespace Dataweb.NShape {
 		public override void SaveChanges(IStoreCache cache) {
 			if (cache == null) throw new ArgumentNullException("cache");
 			if (!isOpen) throw new NShapeException("Store is not open.");
-			if (string.IsNullOrEmpty(ProjectFilePath)) throw new NShapeException("File name was not specified.");
+			if (string.IsNullOrEmpty(ProjectName)) throw new NShapeException("Project name was not specified.");
 			string tempProjectFilePath = GetTemporaryProjectFilePath();
 			string tempImageDirectory = CalcImageDirectoryName(tempProjectFilePath);
 			try {
@@ -350,8 +365,8 @@ namespace Dataweb.NShape {
 				//
 				// Backup current project files
 				switch (backupGenerationMode) {
-					case BackupFileGenerationMode.None: 
-						/* Do nothing */ 
+					case BackupFileGenerationMode.None:
+						Erase();
 						break;
 					case BackupFileGenerationMode.BakFile:
 						if (File.Exists(ProjectFilePath))
@@ -359,9 +374,15 @@ namespace Dataweb.NShape {
 						break;
 					default: throw new InvalidEnumArgumentException();
 				}
+				// Ensure that the old files do not exist any more before renaming the temporary files
+				int retryCnt = 0;
+				while (File.Exists(ProjectFilePath) || File.Exists(ImageDirectory)) {
+					// Wait a little time for the file system to refresh the changed file entries
+					System.Threading.Thread.Sleep(5);
+					if (++retryCnt > 100) break;
+				}
 				//
 				// Rename temporary files
-				System.Threading.Thread.Sleep(5);
 				Debug.Assert(File.Exists(tempProjectFilePath));
 				File.Move(tempProjectFilePath, ProjectFilePath);
 				if (Directory.Exists(tempImageDirectory))
@@ -414,7 +435,7 @@ namespace Dataweb.NShape {
 					throw new NShapeException("XML file '{0}' is not a valid NShape project file.", ProjectFilePath);
 				return int.Parse(xmlReader.GetAttribute(0));
 			} finally {
-				if (!keepFileOpen) CloseFile();
+				if (!keepFileOpen) Close();
 			}
 		}
 		
@@ -438,7 +459,7 @@ namespace Dataweb.NShape {
 					// in OpenComplete.
 					ReadProjectSettings(cache, xmlReader);
 				} catch (Exception exc) {
-					CloseFile();
+					Close();
 					throw exc;
 				}
 			}
@@ -567,9 +588,8 @@ namespace Dataweb.NShape {
 
 			/// <override></override>
 			protected override void DoWriteString(string value) {
-				if (string.IsNullOrEmpty(value)) value = string.Empty;
 				++PropertyIndex;
-				XmlAddAttributeString(GetXmlAttributeName(PropertyIndex), value);
+				XmlAddAttributeString(GetXmlAttributeName(PropertyIndex), (value == null) ? string.Empty : value);
 			}
 
 
@@ -1003,11 +1023,11 @@ namespace Dataweb.NShape {
 
 		private void CreateBackupFiles(string projectFilePath) {
 			if (!File.Exists(projectFilePath)) throw new FileNotFoundException("Project file does not exist.", projectFilePath);
-			const string backupExtension = ".bak";
 			string projectImageDir = CalcImageDirectoryName(projectFilePath);
-			// Calculate backup file names 
-			string backupFilepath = Path.Combine(Path.GetDirectoryName(projectFilePath), Path.GetFileNameWithoutExtension(projectFilePath) + backupExtension);
-			string backupImageDir = CalcImageDirectoryName(projectFilePath) + backupExtension;
+			// Calculate backup file names:
+			// Add the backup file extension in order to preserve the original file extension
+			string backupFilepath = projectFilePath + backupFileExtension;
+			string backupImageDir = CalcImageDirectoryName(projectFilePath) + backupFileExtension;
 			// Delete old backup (if one exists)
 			try {
 				if (File.Exists(backupFilepath)) {
@@ -1032,20 +1052,22 @@ namespace Dataweb.NShape {
 				if (cache.ProjectId == null) {
 					CreateFile(cache, filePath, false);
 				} else if (cache.LoadedProjects[cache.ProjectId].State == ItemState.Deleted) {
-					// First delete the file, so the image directory still exists, when the file cannot be deleted.
-					if (File.Exists(filePath)) File.Delete(filePath);
+					// First try to delete the file.
+					// This ensures that the image directory still exists in case the file cannot be deleted.
+					if (File.Exists(filePath)) 
+						File.Delete(filePath);
 					if (Directory.Exists(imageDirectory)) 
 						Directory.Delete(imageDirectory, true);
 				} else {
 					OpenComplete(cache);
 					// TODO 2: We should keep the file open and clear it here instead of re-creating it.
-					CloseFile();
+					Close();
 					CreateFile(cache, filePath, true);
 				}
 				WriteProject(cache);
 			} finally {
 				// Close and reopen to update Windows directory and keep file ownership
-				CloseFile();
+				Close();
 			}
 		}
 
@@ -1427,18 +1449,20 @@ namespace Dataweb.NShape {
 
 
 		private void OpenFile(IStoreCache cache, string fileName) {
-			XmlReaderSettings settings = new XmlReaderSettings();
-			settings.CloseInput = true;
-			settings.IgnoreComments = true;
-			settings.IgnoreWhitespace = true;
-			settings.IgnoreProcessingInstructions = true;
-			xmlReader = XmlReader.Create(fileName, settings);
+			xmlReader = XmlReader.Create(fileName, GetXmlReaderSettings());
 			xmlReader.Read();
 			repositoryReader = new XmlStoreReader(xmlReader, this, cache);
 		}
 
 
-		private void CloseFile() {
+		private void OpenStream(IStoreCache cache, Stream stream) {
+			xmlReader = XmlReader.Create(stream, GetXmlReaderSettings());
+			xmlReader.Read();
+			repositoryReader = new XmlStoreReader(xmlReader, this, cache);
+		}
+
+
+		private void Close() {
 			repositoryWriter = null;
 			repositoryReader = null;
 			if (xmlWriter != null) {
@@ -1449,6 +1473,16 @@ namespace Dataweb.NShape {
 				xmlReader.Close();
 				xmlReader = null;
 			}
+		}
+
+
+		private XmlReaderSettings GetXmlReaderSettings() {
+			XmlReaderSettings settings = new XmlReaderSettings();
+			settings.CloseInput = true;
+			settings.IgnoreComments = true;
+			settings.IgnoreWhitespace = true;
+			settings.IgnoreProcessingInstructions = true;
+			return settings;
 		}
 
 
@@ -1783,22 +1817,31 @@ namespace Dataweb.NShape {
 
 		private void WriteDiagramShapeConnections(Diagram diagram) {
 			XmlOpenElement(connectionTag + "s");
-			foreach (Shape shape in diagram.Shapes) {
-				// find all gluePoints of the shape
-				foreach (ControlPointId gluePointId in shape.GetControlPointIds(ControlPointCapabilities.Glue)) {
-					// get connection for each glue point
-					ShapeConnectionInfo sci = shape.GetConnectionInfo(gluePointId, null);
-					if (!sci.IsEmpty) {
-						XmlOpenElement(connectionTag);
-						xmlWriter.WriteAttributeString(activeShapeTag, ((IEntity)shape).Id.ToString());
-						xmlWriter.WriteAttributeString(gluePointIdTag, gluePointId.ToString());
-						xmlWriter.WriteAttributeString(passiveShapeTag, ((IEntity)sci.OtherShape).Id.ToString());
-						xmlWriter.WriteAttributeString(connectionPointIdTag, sci.OtherPointId.ToString());
-						XmlCloseElement();
-					}
-				}
-			}
+			WriteShapeConnections(diagram.Shapes);
 			XmlCloseElement();
+		}
+
+
+		private void WriteShapeConnections(IEnumerable<Shape> shapes) {
+			// Get all glue points of all shapes and store their connection infos (if connected)
+			// Passive connection points can be ignored as their connection infos are redundant anyway.
+			foreach (Shape shape in shapes) {
+				foreach (ControlPointId gluePointId in shape.GetControlPointIds(ControlPointCapabilities.Glue)) {
+					// Get connection info for the glue point (skip if empty)
+					ShapeConnectionInfo sci = shape.GetConnectionInfo(gluePointId, null);
+					if (sci.IsEmpty) continue;
+
+					XmlOpenElement(connectionTag);
+					xmlWriter.WriteAttributeString(activeShapeTag, ((IEntity)shape).Id.ToString());
+					xmlWriter.WriteAttributeString(gluePointIdTag, gluePointId.ToString());
+					xmlWriter.WriteAttributeString(passiveShapeTag, ((IEntity)sci.OtherShape).Id.ToString());
+					xmlWriter.WriteAttributeString(connectionPointIdTag, sci.OtherPointId.ToString());
+					XmlCloseElement();
+				}
+				// Process connections of child shapes, too
+				if (shape.Children.Count > 0)
+					WriteShapeConnections(shape.Children);
+			}
 		}
 
 		#endregion
@@ -1905,7 +1948,11 @@ namespace Dataweb.NShape {
 		#region Fields
 
 		/// <ToBeCompleted></ToBeCompleted>
+		[Obsolete]
 		protected const string ProjectFileExtension = ".xml";
+
+		private const string DefaultFileExtension = ".xml";
+
 
 		// Predefined XML Element Tags
 		private const string projectTag = "project";
@@ -1932,7 +1979,8 @@ namespace Dataweb.NShape {
 		// Name of the project. Always != null
 		private string projectName = string.Empty;
 		// File extension of project file. Maybe null.
-		private string fileExtension = ".xml";
+		private string fileExtension = DefaultFileExtension;
+		private string backupFileExtension = DefaultBackupFileExtension;
 		// Specifies whether a backup file should be created when saving the contents to file.
 		private BackupFileGenerationMode backupGenerationMode = BackupFileGenerationMode.BakFile;
 

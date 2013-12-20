@@ -1,5 +1,5 @@
 ﻿/******************************************************************************
-  Copyright 2009-2012 dataweb GmbH
+  Copyright 2009-2013 dataweb GmbH
   This file is part of the NShape framework.
   NShape is free software: you can redistribute it and/or modify it under the 
   terms of the GNU General Public License as published by the Free Software 
@@ -28,7 +28,6 @@ namespace Dataweb.NShape.GeneralShapes {
 
 		/// <override></override>
 		public override Shape Clone() {
-			//Shape result = new Square(Type, (Template)null);
 			Shape result = new Square(Type, this.Template);
 			result.CopyFrom(this);
 			return result;
@@ -71,7 +70,7 @@ namespace Dataweb.NShape.GeneralShapes {
 	}
 
 
-	public class Box : RectangleBase {
+	public class Box : BoxBase {
 
 		internal static Shape CreateInstance(ShapeType shapeType, Template template) {
 			return new Box(shapeType, template);
@@ -80,7 +79,6 @@ namespace Dataweb.NShape.GeneralShapes {
 
 		/// <override></override>
 		public override Shape Clone() {
-			//Shape result = new Box(Type, (Template)null);
 			Shape result = new Box(Type, this.Template);
 			result.CopyFrom(this);
 			return result;
@@ -116,7 +114,7 @@ namespace Dataweb.NShape.GeneralShapes {
 	}
 
 
-	public class RoundedBox : RectangleBase {
+	public class RoundedBox : BoxBase {
 
 		internal static Shape CreateInstance(ShapeType shapeType, Template template) {
 			return new RoundedBox(shapeType, template);
@@ -125,7 +123,6 @@ namespace Dataweb.NShape.GeneralShapes {
 
 		/// <override></override>
 		public override Shape Clone() {
-			//Shape result = new RoundedBox(Type, (Template)null);
 			Shape result = new RoundedBox(Type, this.Template);
 			result.CopyFrom(this);
 			return result;
@@ -286,7 +283,6 @@ namespace Dataweb.NShape.GeneralShapes {
 
 		/// <override></override>
 		public override Shape Clone() {
-			//Shape result = new Diamond(Type, (Template)null);
 			Shape result = new Diamond(Type, this.Template);
 			result.CopyFrom(this);
 			return result;

@@ -1,5 +1,5 @@
 ﻿/******************************************************************************
-  Copyright 2009-2012 dataweb GmbH
+  Copyright 2009-2013 dataweb GmbH
   This file is part of the NShape framework.
   NShape is free software: you can redistribute it and/or modify it under the 
   terms of the GNU General Public License as published by the Free Software 
@@ -206,7 +206,7 @@ namespace Dataweb.NShape {
 		public int Left {
 			get { return left; }
 			set {
-				if (value < 0) throw new ArgumentOutOfRangeException();
+				if (value < 0) throw new ArgumentOutOfRangeException("value");
 				if (all || left != value) {
 					left = value;
 					CheckAll();
@@ -222,7 +222,7 @@ namespace Dataweb.NShape {
 		public int Top {
 			get { return all ? left : top; }
 			set {
-				if (value < 0) throw new ArgumentOutOfRangeException();
+				if (value < 0) throw new ArgumentOutOfRangeException("value");
 				if (all || top != value) {
 					top = value;
 					CheckAll();
@@ -238,7 +238,7 @@ namespace Dataweb.NShape {
 		public int Right {
 			get { return all ? left : right; }
 			set {
-				if (value < 0) throw new ArgumentOutOfRangeException();
+				if (value < 0) throw new ArgumentOutOfRangeException("value");
 				if (all || right != value) {
 					right = value;
 					CheckAll();
@@ -254,7 +254,7 @@ namespace Dataweb.NShape {
 		public int Bottom {
 			get { return all ? left : bottom; }
 			set {
-				if (value < 0) throw new ArgumentOutOfRangeException();
+				if (value < 0) throw new ArgumentOutOfRangeException("value");
 				if (all || bottom != value) {
 					bottom = value;
 					CheckAll();
@@ -270,7 +270,7 @@ namespace Dataweb.NShape {
 		public int All {
 			get { return all ? left : -1; }
 			set {
-				if (value < 0) throw new ArgumentOutOfRangeException();
+				if (value < 0) throw new ArgumentOutOfRangeException("value");
 				left = top = right = bottom = value;
 				CheckAll();
 			}
@@ -599,11 +599,11 @@ namespace Dataweb.NShape {
 			FieldInfo[] fieldInfos = this.GetType().GetFields();
 			Array.Resize<string>(ref names, fieldInfos.Length);
 			int idx = -1;
-			for (int i = fieldInfos.Length - 1; i >= 0; --i) {
-				if (fieldInfos[i].IsInitOnly && fieldInfos[i].IsPublic &&
-					fieldInfos[i].FieldType == typeof(string)) {
-					names[++idx] = fieldInfos[i].Name;
-					fieldInfos[i].SetValue(this, fieldInfos[i].Name);
+			foreach (FieldInfo fieldInfo in fieldInfos) {
+				if (fieldInfo.IsInitOnly && fieldInfo.IsPublic &&
+					fieldInfo.FieldType == typeof(string)) {
+					names[++idx] = fieldInfo.Name;
+					fieldInfo.SetValue(this, fieldInfo.Name);
 				} else { }
 			}
 			if (idx + 1 < names.Length) Array.Resize<string>(ref names, idx + 1);
@@ -615,7 +615,7 @@ namespace Dataweb.NShape {
 		/// </summary>
 		public string this[int index] {
 			get {
-				if (index >= names.Length) throw new IndexOutOfRangeException();
+				if (index >= names.Length) throw new IndexOutOfRangeException("index");
 				return names[index];
 			}
 		}
@@ -635,8 +635,8 @@ namespace Dataweb.NShape {
 		public bool EqualsAny(string name) {
 			Debug.Assert(names != null);
 			if (name == Style.EmptyStyleName) return true;
-			for (int i = names.Length - 1; i >= 0; --i)
-				if (names[i].Equals(name, StringComparison.InvariantCultureIgnoreCase))
+			foreach (string n in names)
+				if (n.Equals(name, StringComparison.InvariantCultureIgnoreCase))
 					return true;
 			return false;
 		}
@@ -2594,9 +2594,8 @@ namespace Dataweb.NShape {
 		/// <override></override>
 		public bool Contains(TStyle style) {
 			if (style == null) throw new ArgumentNullException("style");
-			for (int i = internalList.Values.Count - 1; i >= 0; --i) {
-				if (internalList.Values[i].Style == style
-					|| internalList.Values[i].PreviewStyle == style)
+			foreach (StylePair<TStyle> stylePair in internalList.Values) {
+				if (stylePair.Style == style || stylePair.PreviewStyle == style)
 					return true;
 			}
 			return false;
@@ -2613,10 +2612,10 @@ namespace Dataweb.NShape {
 		/// <ToBeCompleted></ToBeCompleted>
 		public bool ContainsPreviewStyle(TStyle style) {
 			if (style == null) throw new ArgumentNullException("style");
-			for (int i = internalList.Values.Count - 1; i >= 0; --i) {
-				if (internalList.Values[i].Style == style)
-					return (internalList.Values[i].PreviewStyle != null);
-				else if (internalList.Values[i].PreviewStyle == style)
+			foreach (StylePair<TStyle> stylePair in internalList.Values) {
+				if (stylePair.Style == style)
+					return (stylePair.PreviewStyle != null);
+				else if (stylePair.PreviewStyle == style)
 					return true;
 			}
 			return false;
@@ -2635,10 +2634,9 @@ namespace Dataweb.NShape {
 		/// <override></override>
 		public int IndexOf(TStyle item) {
 			if (item == null) throw new ArgumentNullException("item");
-			for (int i = internalList.Values.Count - 1; i >= 0; --i) {
-				if (internalList.Values[i].Style == item
-					|| internalList.Values[i].PreviewStyle == item)
-					return internalList.IndexOfKey(internalList.Values[i].Style.Name);
+			foreach (StylePair<TStyle> stylePair in internalList.Values) {
+				if (stylePair.Style == item || stylePair.PreviewStyle == item)
+					return internalList.IndexOfKey(stylePair.Style.Name);
 			}
 			return -1;
 		}

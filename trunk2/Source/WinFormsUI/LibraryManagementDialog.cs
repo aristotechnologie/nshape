@@ -1,5 +1,5 @@
 /******************************************************************************
-  Copyright 2009-2012 dataweb GmbH
+  Copyright 2009-2013 dataweb GmbH
   This file is part of the NShape framework.
   NShape is free software: you can redistribute it and/or modify it under the 
   terms of the GNU General Public License as published by the Free Software 
@@ -68,8 +68,8 @@ namespace Dataweb.NShape.WinFormsUI {
 					libraryListView.Items.Add(lvItem);
 				}
 			} finally {
-				for (int i = libraryListView.Columns.Count - 1; i >= 0; --i)
-					libraryListView.Columns[i].Width = -1;
+				foreach (ColumnHeader colHeader in libraryListView.Columns)
+					colHeader.Width = -1;
 				libraryListView.ResumeLayout();
 			}
 		}
@@ -123,13 +123,12 @@ namespace Dataweb.NShape.WinFormsUI {
 				openFileDialog.InitialDirectory = Application.StartupPath;
 			
 			if (openFileDialog.ShowDialog() == DialogResult.OK) {
-				List<string> fileNames = new List<string>(openFileDialog.FileNames);
-				for (int i = 0; i < fileNames.Count; ++i) {
+				foreach (string fileName in openFileDialog.FileNames) {
 					try {
-						if (!project.IsValidLibrary(fileNames[i])) {
-							MessageBox.Show(this, string.Format(InvalidLibraryMessage, fileNames[i]), "Invalid file type", MessageBoxButtons.OK, MessageBoxIcon.Error);
+						if (!project.IsValidLibrary(fileName)) {
+							MessageBox.Show(this, string.Format(InvalidLibraryMessage, fileName), "Invalid file type", MessageBoxButtons.OK, MessageBoxIcon.Error);
 						} else {
-							Assembly assembly = Assembly.LoadFile(fileNames[i]);
+							Assembly assembly = Assembly.LoadFile(fileName);
 							string assemblyPath = GetAssemblyFilePath(assembly);
 							// Remove library from the "remove" list
 							if (removedLibraries.ContainsKey(assemblyPath))
@@ -151,8 +150,8 @@ namespace Dataweb.NShape.WinFormsUI {
 
 		private void removeLibraryButton_Click(object sender, EventArgs e) {
 			bool removeConfirmed = false, removeLibrary = false;
-			for (int i = libraryListView.SelectedItems.Count - 1; i >= 0; --i) {
-				string assemblyPath = libraryListView.SelectedItems[i].SubItems[2].Text;
+			foreach (ListViewItem item in libraryListView.SelectedItems) {
+				string assemblyPath = item.SubItems[2].Text;
 				// If assembly is on the "add" list, remove it from there
 				if (addedLibraries.ContainsKey(assemblyPath))
 					addedLibraries.Remove(assemblyPath);
@@ -212,9 +211,11 @@ namespace Dataweb.NShape.WinFormsUI {
 
 
 		private void openFileDialog_FileOk(object sender, System.ComponentModel.CancelEventArgs e) {
-			e.Cancel = !project.IsValidLibrary(openFileDialog.FileName);
-			string msg = string.Format(InvalidLibraryMessage, openFileDialog.FileName);
-			if (e.Cancel) MessageBox.Show(this, msg, "Invalid file type", MessageBoxButtons.OK, MessageBoxIcon.Error);
+			string reason;
+			e.Cancel = !project.IsValidLibrary(openFileDialog.FileName, out reason);
+			string msg = string.Format(InvalidLibraryMessage, openFileDialog.FileName, reason);
+			if (e.Cancel) 
+				MessageBox.Show(this, msg, "Not an NShape library", MessageBoxButtons.OK, MessageBoxIcon.Error);
 		}
 
 
@@ -223,6 +224,6 @@ namespace Dataweb.NShape.WinFormsUI {
 		private SortedList<string, Assembly> currentLibraries = new SortedList<string,Assembly>();
 		private SortedList<string, Assembly> removedLibraries = new SortedList<string, Assembly>();
 
-		private const string InvalidLibraryMessage = "'{0}' is not a valid NShape library.";
+		private const string InvalidLibraryMessage = "'{0}' is not a valid NShape library: {1}";
 	}
 }

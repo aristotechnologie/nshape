@@ -1,5 +1,5 @@
 ﻿/******************************************************************************
-  Copyright 2009-2012 dataweb GmbH
+  Copyright 2009-2013 dataweb GmbH
   This file is part of the NShape framework.
   NShape is free software: you can redistribute it and/or modify it under the 
   terms of the GNU General Public License as published by the Free Software 
@@ -33,7 +33,7 @@ namespace Dataweb.NShape.Advanced {
 					BeginResize();
 
 					pointCount = value;
-					Array.Resize(ref controlPoints, ControlPointCount);
+					ResizeControlPoints(ControlPointCount);
 					UpdateShapePoints();
 
 					EndResize(1, 1);
@@ -62,7 +62,6 @@ namespace Dataweb.NShape.Advanced {
 
 		/// <override></override>
 		public override Shape Clone() {
-			//Shape result = new RegularPolygoneBase(Type, (Template)null);
 			Shape result = new RegularPolygoneBase(Type, this.Template);
 			result.CopyFrom(this);
 			return result;
@@ -77,10 +76,10 @@ namespace Dataweb.NShape.Advanced {
 
 		/// <override></override>
 		public override bool HasControlPointCapability(ControlPointId controlPointId, ControlPointCapabilities controlPointCapability) {
-			if (controlPointId == controlPoints.Length) {
+			if (controlPointId == ControlPoints.Length) {
 				return ((controlPointCapability & ControlPointCapabilities.Rotate) > 0
-							|| (controlPointCapability & ControlPointCapabilities.Reference) > 0
-							|| ((controlPointCapability & ControlPointCapabilities.Connect) > 0 && IsConnectionPointEnabled(controlPointId)));
+				            || (controlPointCapability & ControlPointCapabilities.Reference) > 0
+				            || ((controlPointCapability & ControlPointCapabilities.Connect) > 0 && IsConnectionPointEnabled(controlPointId)));
 			} else if (controlPointId >= 1) {
 				return ((controlPointCapability & ControlPointCapabilities.Resize) > 0
 								|| ((controlPointCapability & ControlPointCapabilities.Connect) > 0 && IsConnectionPointEnabled(controlPointId)));
@@ -135,7 +134,7 @@ namespace Dataweb.NShape.Advanced {
 			// Storage in the relative position's fields:
 			// RelativePosition.A = Tenths of percentage of BC
 			// RelativePosition.B = Tenths of percentage of AC
-			float angle = Geometry.TenthsOfDegreeToDegrees(relativePosition.A);
+			float angle = relativePosition.A / 1000f;
 			float dist = (relativePosition.B / 1000f) * diameter;
 			
 			Point result = Point.Round(Geometry.CalcPoint(X, Y, angle, dist));
@@ -152,14 +151,14 @@ namespace Dataweb.NShape.Advanced {
 			UpdateDrawCache();
 			for (int i = 0; i < pointCount; ++i) {
 				int j = i < 2 ? i + 1 : 0;
-				int x1 = controlPoints[i].X + X;
-				int y1 = controlPoints[i].Y + Y;
-				if (Geometry.DistancePointPoint(x, y, x1, y1) <= range)
+				Point pt = ControlPoints[i];
+				pt.Offset(X, Y);
+				if (Geometry.DistancePointPoint(x, y, pt.X, pt.Y) <= range)
 					return i + 1;
 			}
 			if ((controlPointCapability & ControlPointCapabilities.Rotate) > 0)
 				if (Geometry.DistancePointPoint(X, Y, x, y) <= range)
-					return controlPoints.Length;
+					return ControlPoints.Length;
 			return ControlPointId.None;
 		}
 
@@ -345,9 +344,9 @@ namespace Dataweb.NShape.Advanced {
 			int j;
 			for (int i = shapePoints.Length - 1; i >= 0; --i) {
 				j = (i == 0) ? shapePoints.Length - 1 : i - 1;
-				int x1 = shapePoints[i].X; int y1 = shapePoints[i].Y;
-				int x2 = shapePoints[j].X; int y2 = shapePoints[j].Y;
-				Point p = Geometry.CalcPointOnLine(x1, y1, x2, y2, Geometry.DistancePointPoint(x1, y1, x2, y2) / 2f);
+				Point a = shapePoints[i];
+				Point b = shapePoints[j];
+				Point p = Geometry.CalcPointOnLine(a.X, a.Y, b.X, b.Y, Geometry.DistancePointPoint(a.X, a.Y, b.X, b.Y) / 2f);
 				float dist = Geometry.DistancePointPoint(Point.Empty, p);
 				if (dist > circleRadius) circleRadius = (int)Math.Round(dist);
 			}
@@ -365,14 +364,9 @@ namespace Dataweb.NShape.Advanced {
 
 		/// <override></override>
 		protected override void CalcControlPoints() {
-			if (controlPoints.Length != ControlPointCount)
-				Array.Resize(ref controlPoints, ControlPointCount);
-			int cnt = pointCount;
-			for (int i = 0; i < cnt; ++i) {
-				controlPoints[i].X = shapePoints[i].X;
-				controlPoints[i].Y = shapePoints[i].Y;
-			}
-			controlPoints[cnt] = Point.Empty;
+			ResizeControlPoints(ControlPointCount);
+			shapePoints.CopyTo(ControlPoints, 0);
+			ControlPoints[pointCount] = Point.Empty;
 		}
 
 
@@ -704,7 +698,7 @@ namespace Dataweb.NShape.Advanced {
 
 
 		//protected override void CalcCaptionBounds(int index, out Rectangle captionBounds) {
-		//   if (index != 0) throw new IndexOutOfRangeException();
+	//   if (index != 0) throw new ArgumentOutOfRangeException("index");
 		//   Geometry.CalcBoundingRectangle(shapePoints, out captionBounds);
 		//}
 

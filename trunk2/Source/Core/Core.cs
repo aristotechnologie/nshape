@@ -1,5 +1,5 @@
 ﻿/******************************************************************************
-  Copyright 2009-2012 dataweb GmbH
+  Copyright 2009-2013 dataweb GmbH
   This file is part of the NShape framework.
   NShape is free software: you can redistribute it and/or modify it under the 
   terms of the GNU General Public License as published by the Free Software 
@@ -145,9 +145,9 @@ namespace Dataweb.NShape.Advanced {
 			if (source == null) throw new ArgumentNullException("source");
 			id = ((IEntity)source).Id;
 			lastSaved = source.LastSaved;
-			for (int i = 0; i < source.libraries.Count; ++i) {
-				if (!libraries.Contains(source.libraries[i]))
-					libraries.Add(source.libraries[i]);
+			foreach (LibraryData library in source.libraries) {
+				if (!libraries.Contains(library))
+					libraries.Add(library);
 			}
 		}
 
@@ -161,7 +161,15 @@ namespace Dataweb.NShape.Advanced {
 		}
 
 
-		
+		/// <summary>
+		/// Stores a desciptive text.
+		/// </summary>
+		public string Description {
+			get { return description; }
+			set { description = value; }
+		}
+
+
 		/// <summary>
 		/// Adds a dynamic library to the project.
 		/// </summary>
@@ -208,6 +216,7 @@ namespace Dataweb.NShape.Advanced {
 		/// </summary>
 		public static IEnumerable<EntityPropertyDefinition> GetPropertyDefinitions(int version) {
 			yield return new EntityFieldDefinition("LastSavedUtc", typeof(DateTime));
+			if (version >= 5) yield return new EntityFieldDefinition("Description", typeof(string));
 			yield return new EntityInnerObjectsDefinition("Libraries", "Core.Library", librariesAttrNames, librariesAttrTypes);
 		}
 
@@ -227,11 +236,13 @@ namespace Dataweb.NShape.Advanced {
 
 		void IEntity.SaveFields(IRepositoryWriter writer, int version) {
 			writer.WriteDate(DateTime.Now);
+			if (version >= 5) writer.WriteString(description);
 		}
 
 
 		void IEntity.LoadFields(IRepositoryReader reader, int version) {
 			lastSaved = reader.ReadDate();
+			if (version >= 5) description = reader.ReadString();
 		}
 
 
@@ -311,6 +322,7 @@ namespace Dataweb.NShape.Advanced {
 		private static Type[] librariesAttrTypes = new Type[] { typeof(string), typeof(string), typeof(int) };
 
 		private object id;
+		private string description;
 		private DateTime lastSaved;
 		private List<LibraryData> libraries = new List<LibraryData>();
 
@@ -363,11 +375,9 @@ namespace Dataweb.NShape.Advanced {
 		/// <ToBeCompleted></ToBeCompleted>
 		public T Current {
 			get {
-				if (instanceReturned) return default(T);
-				else {
-					instanceReturned = true;
-					return instance;
-				}
+				if (instanceReturned) throw new InvalidOperationException();
+				instanceReturned = true;
+				return instance;
 			}
 		}
 

@@ -1,5 +1,5 @@
 /******************************************************************************
-  Copyright 2009-2012 dataweb GmbH
+  Copyright 2009-2013 dataweb GmbH
   This file is part of the NShape framework.
   NShape is free software: you can redistribute it and/or modify it under the 
   terms of the GNU General Public License as published by the Free Software 
@@ -368,16 +368,20 @@ namespace Dataweb.NShape.Commands {
 
 		/// <ToBeCompleted></ToBeCompleted>
 		protected void Disconnect(IList<Shape> shapes) {
-			for (int i = shapes.Count - 1; i >= 0; --i)
-				Disconnect(shapes[i]);
+			foreach (Shape shape in shapes)
+			    Disconnect(shape);
 		}
 
 
 		/// <ToBeCompleted></ToBeCompleted>
 		protected void Disconnect(Shape shape) {
+			// Check whether the shape has already been added (this is the case when re-doing the command)
 			if (!connections.ContainsKey(shape))
 				connections.Add(shape, new List<ShapeConnectionInfo>(shape.GetConnectionInfos(ControlPointId.Any, null)));
+			// Disconnect shapes (if necessary)
 			foreach (ShapeConnectionInfo sci in connections[shape]) {
+				if (shape.IsConnected(sci.OwnPointId, sci.OtherShape) == ControlPointId.None)
+					continue;
 				if (shape.HasControlPointCapability(sci.OwnPointId, ControlPointCapabilities.Glue)) {
 					shape.Disconnect(sci.OwnPointId);
 					Repository.DeleteConnection(shape, sci.OwnPointId, sci.OtherShape, sci.OtherPointId);
@@ -393,9 +397,8 @@ namespace Dataweb.NShape.Commands {
 		/// <ToBeCompleted></ToBeCompleted>
 		protected void Reconnect(IList<Shape> shapes) {
 			// restore connections
-			int cnt = shapes.Count;
-			for (int i = 0; i < cnt; ++i)
-				Reconnect(shapes[i]);
+			foreach (Shape shape in shapes)
+				Reconnect(shape);
 		}
 
 
@@ -412,7 +415,7 @@ namespace Dataweb.NShape.Commands {
 						if (Repository != null) Repository.InsertConnection(sci.OtherShape, sci.OtherPointId, shape, sci.OwnPointId);
 					}
 				}
-			}
+			} 
 		}
 
 
@@ -616,9 +619,8 @@ namespace Dataweb.NShape.Commands {
 			if (attachedObjects.Shapes.Count > 0) {
 				if (deleteShapes) repository.DeleteAll(attachedObjects.Shapes);
 				else {
-					for (int sIdx = attachedObjects.Shapes.Count - 1; sIdx >= 0; --sIdx) {
+					for (int sIdx = attachedObjects.Shapes.Count - 1; sIdx >= 0; --sIdx)
 						attachedObjects.Shapes[sIdx].ModelObject = null;
-					}
 					repository.Update(attachedObjects.Shapes);
 				}
 			}
@@ -643,7 +645,7 @@ namespace Dataweb.NShape.Commands {
 			// insert shapes
 			if (attachedObjects.Shapes.Count > 0) {
 				for (int sIdx = attachedObjects.Shapes.Count - 1; sIdx >= 0; --sIdx)
-					attachedObjects.Shapes[sIdx].ModelObject = modelObject;
+				    attachedObjects.Shapes[sIdx].ModelObject = modelObject;
 				if (insertShapes)
 					throw new NotImplementedException();
 				else repository.Update(attachedObjects.Shapes);
@@ -780,10 +782,10 @@ namespace Dataweb.NShape.Commands {
 
 		/// <ToBeCompleted></ToBeCompleted>
 		protected void DeleteShapesAndModels() {
+			if (Shapes.Count == 0) throw new NShapeInternalException("No shapes set. Call SetShapes() before.");
+			// Disconnect shapes as long as the model objects still exist.
+			Disconnect(Shapes);
 			if (Repository != null && ModelObjects != null && ModelObjects.Count > 0) {
-				// Disconnect shapes as long as the model objects still exist.
-				// If there are no model objects, the shapes will be disconnected in Remove()
-				Disconnect(Shapes);
 				if (modelsAndObjects == null) {
 					modelsAndObjects = new Dictionary<IModelObject, AttachedObjects>();
 					foreach (IModelObject modelObject in ModelObjects)
@@ -793,28 +795,6 @@ namespace Dataweb.NShape.Commands {
 					DetachAndDeleteObjects(item.Value, Repository);
 				Repository.Delete(modelsAndObjects.Keys);
 			}
-			RemoveShapes();
-		}
-
-
-		/// <ToBeCompleted></ToBeCompleted>
-		protected void InsertShapes(LayerIds activeLayers) {
-			DoInsertShapes(false, activeLayers);
-		}
-
-
-		/// <ToBeCompleted></ToBeCompleted>
-		protected void InsertShapes() {
-			DoInsertShapes(true, LayerIds.None);
-		}
-
-
-		/// <ToBeCompleted></ToBeCompleted>
-		protected void RemoveShapes() {
-			if (Shapes.Count == 0) throw new NShapeInternalException("No shapes set. Call SetShapes() before.");
-			// Disconnect all shapes connected to the deleted shape(s)
-			Disconnect(Shapes);
-			// Remove shapes
 			diagram.Shapes.RemoveRange(Shapes);
 			if (Repository != null) Repository.DeleteAll(Shapes);
 		}
@@ -996,8 +976,10 @@ namespace Dataweb.NShape.Commands {
 				else Repository.Insert(modelsAndObjects.Keys);
 			}
 			// Insert shapes afterwards
-			if (useOriginalLayers) InsertShapes();
-			else InsertShapes(activeLayers);
+			if (useOriginalLayers) 
+				DoInsertShapes(true, LayerIds.None);
+			else 
+				DoInsertShapes(false, activeLayers);
 			// Attach model obejcts to shapes finally
 			if (Repository != null && modelsAndObjects != null) {
 				foreach (KeyValuePair<IModelObject, AttachedObjects> item in modelsAndObjects)
@@ -1166,8 +1148,8 @@ namespace Dataweb.NShape.Commands {
 			this.aggregationShapeOwnedByDiagram = diagram.Shapes.Contains(aggregationShape);
 			this.shapes = new List<Shape>(shapes);
 			aggregationLayerIds = LayerIds.None;
-			for (int i = 0; i < this.shapes.Count; ++i)
-				aggregationLayerIds |= this.shapes[i].Layers;
+			foreach (Shape shape in this.shapes)
+				aggregationLayerIds |= shape.Layers;
 		}
 
 
@@ -1387,12 +1369,14 @@ namespace Dataweb.NShape.Commands {
 			bool isGranted = true;
 			for (int i = 0; i < commands.Count; ++i) {
 				if (!commands[i].IsAllowed(securityManager)) {
-					if (createException) exception = CheckAllowed(securityManager);
+					if (createException) exception = commands[i].CheckAllowed(securityManager);
 					isGranted = false;
 					break;
 				}
 			}
-			if (!isGranted && createException && exception == null) exception = new NShapeSecurityException(this);
+			// If a necessary command is not granted and no exception was created yet, create it now
+			if (!isGranted && createException && exception == null) 
+				exception = new NShapeSecurityException(this);
 			return isGranted;
 		}
 
@@ -1690,6 +1674,7 @@ namespace Dataweb.NShape.Commands {
 		/// <ToBeCompleted></ToBeCompleted>
 		public DeleteShapesCommand(IRepository repository, Diagram diagram, IEnumerable<Shape> shapes, bool withModelObjects)
 			: base(repository, diagram) {
+			deleteWithModelObjects = withModelObjects;
 			SetShapes(shapes, SortOrder.TopDown, withModelObjects);
 			this.description = GetDescription(DescriptionType.Delete, shapes, withModelObjects);
 			// Store "shape to model object" assignments for undo
@@ -1705,6 +1690,10 @@ namespace Dataweb.NShape.Commands {
 
 		/// <override></override>
 		public override void Execute() {
+			if (modelObjectAssignments != null) {
+				foreach (KeyValuePair<Shape, IModelObject> item in modelObjectAssignments)
+					item.Key.ModelObject = null;
+			}
 			DeleteShapesAndModels();
 		}
 
@@ -1727,6 +1716,7 @@ namespace Dataweb.NShape.Commands {
 
 		// A dictionary used to store the original relationsships between shapes and model objects
 		private Dictionary<Shape, IModelObject> modelObjectAssignments;
+		private bool deleteWithModelObjects = false;
 	}
 
 
@@ -1769,27 +1759,25 @@ namespace Dataweb.NShape.Commands {
 
 			// Move only shapes without connected glue points
 			foreach (Shape shape in shapes) {
-				// Do not move shapes that are connected with all their glue points
-				if (shape is ILinearShape) {
-					if (!CanMoveShape((ILinearShape)shape)) continue;
-				} else if (shape is LabelBase) {
+				if (shape is LabelBase) {
+					// Do not move labels connected to a selected shape (as they will move with their partner anyway)
 					if (!CanMoveShape((LabelBase)shape, shapes)) continue;
 				}
 				this.shapes.Add(shape);
 			}
 			// Collect connections to remove temporarily
 			for (int i = 0; i < this.shapes.Count; ++i) {
-				if (!IsConnectedToNonSelectedShapes(this.shapes[i])) {
-					foreach (ControlPointId gluePointId in this.shapes[i].GetControlPointIds(ControlPointCapabilities.Glue)) {
-						ShapeConnectionInfo gluePointConnectionInfo = this.shapes[i].GetConnectionInfo(gluePointId, null);
-						if (!gluePointConnectionInfo.IsEmpty) {
-							ConnectionInfoBuffer connInfoBuffer;
-							connInfoBuffer.shape = this.shapes[i];
-							connInfoBuffer.connectionInfo = gluePointConnectionInfo;
-							if (connectionsBuffer == null)
-								connectionsBuffer = new List<ConnectionInfoBuffer>();
-							connectionsBuffer.Add(connInfoBuffer);
-						}
+				if (IsConnectedToNonSelectedShapes(this.shapes[i])) 
+					continue;
+				foreach (ControlPointId gluePointId in this.shapes[i].GetControlPointIds(ControlPointCapabilities.Glue)) {
+					ShapeConnectionInfo gluePointConnectionInfo = this.shapes[i].GetConnectionInfo(gluePointId, null);
+					if (!gluePointConnectionInfo.IsEmpty) {
+						ConnectionInfoBuffer connInfoBuffer;
+						connInfoBuffer.shape = this.shapes[i];
+						connInfoBuffer.connectionInfo = gluePointConnectionInfo;
+						if (connectionsBuffer == null)
+							connectionsBuffer = new List<ConnectionInfoBuffer>();
+						connectionsBuffer.Add(connInfoBuffer);
 					}
 				}
 			}
@@ -1850,17 +1838,27 @@ namespace Dataweb.NShape.Commands {
 
 
 
-		private bool CanMoveShape(ILinearShape shape) {
+		/// <summary>
+		/// Checks whether the given shape is connected with all its glue points. 
+		/// In this case, the shape cannot be moved.
+		/// </summary>
+		private bool CanMoveShape(Shape shape) {
 			int gluePointCnt = 0, connectedCnt = 0;
-			foreach (ControlPointId gluePointId in ((Shape)shape).GetControlPointIds(ControlPointCapabilities.Glue)) {
+			foreach (ControlPointId gluePointId in shape.GetControlPointIds(ControlPointCapabilities.Glue)) {
 				++gluePointCnt;
 				ShapeConnectionInfo sci = ((Shape)shape).GetConnectionInfo(gluePointId, null);
 				if (!sci.IsEmpty) ++connectedCnt;
 			}
-			return (gluePointCnt != connectedCnt);
+			if (gluePointCnt == 0)
+				return true;
+			else return (gluePointCnt != connectedCnt);
 		}
 
 
+		/// <summary>
+		/// Checks whether the shape is connected with all its glue points to selected shapes.
+		/// In this case, the shape cannot be moved.
+		/// </summary>
 		private bool CanMoveShape(LabelBase shape, IEnumerable<Shape> selectedShapes) {
 			foreach (ControlPointId gluePointId in shape.GetControlPointIds(ControlPointCapabilities.Glue)) {
 				ShapeConnectionInfo sci = shape.GetConnectionInfo(gluePointId, null);
@@ -3324,15 +3322,17 @@ namespace Dataweb.NShape.Commands {
 		/// <override></override>
 		public override void Execute() {
 			if (template == null) {
+				// Create a template shape and copy properties
 				Shape templateShape = baseShape.Type.CreateInstance();
 				foreach (Shape childShape in baseShape.Children.BottomUp)
 					templateShape.Children.Add(childShape.Type.CreateInstance(), childShape.ZOrder);
-				// ToDo: 
-				// The template of the other shape will be copied although it is not really wanted that the new template bases on an other template!
-				// The child shapes will be copied including their template, too. We should check if it is better to 
-				// copy the shapes manually here and change the CopyFrom method of the ShapeCollection so it checks for 
-				// existing shapes before starting to clone the souce's child shapes...
-				templateShape.CopyFrom(baseShape);	// Copies shape and its child shapes (all including template)
+				templateShape.CopyFrom(baseShape);
+				// Clone model object if necessary
+				if (baseShape.ModelObject != null) {
+					IModelObject templateModelObject = baseShape.ModelObject.Clone();
+					templateShape.ModelObject = templateModelObject;
+				}
+				// Create the new template
 				template = new Template(templateName, templateShape);
 			}
 			if (Repository != null) {
@@ -3571,10 +3571,10 @@ namespace Dataweb.NShape.Commands {
 			if (changedTemplate == null) throw new ArgumentNullException("changedTemplate");
 			this.description = string.Format("Change shape of tempate  '{0}' from '{1}' to '{2}'", originalTemplate.Title, originalTemplate.Shape.Type.Name, changedTemplate.Shape.Type.Name);
 			this.originalTemplate = originalTemplate;
-			this.oldTemplate = originalTemplate.Clone();
+			this.oldTemplate = originalTemplate.Clone();	// Shape and ModelObject(!) are also cloned in this step
 			this.newTemplate = changedTemplate;
 
-			this.oldTemplateShape = originalTemplate.Shape;
+			this.oldTemplateShape = originalTemplate.Shape;	// Should we store the orignial model object, too?
 			this.newTemplateShape = changedTemplate.Shape;
 			this.newTemplateShape.DisplayService = oldTemplateShape.DisplayService;
 		}
@@ -3673,6 +3673,10 @@ namespace Dataweb.NShape.Commands {
 
 		private void ReplaceShapes(Diagram diagram, Shape oldShape, Shape newShape, IEnumerable<ShapeConnectionInfo> oldConnections, IEnumerable<ShapeConnectionInfo> newConnections) {
 			oldShape.Invalidate();
+			// Detach model object from old shape before deleting the shape
+			IModelObject origModelObject = oldShape.ModelObject;
+			if (origModelObject != null)
+				origModelObject.DetachShape(oldShape);
 			// Disconnect all connections to the old shape
 			foreach (ShapeConnectionInfo sci in oldConnections) {
 				Debug.Assert(oldShape.IsConnected(ControlPointId.Any, null) != ControlPointId.None);
@@ -3691,7 +3695,8 @@ namespace Dataweb.NShape.Commands {
 			}
 			// Exchange the shapes before deleting the old shape from the repository because it 
 			// might be removed from the diagram in a "ShapeDeleted" event handler
-			newShape.CopyFrom(oldShape);	// Template will not be copied
+			newShape.CopyFrom(oldShape);			// Template will not be copied
+			newShape.ModelObject = origModelObject;	// Assign the original model object to the new shape
 			diagram.Shapes.Replace(oldShape, newShape);
 			if (Repository != null) {
 				Repository.Delete(oldShape);

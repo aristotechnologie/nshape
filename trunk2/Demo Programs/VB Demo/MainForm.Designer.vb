@@ -99,7 +99,7 @@ Partial Class MainForm
 		Me.Display.SelectionInteriorColor = System.Drawing.Color.WhiteSmoke
 		Me.Display.SelectionNormalColor = System.Drawing.Color.DarkGreen
 		Me.Display.ShowDefaultContextMenu = False
-		Me.Display.ShowGrid = False
+		Me.Display.IsGridVisible = False
 		Me.Display.ShowScrollBars = False
 		Me.Display.Size = New System.Drawing.Size(412, 412)
 		Me.Display.SnapToGrid = False

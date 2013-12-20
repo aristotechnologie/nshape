@@ -14,9 +14,9 @@ using Dataweb.NShape.GeneralShapes;
 
 namespace ModelMapping_Demo {
 
-	public partial class Form1 : Form {
+	public partial class MainForm : Form {
 		
-		public Form1() {
+		public MainForm() {
 			InitializeComponent();
 
 			// Initialize project with a shape library
@@ -81,6 +81,8 @@ namespace ModelMapping_Demo {
 			lineStyleMapping.AddValueRange(66.66f, project.Design.LineStyles.Dashed);
 			lineStyleMapping.AddValueRange(83.33f, project.Design.LineStyles.Normal);
 			template.MapProperties(lineStyleMapping);
+			// Save mapping
+			project.Repository.Insert(lineStyleMapping, template);
 			//
 			// Integer to Style
 			// Change outline thickness depending on the boolean property
@@ -88,12 +90,16 @@ namespace ModelMapping_Demo {
 			fillStyleMapping.AddValueRange(0, project.Design.FillStyles.Green);
 			fillStyleMapping.AddValueRange(1, project.Design.FillStyles.Red);
 			template.MapProperties(fillStyleMapping);
+			// Save mapping
+			project.Repository.Insert(fillStyleMapping, template);
 			//
 			// Integer to Integer
 			// Change shape's angle depending on the integer property 
 			// Note: Value is modified by a slope factor of 10 because angle is specified in tenths of degrees.
 			NumericModelMapping angleMapping = new NumericModelMapping(2, MyBusinessObject.IntegerPropertyId, NumericModelMapping.MappingType.IntegerInteger, 0, 10);
 			template.MapProperties(angleMapping);
+			// Save mapping
+			project.Repository.Insert(angleMapping, template);
 
 			// Add model object and update template
 			project.Repository.Insert(modelObj);
