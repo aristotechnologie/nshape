@@ -26,7 +26,6 @@ Changes in 2.1:
   used for storing user defined string data that will be saved to and loaded from the repository (in 
   contrast to the Tag property).
 - Extended Interface: Added string property "Description" to the Dataweb.NShape.Project class.
-  saved to and loaded from the repository (in contrast to the Tag property).
 - Extended Interface: Added a new method to the shape collection interface:
 	public interface IShapeCollection 
 		int GetZOrder(Shape shape)

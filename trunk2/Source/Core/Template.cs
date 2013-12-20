@@ -305,7 +305,7 @@ namespace Dataweb.NShape {
 		public static IEnumerable<EntityPropertyDefinition> GetPropertyDefinitions(int version) {
 			yield return new EntityFieldDefinition("Name", typeof(string));
 			if (version >= 3) yield return new EntityFieldDefinition("Title", typeof(string));
-			yield return new EntityFieldDefinition("Description", typeof(string));
+			if (version >= 5) yield return new EntityFieldDefinition("Description", typeof(string));
 			yield return new EntityInnerObjectsDefinition(connectionPtMappingName + "s", connectionPtMappingName, connectionPtMappingAttrNames, connectionPtMappingAttrTypes);
 		}
 
@@ -329,7 +329,7 @@ namespace Dataweb.NShape {
 			if (writer == null) throw new ArgumentNullException("writer");
 			writer.WriteString(name);
 			if (version >= 3) writer.WriteString(title);
-			writer.WriteString(description);
+			if (version >= 3) writer.WriteString(description);
 		}
 
 
@@ -338,7 +338,7 @@ namespace Dataweb.NShape {
 			if (reader == null) throw new ArgumentNullException("reader");
 			name = reader.ReadString();
 			if (version >= 3) title = reader.ReadString();
-			description = reader.ReadString();
+			if (version >= 5) description = reader.ReadString();
 		}
 
 
