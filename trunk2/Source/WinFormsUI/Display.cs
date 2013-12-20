@@ -1996,7 +1996,6 @@ namespace Dataweb.NShape.WinFormsUI {
 			// Recalculate viewArea in case a new zoom level was applied
 			ControlToDiagram(DrawBounds, out areaBoundsDiag);
 			areaBoundsDiag.Inflate(-margin, -margin);
-			ControlToDiagram(areaBoundsDiag, out areaBoundsDiag);
             if (viewAreaDiagram.Left < areaBoundsDiag.Left
 				|| viewAreaDiagram.Top < areaBoundsDiag.Top
 				|| viewAreaDiagram.Right > areaBoundsDiag.Right
