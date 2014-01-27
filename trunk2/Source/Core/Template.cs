@@ -329,7 +329,7 @@ namespace Dataweb.NShape {
 			if (writer == null) throw new ArgumentNullException("writer");
 			writer.WriteString(name);
 			if (version >= 3) writer.WriteString(title);
-			if (version >= 3) writer.WriteString(description);
+			if (version >= 5) writer.WriteString(description);
 		}
 
 

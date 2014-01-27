@@ -107,10 +107,15 @@ namespace ArchiSketch {
 
 
 		private void MainForm_Load(object sender, EventArgs e) {
+			// Turn off automatic loading of shape libraries. We want all diagrams to use the same shape libraries.
 			project.AutoLoadLibraries = true;
+			// Add shape library "GeneralShapes"
 			project.AddLibrary(Assembly.GetAssembly(typeof(Circle)), false);
+			// Add shape library "SoftwareArchitectureShapes"
 			project.AddLibrary(Assembly.GetAssembly(typeof(CloudSymbol)), false);
-			fileNewToolStripMenuItem_Click(sender, e);
+			
+			// Create a new project on start
+			fileNewToolStripMenuItem_Click(this, EventArgs.Empty);
 		}
 
 
@@ -139,6 +144,7 @@ namespace ArchiSketch {
 				// Create and display a new Diagram
 				DisplayNewDiagram();
 			else
+				// Display the selected diagram
 				DisplayDiagram(diagramComboBox.Items[diagramComboBox.SelectedIndex].ToString());
 		}
 
@@ -201,15 +207,28 @@ namespace ArchiSketch {
 
 		private void fileOpenToolStripMenuItem_Click(object sender, EventArgs e) {
 			if (openFileDialog.ShowDialog(this) == DialogResult.OK) {
-				switch (MessageBox.Show("Do you want to save the current project?", "Close Project", MessageBoxButtons.YesNoCancel)) {
-					case DialogResult.Yes: SaveCurrentProject(); break;
-					case DialogResult.Cancel: return;
-					case DialogResult.No: break;
+				// Check whether the repository is modified and ask the user whether to save it
+				if (project.Repository.IsModified) {
+					switch (MessageBox.Show("Do you want to save the current project?", "Close Project", MessageBoxButtons.YesNoCancel)) {
+						case DialogResult.Yes:
+							SaveCurrentProject();
+							break;
+						case DialogResult.Cancel:
+							return;
+						case DialogResult.No:
+							break;
+					}
 				}
+				// Close the current project
 				project.Close();
+				// Set the project name (file name)
 				project.Name = Path.GetFileNameWithoutExtension(openFileDialog.FileName);
+				// Set the project location
 				xmlStore.DirectoryName = Path.GetDirectoryName(openFileDialog.FileName);
+				// Set the file extension
 				xmlStore.FileExtension = Path.GetExtension(openFileDialog.FileName);
+				
+				// Now open the project
 				OpenProject(false);
 				Text = GetFormTitle();
 			}
@@ -266,13 +285,14 @@ namespace ArchiSketch {
 
 		private void OpenProject(bool newProject) {
 			try {
-				if (newProject) {
+				if (newProject)
 					project.Create();
-					//project.AddLibraryByName("Dataweb.NShape.GeneralShapes", false);
-					//project.AddLibraryByName("Dataweb.NShape.SoftwareArchitectureShapes", false);
-				} else project.Open();
+				else 
+					project.Open();
 				UpdateToolBoxStrip();
 				UpdateDiagramCombo();
+				
+				// Display first diagram (if a diagram exist)
 				DisplayDefaultDiagram();
 			} catch (Exception exc) {
 				MessageBox.Show(exc.Message, "Cannot open project");
@@ -291,13 +311,19 @@ namespace ArchiSketch {
 			bool doIt = false;
 			if (project.Name.Equals(newProjectName, StringComparison.InvariantCultureIgnoreCase)) {
 				if (saveFileDialog.ShowDialog(this) == DialogResult.OK) {
+					// Update the project name (file name) 
 					project.Name = Path.GetFileNameWithoutExtension(saveFileDialog.FileName);
+					// Update the project location 
 					xmlStore.DirectoryName = Path.GetDirectoryName(saveFileDialog.FileName);
+					// Update the file extension
 					xmlStore.FileExtension = Path.GetExtension(saveFileDialog.FileName);
+					
+					// If a project with this name exists, delete it
 					if (repository.Exists()) repository.Erase();
 					doIt = true;
 				}
 			} else doIt = true;
+			// Save the project
 			if (doIt) project.Repository.SaveChanges();
 		}
 
@@ -393,8 +419,9 @@ namespace ArchiSketch {
 
 
 		private Diagram GetDiagram(string diagramName) {
-			// ToDo: Is this ok? GetDiagram(diagramName) throws an exception if the name does not exist in the repository
 			Diagram result = null;
+			// GetDiagram(diagramName) throws an exception if the name does not exist in the repository,
+			// so we iterate through all existing diagrams
 			foreach (Diagram d in project.Repository.GetDiagrams())
 			   if (d.Name == diagramName) {
 			      result = d;
@@ -412,16 +439,15 @@ namespace ArchiSketch {
 
 
 		private void EditToolBoxTemplate() {
-			if (toolSetController.SelectedTool is TemplateTool) {
-				//TemplateTool tt = (TemplateTool)toolSetController.SelectedTool;
-				//TemplateEditorDialog te = new TemplateEditorDialog(project, tt.Template);
-				//te.ShowDialog();
+			if (toolSetController.SelectedTool is TemplateTool)
 				toolSetController.ShowTemplateEditor(true);
-			} else MessageBox.Show("Select a template insertion tool and repeat the command.", "Editing a Template");
+			else MessageBox.Show("Select a template insertion tool and repeat the command.", "Editing a Template");
 		}
 
 		#endregion
 
+
+		#region NShape ToolBox event handlers for showing dialogs
 
 		private void toolBox_ShowTemplateEditorDialog(object sender, TemplateEditorEventArgs e) {
 			TemplateEditorDialog dlg = new TemplateEditorDialog(e.Project, e.Template);
@@ -437,6 +463,8 @@ namespace ArchiSketch {
 		private void toolBox_ShowDesignEditorDialog(object sender, EventArgs e) {
 			DesignEditorDialog dlg = new DesignEditorDialog(project);
 		}
+
+		#endregion
 
 
 		private const string newProjectName = "<New Project>";

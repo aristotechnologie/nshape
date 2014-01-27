@@ -23,10 +23,11 @@ namespace BasicTutorial {
 
 		private void Form1_Load(object sender, EventArgs e) {
 			try {
-				// Set path to the sample diagram and the sample diagram name
+				// Set path to the sample diagram and the diagram file extension
 				string dir = Path.Combine(GetBasicTutorialPath(), "Sample Project");
 				xmlStore1.DirectoryName = dir;
 				xmlStore1.FileExtension = "nspj";
+				// Set the name of the project that should be loaded from the store
 				project1.Name = "Circles";
 				// Add path to the NShape shape library assemblies to the search paths
 				string programFilesDir = Environment.GetEnvironmentVariable(string.Format("ProgramFiles{0}", (IntPtr.Size == sizeof(long)) ? "(x86)" : ""));
@@ -35,8 +36,8 @@ namespace BasicTutorial {
 				
 				// Open the NShape project
 				project1.Open();
-				
-				// Load the diagram
+
+				// Load the diagram and display it
 				display1.LoadDiagram("Diagram 1");
 			} catch (Exception exc) {
 				MessageBox.Show(exc.Message, "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
@@ -45,6 +46,7 @@ namespace BasicTutorial {
 
 
 		private void fileSaveToolStripMenuItem_Click(object sender, EventArgs e) {
+			// Save all modifications to the repository (to a XML file in this demo)
 			project1.Repository.SaveChanges();
 		}
 

@@ -127,7 +127,7 @@ namespace Security_Demo {
 
 
 		private void InitializeSecurityManager() {
-			// Clear Default Security Settings
+			// Clear all default security settings (clear permissions and delete domains)
 			foreach (StandardRole role in Enum.GetValues(typeof(StandardRole))) {
 				if (role == StandardRole.Custom) continue;
 				foreach (SecurityAccess access in Enum.GetValues(typeof(SecurityAccess)))
@@ -143,7 +143,7 @@ namespace Security_Demo {
 			SecurityManager.AddDomain('D', "Diagram - Diagram's Background can be changed.");
 			SecurityManager.AddDomain('E', "Model Shapes - Only Data properties can be changed.");
 
-			// Set permissions for all roles
+			// Define permission sets for all roles
 			Permission generalPermissions;
 			Permission domainAPermissions;
 			Permission domainBPermissions;
@@ -153,10 +153,11 @@ namespace Security_Demo {
 			Permission domainStdPermissions;
 			SecurityAccess generalPermissionAccess;
 			SecurityAccess domainPermissionAccess;
-
+			// Assign the permissions to each role's permission set
 			foreach (StandardRole role in cboUser.Items) {
 				switch (role) {
 					case StandardRole.Administrator:
+						// Administrators have full access -> Permissions of all domains are granted with modify access
 						generalPermissionAccess =
 						domainPermissionAccess = SecurityAccess.Modify;
 						generalPermissions =
@@ -168,44 +169,70 @@ namespace Security_Demo {
 						domainStdPermissions = Permission.All;
 						break;
 					case StandardRole.SuperUser:
+						// Super user has full access to the general permissions
 						generalPermissionAccess = SecurityAccess.Modify;
 						generalPermissions = Permission.Designs | Permission.Templates;
-
+						// Super user has modify access
 						domainPermissionAccess = SecurityAccess.Modify;
+						// Super user the following access permissions for the domains:
+						// Full access for user-created shapes
 						domainAPermissions = Permission.Insert | Permission.Delete | Permission.Layout | Permission.Data | Permission.Connect | Permission.Present;
+						// Pre-defined wire shapes (loaded from the sample diagram) may be moved, connected, colored and the data properties may be modified.
 						domainBPermissions = Permission.Layout | Permission.Connect | Permission.Data | Permission.Present;
+						// Pre-defined shapes (loaded from the sample diagram) may be moved, colored and the data properties may be modified.
 						domainCPermissions = Permission.Layout | Permission.Data | Permission.Present;
+						// The (loaded) diagram may be redesigned (background color/-image) and the data properties may be modified.
 						domainDPermissions = Permission.Present | Permission.Data;
+						// The model shapes grant only access to their data properties.
 						domainEPermissions = Permission.Data | Permission.Present;
+						// All other domains do not grant any access permission.
 						domainStdPermissions = Permission.None;
 						break;
 					default:
+						// All other roles only grant read-only access...
 						generalPermissionAccess = SecurityAccess.View;
+						// ... except for the designer who may adjust the design and re-style the template shapes.
 						generalPermissions = (role == StandardRole.Designer) ? Permission.Designs | Permission.Templates : Permission.None;
 
+						// All other roles only grant read-only access (except for the designer)
 						domainPermissionAccess = (role == StandardRole.Designer) ? SecurityAccess.Modify : SecurityAccess.View;
+						// User created shape grant access to all of their properties.
+						// Whether this access is read only or not depends on the domain permission access.
 						domainAPermissions = Permission.Insert | Permission.Delete | Permission.Layout | Permission.Data | Permission.Connect;
+						// Pre-defined wire shapes (loaded from the sample diagram) grant access to their layout properties and may be connected.
+						// Whether this access is read only or not depends on the domain permission access.
 						domainBPermissions = Permission.Layout | Permission.Connect;
+						// Pre-defined shapes (loaded from the sample diagram) grant access to their layout properties.
+						// Whether this access is read only or not depends on the domain permission access.
 						domainCPermissions = Permission.Layout;
+						// The (loaded) diagram grants access to its presentation properties.
+						// Whether this access is read only or not depends on the domain permission access.
 						domainDPermissions = Permission.Present;
+						// The model shapes grant access to their data properties.
+						// Whether this access is read only or not depends on the domain permission access.
 						domainEPermissions = Permission.Data;
+						// All other domains do not grant any access permission.
 						domainStdPermissions = Permission.None;
 						break;
 				}
 
-				// Set general permissions
+				// Apply general permissions
 				SecurityManager.SetPermissions(role, generalPermissions, generalPermissionAccess);
-				// Set shape permissions for shapes inserted by the user
+				// Apply shape permissions for shapes inserted by the user
 				SecurityManager.SetPermissions('A', role, domainAPermissions, domainPermissionAccess);
+				// Apply shape permissions for the pre-defined wire shapes (loaded from the sample diagram)
 				SecurityManager.SetPermissions('B', role, domainBPermissions, domainPermissionAccess);
+				// Apply shape permissions for the pre-defined shapes (loaded from the sample diagram)
 				SecurityManager.SetPermissions('C', role, domainCPermissions, domainPermissionAccess);
+				// Apply diagram permissions
 				SecurityManager.SetPermissions('D', role, domainDPermissions, domainPermissionAccess);
+				// Apply model shape permissions
 				SecurityManager.SetPermissions('E', role, domainEPermissions, domainPermissionAccess);
 				// Set permissions for all other security domains
 				for (char c = 'F'; c != 'Z'; ++c)
 					SecurityManager.SetPermissions(c, role, domainStdPermissions, domainPermissionAccess);
 			}
-
+			// Set the current user role.
 			SecurityManager.CurrentRole = StandardRole.Designer;
 		}
 
@@ -216,14 +243,18 @@ namespace Security_Demo {
 
 		private void Form1_Load(object sender, EventArgs e) {
 			try {
+				// Set up the XML storee component (storage directory and file extension)
 				string dir = Path.GetDirectoryName(Path.GetDirectoryName(Application.StartupPath)) + @"\Demo Programs\Security Demo\Sample Project";
 				xmlStore.DirectoryName = dir;
 				xmlStore.FileExtension = ".nspj";
 
+				// Add a search path for shape assemblies (application's startup directory in this case)
 				project.LibrarySearchPaths.Add(Application.StartupPath);
+				// Set the name of the project to open and open it
 				project.Name = "Security Demo Sample Project";
 				project.Open();
 
+				// Activate the pointer tool and load the sample diagram
 				display1.ActiveTool = toolSetController.DefaultTool;
 				display1.LoadDiagram("Simple Circuit");
 
@@ -234,6 +265,8 @@ namespace Security_Demo {
 
 				UpdateSecurityInfoCtrls();
 			} catch (Exception exc) {
+				// Always catch exceptions in the Form.Load event (and show their messages) as the framework 
+				// swallows all exceptions thrown in this exception handler without any notice in non-debug mode!
 				MessageBox.Show(this, exc.Message, "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
 			}
 		}
@@ -248,6 +281,7 @@ namespace Security_Demo {
 
 		
 		private void propertyController1_ObjectsSet(object sender, Dataweb.NShape.Controllers.PropertyControllerEventArgs e) {
+			// Get common security domain name of all selected objects
 			if (e.Objects.Count > 0) {
 				char dom = SecurityDemoHelper.NoDomain;
 				foreach (object o in e.Objects) {
@@ -261,7 +295,8 @@ namespace Security_Demo {
 					}
 				}
 				cboDomain.SelectedIndex = Math.Max(dom - 'A', -1);
-			} else cboDomain.SelectedIndex = -1;
+			} else 
+				cboDomain.SelectedIndex = -1;
 			
 			// Store security objects and their type for later use
 			if (e.Objects.Count > 0) {
@@ -290,6 +325,7 @@ namespace Security_Demo {
 		
 		private void editPermissionsButton_Click(object sender, EventArgs e) {
 			if (securityEditor == null) {
+				// Show the demo's security settings editor dialog
 				securityEditor = new SecuritySettingsEditor(this);
 				securityEditor.FormClosed += dlg_FormClosed;
 				securityEditor.Show(this);
@@ -298,18 +334,21 @@ namespace Security_Demo {
 
 
 		private void toolSetController1_LibraryManagerSelected(object sender, EventArgs e) {
+			// Show the LibraryManagerDialog when requested by the tool set controller 
 			using (LibraryManagementDialog dlg = new LibraryManagementDialog(project))
 				dlg.ShowDialog(this);
 		}
 
 
 		private void toolSetController1_TemplateEditorSelected(object sender, TemplateEditorEventArgs e) {
+			// Show the TemplateEditorDialog when requested by the tool set controller 
 			using (TemplateEditorDialog dlg = new TemplateEditorDialog(project, e.Template))
 				dlg.ShowDialog(this);
 		}
 
 
 		private void toolSetController1_DesignEditorSelected(object sender, EventArgs e) {
+			// Show the DesignEditorDialog when requested by the tool set controller
 			DesignEditorDialog dlg = new DesignEditorDialog(project);
 			dlg.FormClosed += new FormClosedEventHandler(dlg_FormClosed);
 			dlg.Show(this);
@@ -423,4 +462,5 @@ namespace Security_Demo {
 		}
 
 	}
+
 }

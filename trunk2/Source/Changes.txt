@@ -7,6 +7,12 @@ Known issues:
 
 
 ====================================================================================================
+Changes in 2.1.1:
+====================================================================================================
+- Bug Fix: Saving repositories version 3 and 4 no longer causes an IndexOutOfRangeException.
+- Improvement: Added descriptive comments to all demo programs and the tutorial projects.
+
+====================================================================================================
 Changes in 2.1:
 ====================================================================================================
 - Interface Change: Classes PropertyMappingIdAttribute and RequiredPermissionAttribute have been sealed

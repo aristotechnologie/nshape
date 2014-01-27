@@ -50,104 +50,15 @@ namespace Database_Designer {
 			propertyWindowDockType = DockType.Top ^ DockType.Right ^ DockType.Bottom;
 		}
 
+		#region Implementation
 
-		private Rectangle ContentBounds {
-			get {
-				contentBounds.X = Bounds.X + SystemInformation.Border3DSize.Width;
-				contentBounds.Y = Bounds.Y 
-					+ SystemInformation.CaptionHeight 
-					+ SystemInformation.Border3DSize.Height 
-					+ SystemInformation.Border3DSize.Height 
-					+ SystemInformation.FixedFrameBorderSize.Height
-					+ SystemInformation.FixedFrameBorderSize.Height;
-				if (toolStripContainer.TopToolStripPanelVisible)
-				    contentBounds.Y += toolStripContainer.TopToolStripPanel.Height;
-				contentBounds.Width = display.DrawBounds.Width;
-				contentBounds.Height = display.DrawBounds.Height;
-				return contentBounds; 
-			}
-		}
-
-
-		protected override void OnMove(EventArgs e) {
-			base.OnMove(e);
-			if (toolBoxWindow.Visible)
-				DockToolWindow();
-			if (propertyWindow.Visible)
-				DockPropertyWindow();
-		}
-
-
-		protected override void OnResize(EventArgs e) {
-			base.OnResize(e);
-			if (toolBoxWindow != null && toolBoxWindow.Visible)
-				DockToolWindow();
-			if (toolBoxWindow != null && propertyWindow.Visible)
-				DockPropertyWindow();
-		}
-
-
-		private void DockToolWindow() {
-			Rectangle contentBounds = Rectangle.Empty;
-			contentBounds = ContentBounds;
-
-			try {
-				toolBoxWindow.SuspendLayout();
-				int toolBoxBottom;
-				if (propertyWindow.Visible)
-					toolBoxBottom = contentBounds.Top + (contentBounds.Height / 2);
-				else
-					toolBoxBottom = contentBounds.Bottom;
-
-				if ((toolBoxWindowDockType & DockType.Left) > 0)
-					toolBoxWindow.Left = contentBounds.Left;
-
-				if ((toolBoxWindowDockType & DockType.Top) > 0)
-					toolBoxWindow.Top = contentBounds.Top + margin;
-
-				if ((toolBoxWindowDockType & DockType.Right) > 0)
-					toolBoxWindow.Left = contentBounds.Right - toolBoxWindow.Width - margin;
-
-				if ((toolBoxWindowDockType & DockType.Bottom) > 0)
-					toolBoxWindow.Height = toolBoxBottom - toolBoxWindow.Top - margin;
-			} finally {
-				toolBoxWindow.ResumeLayout();
-			}
-		}
-
-
-		private void DockPropertyWindow() {
-			Rectangle contentBounds = Rectangle.Empty;
-			contentBounds = ContentBounds;
-
-			try {
-				propertyWindow.SuspendLayout();
-				int propertyWindowTop;
-				if (toolBoxWindow.Visible)
-					propertyWindowTop = contentBounds.Bottom - (contentBounds.Height / 2);
-				else
-					propertyWindowTop = contentBounds.Top;
-
-				if ((propertyWindowDockType & DockType.Left) > 0)
-					propertyWindow.Left = contentBounds.Left;
-				if ((propertyWindowDockType & DockType.Top) > 0)
-					propertyWindow.Top = propertyWindowTop + 10;
-				if ((propertyWindowDockType & DockType.Right) > 0)
-					propertyWindow.Left = contentBounds.Right - propertyWindow.Width - margin;
-				if ((propertyWindowDockType & DockType.Bottom) > 0)
-					propertyWindow.Height = contentBounds.Bottom - propertyWindow.Top - margin;
-			} finally {
-				propertyWindow.ResumeLayout();
-			}
-		}
-
-		
 		private void MainForm_Load(object sender, EventArgs e) {
 			// Connect NShape components
 			propertyPresenter.PrimaryPropertyGrid = propertyWindow.PropertyGrid;
 			toolSetPresenter.ListView = toolBoxWindow.ListView;
 			// Enable loading needed Libraries
 			project.AutoLoadLibraries = true;
+			// Add library search path
 			project.LibrarySearchPaths.Add(Application.StartupPath);
 			// Add persistent libraries
 			project.AddLibraryByName("Dataweb.NShape.GeneralShapes", false);
@@ -156,14 +67,10 @@ namespace Database_Designer {
 			NewProject();
 		}
 
-		
-		private void DatabaseDesignerForm_Shown(object sender, EventArgs e) {
-			toolBoxWindow.Show(this);
-			DockToolWindow();
-			Activate();
-		}
 
-
+		/// <summary>
+		/// Create tools for the shape toolbox and sort them into custom categories
+		/// </summary>
 		private void CreateTools() {
 			toolSetPresenter.ToolSetController.Clear();
 			toolSetPresenter.ToolSetController.AddTool(new SelectionTool(), true);
@@ -264,6 +171,9 @@ namespace Database_Designer {
 		}
 
 
+		/// <summary>
+		/// Creates a 'TemplateTool' for the shape toolbox and adds it to the specified toolbox category
+		/// </summary>
 		private void CreateTemplateAndTool(string name, string category, Shape shape) {
 			Template template = new Template(name, shape);
 			toolSetPresenter.ToolSetController.CreateTemplateTool(template, category);
@@ -272,14 +182,16 @@ namespace Database_Designer {
 
 
 		private void AddNewDiagram() {
-			// Count diagrams
+			// Count diagrams in order to get a decent default name for the new diagram
 			int diagramCnt = 0;
 			foreach (Diagram d in project.Repository.GetDiagrams())
 				diagramCnt++;
 			
+			// Create the diagram and set default values
 			Diagram diagram = new Diagram(string.Format("Diagram {0}", diagramCnt + 1));
 			diagram.Width = 1600;
 			diagram.Height = 1200;
+			// Set background colors and a background image
 			diagram.BackgroundGradientColor = Color.WhiteSmoke;
 			if (diagramCnt % 2 == 0)
 				diagram.BackgroundColor = Color.DarkRed;
@@ -287,9 +199,12 @@ namespace Database_Designer {
 			diagram.BackgroundImage = new NamedImage(Database_Designer.Properties.Resources.NY028_3, "BackgroundImage");
 			diagram.BackgroundImageLayout = ImageLayoutMode.Fit;
 
+			// Insert the diagram into the repository (otherwise it won't be saved to file)
 			project.Repository.InsertAll(diagram);
+			// Display the diagram
 			display.Diagram = diagram;
 
+			// Add a menu item to the main menu for displaying this diagram 
 			ToolStripMenuItem item = new ToolStripMenuItem();
 			item.Text = diagram.Name;
 			item.Tag = diagram;
@@ -303,6 +218,7 @@ namespace Database_Designer {
 		private void AddLoadedDiagram(Diagram diagram) {
 			display.Diagram = diagram;
 
+			// Add a menu item to the main menu for displaying this diagram 
 			ToolStripMenuItem item = new ToolStripMenuItem();
 			item.Text = diagram.Name;
 			item.Tag = diagram;
@@ -314,6 +230,7 @@ namespace Database_Designer {
 
 
 		private void ClearLoadedDiagrams() {
+			// clear all menu items used for selecting the diagram
 			for (int i = diagramsDropDownButton.DropDown.Items.Count - 1; i >= 0; --i) {
 				diagramsDropDownButton.DropDown.Items[i].Click -= diagramDropDownItem_Click;
 				diagramsDropDownButton.DropDown.Items.RemoveAt(i);
@@ -321,18 +238,20 @@ namespace Database_Designer {
 		}
 
 
-		private void DeleteDiagram(Diagram diagram) {			
+		private void DeleteDiagram(Diagram diagram) {
+			// Delete menu item 
 			for (int i = diagramsDropDownButton.DropDown.Items.Count - 1; i >= 0; --i) {
 				if (diagramsDropDownButton.DropDown.Items[i].Tag == diagram) {
 					diagramsDropDownButton.DropDown.Items[i].Click -= new EventHandler(diagramDropDownItem_Click);
 					diagramsDropDownButton.DropDown.Items.RemoveAt(i);
 
+					// Delete the diagram including its contents
 					project.Repository.DeleteAll(diagram);
-					diagram.Clear();
 					diagram = null;
 				}
 			}
 
+			// Switch to the previous diagram
 			if (display.Diagram == null && diagramsDropDownButton.DropDown.Items.Count > 0)
 				display.Diagram = diagramsDropDownButton.DropDown.Items[0].Tag as Diagram;
 			else {
@@ -343,17 +262,22 @@ namespace Database_Designer {
 
 
 		private void NewProject(){
+			// If a project is already open, close it first.
 			if (project.IsOpen) {
 				ClearLoadedDiagrams();
 				project.Close();
 			}
 
+			// Clear project location and file extension and set the default project name
+			// This will force the user to select a new location and name for the project when saving.
 			xmlStore.DirectoryName = xmlStore.FileExtension = string.Empty;
 			project.Name = defaultProjectName;
 			project.Create();
 
+			// (Re-)fill the shape toolbox
 			CreateTools();
 
+			// Add a new diagram
 			AddNewDiagram();
 			SetButtonStates();
 		}
@@ -364,36 +288,41 @@ namespace Database_Designer {
 			dlg.Filter = fileFilter;
 			if (dlg.ShowDialog() == DialogResult.OK) {
 				if (!string.IsNullOrEmpty(dlg.FileName) && File.Exists(dlg.FileName)) {
+					// Close the current project and clear the UI
 					project.Close();
 					ClearLoadedDiagrams();
 
+					// Set project name, location and file extension
 					xmlStore.FileExtension = Path.GetExtension(dlg.FileName);
 					xmlStore.DirectoryName = Path.GetDirectoryName(dlg.FileName);
 					project.Name = Path.GetFileNameWithoutExtension(dlg.FileName);
+					// Load the project from file
 					project.Open();
 
+					// As we want a custom toolbox, we have to clear the tools created when loading the 
+					// project ans re-fill the toolbox with tools for the existing templates:
 					toolSetController.Clear();
 					toolSetController.AddTool(new SelectionTool(), true);
 					foreach (Template template in project.Repository.GetTemplates()) {
-						string category = "Miscellaneous";
+						// Set the default category for all shapes not handled here
+						string category = null;
 						if (template.Shape is DatabaseSymbol
 							|| template.Shape is EntitySymbol
-									|| template.Shape is Polyline
-									|| template.Shape is CloudSymbol) {
+							|| template.Shape is Polyline
+							|| template.Shape is CloudSymbol) {
 							category = "Database Entities";
 						} else if (template.Shape is Text
-									|| template.Shape is AnnotationSymbol) {
+							|| template.Shape is AnnotationSymbol) {
 							category = "Description";
 						} else category = "Miscellaneous";
 
+						// Create a tool for the loaded template
 						toolSetController.CreateTemplateTool(template, category);
 					}
 
-					// load diagrams
-					if (project.Repository != null) {
-						foreach (Diagram diagram in project.Repository.GetDiagrams())
-							AddLoadedDiagram(diagram);
-					}
+					// And add menu entries for selecting the loaded diagrams
+					foreach (Diagram diagram in project.Repository.GetDiagrams())
+						AddLoadedDiagram(diagram);
 				} else MessageBox.Show(string.Format("File '{0}' does not exist.", dlg.FileName));
 			}
 		}
@@ -405,28 +334,138 @@ namespace Database_Designer {
 				dlg.Filter = fileFilter;
 				if (!string.IsNullOrEmpty(xmlStore.DirectoryName))
 					dlg.InitialDirectory = xmlStore.DirectoryName;
-				dlg.FileName = project.Name + (string.IsNullOrEmpty(xmlStore.FileExtension) ? ".xml" : xmlStore.FileExtension);
+				dlg.FileName = project.Name + (string.IsNullOrEmpty(xmlStore.FileExtension) ? ".nspj" : xmlStore.FileExtension);
 				if (dlg.ShowDialog(this) == DialogResult.OK) {
+					// Set selected project name (fila name), location and file extension
 					project.Name = Path.GetFileNameWithoutExtension(dlg.FileName);
 					xmlStore.DirectoryName = Path.GetDirectoryName(dlg.FileName);
 					xmlStore.FileExtension = Path.GetExtension(dlg.FileName);
 				}
 			}
-			if (!string.IsNullOrEmpty(project.Name)
-				&& !string.IsNullOrEmpty(xmlStore.DirectoryName))
+			// Save the project
+			if (!string.IsNullOrEmpty(project.Name) && !string.IsNullOrEmpty(xmlStore.DirectoryName))
 				project.Repository.SaveChanges();
 		}
 
 
 		private void SetButtonStates() {
-			//cutButton.Enabled = display.CanCut(false);
-			//copyButton.Enabled = display.CanCopy(false);
-			//pasteButton.Enabled = display.CanPaste();
-			//deleteButton.Enabled = display.CanDelete(false);
+			if (display.Diagram != null) {
+				cutButton.Enabled = display.DiagramSetController.CanCut(display.Diagram, display.SelectedShapes);
+				copyButton.Enabled = display.DiagramSetController.CanCopy(display.SelectedShapes);
+				pasteButton.Enabled = display.DiagramSetController.CanPaste(display.Diagram);
+				deleteButton.Enabled = display.DiagramSetController.CanDeleteShapes(display.Diagram, display.SelectedShapes);
+			}
+		}
+
+		#endregion
+
+
+		#region ToolWindow Docking Imlpementation
+
+		private Rectangle ContentBounds {
+			get {
+				contentBounds.X = Bounds.X + SystemInformation.Border3DSize.Width;
+				contentBounds.Y = Bounds.Y
+					+ SystemInformation.CaptionHeight
+					+ SystemInformation.Border3DSize.Height
+					+ SystemInformation.Border3DSize.Height
+					+ SystemInformation.FixedFrameBorderSize.Height
+					+ SystemInformation.FixedFrameBorderSize.Height;
+				if (toolStripContainer.TopToolStripPanelVisible)
+					contentBounds.Y += toolStripContainer.TopToolStripPanel.Height;
+				contentBounds.Width = display.DrawBounds.Width;
+				contentBounds.Height = display.DrawBounds.Height;
+				return contentBounds;
+			}
 		}
 
 
+		protected override void OnMove(EventArgs e) {
+			base.OnMove(e);
+			if (toolBoxWindow.Visible)
+				DockToolWindow();
+			if (propertyWindow.Visible)
+				DockPropertyWindow();
+		}
+
+
+		protected override void OnResize(EventArgs e) {
+			base.OnResize(e);
+			if (toolBoxWindow != null && toolBoxWindow.Visible)
+				DockToolWindow();
+			if (toolBoxWindow != null && propertyWindow.Visible)
+				DockPropertyWindow();
+		}
+
+
+		private void DockToolWindow() {
+			Rectangle contentBounds = Rectangle.Empty;
+			contentBounds = ContentBounds;
+
+			try {
+				toolBoxWindow.SuspendLayout();
+				int toolBoxBottom;
+				if (propertyWindow.Visible)
+					toolBoxBottom = contentBounds.Top + (contentBounds.Height / 2);
+				else
+					toolBoxBottom = contentBounds.Bottom;
+
+				if ((toolBoxWindowDockType & DockType.Left) > 0)
+					toolBoxWindow.Left = contentBounds.Left;
+
+				if ((toolBoxWindowDockType & DockType.Top) > 0)
+					toolBoxWindow.Top = contentBounds.Top + margin;
+
+				if ((toolBoxWindowDockType & DockType.Right) > 0)
+					toolBoxWindow.Left = contentBounds.Right - toolBoxWindow.Width - margin;
+
+				if ((toolBoxWindowDockType & DockType.Bottom) > 0)
+					toolBoxWindow.Height = toolBoxBottom - toolBoxWindow.Top - margin;
+			} finally {
+				toolBoxWindow.ResumeLayout();
+			}
+		}
+
+
+		private void DockPropertyWindow() {
+			Rectangle contentBounds = Rectangle.Empty;
+			contentBounds = ContentBounds;
+
+			try {
+				propertyWindow.SuspendLayout();
+				int propertyWindowTop;
+				if (toolBoxWindow.Visible)
+					propertyWindowTop = contentBounds.Bottom - (contentBounds.Height / 2);
+				else
+					propertyWindowTop = contentBounds.Top;
+
+				if ((propertyWindowDockType & DockType.Left) > 0)
+					propertyWindow.Left = contentBounds.Left;
+				if ((propertyWindowDockType & DockType.Top) > 0)
+					propertyWindow.Top = propertyWindowTop + 10;
+				if ((propertyWindowDockType & DockType.Right) > 0)
+					propertyWindow.Left = contentBounds.Right - propertyWindow.Width - margin;
+				if ((propertyWindowDockType & DockType.Bottom) > 0)
+					propertyWindow.Height = contentBounds.Bottom - propertyWindow.Top - margin;
+			} finally {
+				propertyWindow.ResumeLayout();
+			}
+		}
+
+
+		private void DatabaseDesignerForm_Shown(object sender, EventArgs e) {
+			toolBoxWindow.Show(this);
+			DockToolWindow();
+			Activate();
+		}
+
+		#endregion
+
+
+		#region Event Handler Implementations (UI)
+
 		private void display_ShapesSelected(object sender, EventArgs e) {
+			// Update UI buttons
 			SetButtonStates();
 		}
 
@@ -538,6 +577,8 @@ namespace Database_Designer {
 			LoadRepository();
 		}
 
+		#endregion
+
 
 		#region NShape component's event handler implementations
 
@@ -560,6 +601,8 @@ namespace Database_Designer {
 		#endregion
 
 
+		#region Fields
+
 		private ToolBoxWindow toolBoxWindow;
 		private PropertyWindow propertyWindow;
 		private Rectangle contentBounds = Rectangle.Empty;
@@ -570,6 +613,8 @@ namespace Database_Designer {
 
 		private DockType toolBoxWindowDockType = 0;
 		private DockType propertyWindowDockType = 0;
+
+		#endregion
 	}
 
 }

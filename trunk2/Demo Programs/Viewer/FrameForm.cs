@@ -34,6 +34,8 @@ namespace NShapeViewer {
 		}
 
 
+		#region [Private] ChildForm handling implementations
+
 		private void ShowDisplayChildForm(Diagram diagram) {
 			DisplayChildForm childForm = new DisplayChildForm();
 			RegisterChildFormEvents(childForm);
@@ -57,8 +59,6 @@ namespace NShapeViewer {
 			childForm.Disposed -= childForm_Disposed;
 		}
 
-		
-		#region [Private] ChildForm event handler implementations
 
 		private void childForm_FormClosed(object sender, FormClosedEventArgs e) {
 			if (sender is DisplayChildForm) {
@@ -96,11 +96,13 @@ namespace NShapeViewer {
 		#region [Private] NShape component event handler implementations
 
 		private void project_Opened(object sender, EventArgs e) {
+			// Model obejcts are optional, so we can hide the ModelTree if there are no model objects
 			foreach (IModelObject modelObject in project.Repository.GetModelObjects(null)) {
 				modelTreeView.Visible = true;
 				break;
 			}
 			
+			// Create a child form for each diagram in the repository
 			Debug.Assert(displayChildForms.Count == 0);
 			foreach (Diagram diagram in project.Repository.GetDiagrams()) {
 				ShowDisplayChildForm(diagram);				

@@ -44,6 +44,7 @@ namespace WebVisists {
 
 			project.Name = "Webvisits Project";
 			project.Create();
+			// Add persistent libraries
 			project.AddLibraryByName("Dataweb.nShape.GeneralShapes", false);
 			project.AddLibraryByName("Dataweb.nShape.SoftwareArchitectureShapes", false);
 
@@ -64,6 +65,10 @@ namespace WebVisists {
 		}
 
 
+		/// <summary>
+		/// Load a statistics file and create shapes for the visualization:
+		/// Shapes representing the web pages will be connected to each other with lines.
+		/// </summary>
 		private void loadWebStatisticsToolStripMenuItem_Click(object sender, EventArgs e) {
 			string statsDir = Path.Combine("Demo Programs", Path.Combine("WebVisits", "Sample Web Statistics"));
 			openFileDialog.Filter = "Web Statistics|*.xml|All files|*.*";
@@ -73,7 +78,7 @@ namespace WebVisists {
 				// Create a new diagram
 				ShapeType boxType = project.ShapeTypes["Ellipse"];
 				ShapeType multiLineType = project.ShapeTypes["Polyline"];
-				
+
 				Dictionary<int, RectangleBase> boxes = new Dictionary<int, RectangleBase>();
 				List<Polyline> lines = new List<Polyline>();
 				//
@@ -82,14 +87,17 @@ namespace WebVisists {
 				scanner.ReadElement();
 				scanner.ReadElement("WebVisits");
 				scanner.ReadChild("Pages");
-				if (scanner.ReadChild("Page")) do {
-					scanner.ReadAttribute(); // id attribute
-					RectangleBase box = (RectangleBase)boxType.CreateInstance(pageTemplate);
-					box.Width = 140;
-					boxes.Add(scanner.IntValue, box);
-					scanner.ReadAttribute();
-					box.Text = scanner.StringValue;
-				} while (scanner.ReadElement());
+				if (scanner.ReadChild("Page"))
+					do {
+						scanner.ReadAttribute(); // id attribute
+						// Create a shape representing this web page
+						RectangleBase box = (RectangleBase)boxType.CreateInstance(pageTemplate);
+						box.Width = 140;
+						boxes.Add(scanner.IntValue, box);
+						// Set the page name as the shape's text
+						scanner.ReadAttribute();
+						box.Text = scanner.StringValue;
+					} while (scanner.ReadElement());
 				scanner.ReadParent();
 				if (scanner.ReadChild("Referral"))
 					do {
@@ -101,10 +109,14 @@ namespace WebVisists {
 						Shape shape2 = boxes[id2];
 						scanner.ReadAttribute(); // count
 						int count = scanner.IntValue;
+						
+						// Create a line representing the referral info
 						Polyline line = (Polyline)multiLineType.CreateInstance();
-						line.EndCapStyle = project.Design.CapStyles.ClosedArrow;
-						line.LineStyle = GetLineStyle(count);
+						line.EndCapStyle = project.Design.CapStyles.ClosedArrow;	// Set arrow tip
+						line.LineStyle = GetLineStyle(count);						// Find a line style that visually represents the number of clicks
+						// Connect the first line vertex to shape1
 						line.Connect(ControlPointId.FirstVertex, shape1, ControlPointId.Reference);
+						// Connect the last line vertex to shape2
 						line.Connect(ControlPointId.LastVertex, shape2, ControlPointId.Reference);
 						lines.Add(line);
 					} while (scanner.ReadElement());
@@ -115,37 +127,42 @@ namespace WebVisists {
 				int cnt = 0;
 				foreach (Diagram d in project.Repository.GetDiagrams())
 					++cnt;
+				// Create a new diagram for the read statistics
 				Diagram diagram = new Diagram(string.Format("WebVisits Diagram {0}", cnt));
 				diagram.Width = 1000;
 				diagram.Height = 1000;
 				diagram.BackgroundImageLayout = Dataweb.NShape.ImageLayoutMode.Fit;
+				// Insert all web page shapes into the diagram
 				foreach (RectangleBase b in boxes.Values)
 					diagram.Shapes.Add(b, project.Repository.ObtainNewTopZOrder(diagram));
+				// Insert all connector shapes (lines) into the diagram
 				foreach (Polyline l in lines)
 					diagram.Shapes.Add(l, project.Repository.ObtainNewBottomZOrder(diagram));
-				
+				// Empty the local shape buffers
 				boxes.Clear();
 				lines.Clear();
 				//
-				// Insert the diagram (including all shapes) into the repository
+				// Insert the diagram (including all shapes) into the repository (otherwise they won't be saved)
 				project.Repository.InsertAll(diagram);
 				//
-				// Layout the shapes
+				// Create a layouter in order to layout the shapes
 				if (layouter == null)
 					layouter = new RepulsionLayouter(project);
+				// Adjust layouter parameters
 				layouter.SpringRate = 14;
 				layouter.Repulsion = 7;
 				layouter.RepulsionRange = 400;
 				layouter.Friction = 0;
 				layouter.Mass = 50;
-				//
+				// Set the shapes that sould be layouted
 				layouter.AllShapes = diagram.Shapes;
 				layouter.Shapes = diagram.Shapes;
 
+				// Perform the layout
 				layouter.Prepare();
 				layouter.Execute(10);
-				layouter.Fit(50, 50, diagram.Width- 100, diagram.Height-100);
-				//
+				layouter.Fit(50, 50, diagram.Width - 100, diagram.Height - 100);
+
 				// Display the result
 				display.Diagram = diagram;
 			}
@@ -155,16 +172,20 @@ namespace WebVisists {
 		private void loadDiagramToolStripMenuItem_Click(object sender, EventArgs e) {
 			using (OpenFileDialog openFileDlg = new OpenFileDialog()) {
 				if (openFileDlg.ShowDialog(this) == DialogResult.OK) {
+					// Close the current project
 					project.Close();
+					// Set project name (file name), directory and file extension
 					xmlStore.DirectoryName = Path.GetDirectoryName(openFileDlg.FileName);
 					xmlStore.FileExtension = Path.GetExtension(openFileDlg.FileName);
 					project.Name = Path.GetFileNameWithoutExtension(openFileDlg.FileName);
+					// Open (load) the diagram
 					project.Open();
+					// Display the first diagram
 					foreach (Diagram d in project.Repository.GetDiagrams()) {
 						display.Diagram = d;
 						break;
 					}
-
+					// Fill the toolbox
 					FillToolBox();
 				}
 			}
@@ -176,6 +197,7 @@ namespace WebVisists {
 			Template labelTemplate = null;
 			Template annotationTemplate = null;
 
+			// Find existing templates for web-page, annotation and label
 			foreach (Template template in project.Repository.GetTemplates()) {
 				if (string.Compare(template.Name, templateNameAnnotation, StringComparison.InvariantCultureIgnoreCase) == 0) {
 					annotationTemplate = template;
@@ -185,26 +207,47 @@ namespace WebVisists {
 					pageTemplate = template;
 			}
 
-			// Add desired tools
+			// Add desired tools:
+			// We always want a selection tool (pointer tool)
 			toolBoxAdapter.ToolSetController.AddTool(new SelectionTool(), true);
+			// Add tools to the tool box for creating the shapes...
 			if (pageTemplate == null) {
+				// If there is no template for the shape representing the web page, create it.
 				pageTemplate = new Template(templateNameWebPage, project.ShapeTypes["Ellipse"].CreateInstance());
 				((RectangleBase)pageTemplate.Shape).FillStyle = project.Design.FillStyles["Green"];
+				// Insert the template into the repository (otherwise it won't be saved)
+				// Please note: Inserting a template will automatically create a tool in the toolbox
 				project.Repository.InsertAll(pageTemplate);
-			} else toolBoxAdapter.ToolSetController.CreateTemplateTool(pageTemplate);
-
+			} else {
+				// Add the existing template to the toolbox
+				toolBoxAdapter.ToolSetController.CreateTemplateTool(pageTemplate);
+			}
+			//
 			if (labelTemplate == null) {
+				// If there is no template for the label shape, create it.
 				labelTemplate = new Template(templateNameLabel, project.ShapeTypes["Label"].CreateInstance());
 				((RectangleBase)labelTemplate.Shape).CharacterStyle = project.Design.CharacterStyles.Normal;
+				// Insert the template into the repository (otherwise it won't be saved)
+				// Please note: Inserting a template will automatically create a tool in the toolbox
 				project.Repository.InsertAll(labelTemplate);
-			} else toolBoxAdapter.ToolSetController.CreateTemplateTool(labelTemplate);
-
+			} else {
+				// Add the existing template to the toolbox
+				toolBoxAdapter.ToolSetController.CreateTemplateTool(labelTemplate);
+			}
+			//
 			if (annotationTemplate == null) {
+				// If there is no template for the annotation shape, create it.
 				annotationTemplate = new Template(templateNameAnnotation, project.ShapeTypes["Annotation"].CreateInstance());
 				((RectangleBase)annotationTemplate.Shape).FillStyle = project.Design.FillStyles.Yellow;
+				// Insert the template into the repository (otherwise it won't be saved)
+				// Please note: Inserting a template will automatically create a tool in the toolbox
 				project.Repository.InsertAll(annotationTemplate);
-			} else toolBoxAdapter.ToolSetController.CreateTemplateTool(annotationTemplate);
+			} else {
+				// Add the existing template to the toolbox
+				toolBoxAdapter.ToolSetController.CreateTemplateTool(annotationTemplate);
+			}
 			
+			// Activate the default tool (pointer tool by default).
 			toolBoxAdapter.ToolSetController.SelectedTool = toolBoxAdapter.ToolSetController.DefaultTool;
 		}
 
@@ -214,7 +257,9 @@ namespace WebVisists {
 				if (Directory.Exists(xmlStore.DirectoryName))
 					dlg.InitialDirectory = xmlStore.DirectoryName;
 				else dlg.FileName = Path.GetFileName(xmlStore.ProjectFilePath);
+
 				if (dlg.ShowDialog() == DialogResult.OK) {
+					// Update project name (file name) and directory
 					xmlStore.DirectoryName = Path.GetDirectoryName(dlg.FileName);
 					project.Name = Path.GetFileNameWithoutExtension(dlg.FileName);
 					project.Repository.SaveChanges();
@@ -223,17 +268,8 @@ namespace WebVisists {
 		}
 
 
-		private void toolbox_SelectedIndexChanged(object sender, EventArgs e) {
-
-		}
-
-
-		private void toolBoxAdapter_ToolSelected(object sender, EventArgs e) {
-		}
-
-
 		private void showLayoutWindowToolStripMenuItem_Click(object sender, EventArgs e) {
-			// ToDo: Show layout dialog
+			// Show layout dialog
 			Dataweb.NShape.WinFormsUI.LayoutDialog layoutWindow;
 			if (layouter != null)
 				layoutWindow = new Dataweb.NShape.WinFormsUI.LayoutDialog(layouter);
@@ -250,7 +286,7 @@ namespace WebVisists {
 
 
 		private void CreateLineStyles() {
-			// Create Line Styles
+			// Create custom line styles
 			for (int j = 1; j <= 5; ++j) {
 				for (int i = 1; i <= 10; ++i) {
 					string name = string.Empty;
@@ -288,13 +324,19 @@ namespace WebVisists {
 					lineStyle.LineWidth = Math.Max(1, j / 2);
 					lineStyle.ColorStyle = colorStyle;
 					lineStyle.DashType = dashType;
+					
+					// Add the new line style to the current design (make it usable in shapes)
 					project.Design.AddStyle(lineStyle);
+					// Add the new line style to the repository (otherwise it won't be saved)
 					project.Repository.Insert(project.Design, lineStyle);
 				}
 			}
 		}
 
 
+		/// <summary>
+		/// Find a line style that visually represents the given number (high number -> bold line)
+		/// </summary>
 		private ILineStyle GetLineStyle(int count) {
 			int factor = 1 + (int)Math.Round(count / 100f);
 			string name;

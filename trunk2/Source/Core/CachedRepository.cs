@@ -1181,7 +1181,7 @@ namespace Dataweb.NShape.Advanced {
 					//store.LoadDiagramShapes(this, d);
 					return d;
 				}
-			throw new ArgumentException(string.Format("A diagram '{0}' does not exist in the repository.", name));
+			throw new ArgumentException(string.Format("Diagram '{0}' does not exist in the repository.", name));
 		}
 
 

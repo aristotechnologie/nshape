@@ -27,20 +27,20 @@ using Dataweb.NShape.WinFormsUI;
 
 
 namespace NShape_WPF_Demo {
-	
+
 	/// <summary>
 	/// Interaction logic for MainWindow.xaml
 	/// </summary>
 	public partial class MainWindow : Window {
-		
-		
+
+
 		public MainWindow() {
 			InitializeComponent();
 			Title = appTitle;
 
-			// Enable XP-Style WinForms controls
+			// Enable XP-Style for WinForms controls
 			System.Windows.Forms.Application.EnableVisualStyles();
-			
+
 			// Initialize WinForms ListView
 			winFormsListView.View = System.Windows.Forms.View.Details;
 			winFormsListView.ShowGroups = true;
@@ -81,8 +81,8 @@ namespace NShape_WPF_Demo {
 
 		private void ActivateMenuItems() {
 			openProjectMenuItem.IsEnabled = !project.IsOpen;
-			saveProjectMenuItem.IsEnabled = 
-			saveProjectAsMenuItem.IsEnabled = 
+			saveProjectMenuItem.IsEnabled =
+			saveProjectAsMenuItem.IsEnabled =
 			closeProjectMenuItem.IsEnabled = project.IsOpen;
 		}
 
@@ -120,7 +120,7 @@ namespace NShape_WPF_Demo {
 		// Returns false, if the save should be retried with another project name.
 		private bool SaveProject() {
 			bool result = false;
-			this.Cursor = Cursors.Wait;
+			Mouse.OverrideCursor = Cursors.Wait;
 			try {
 				// Save changes
 				project.Repository.SaveChanges();
@@ -130,7 +130,7 @@ namespace NShape_WPF_Demo {
 			} catch (Exception exc) {
 				MessageBox.Show(this, exc.Message, "Error", MessageBoxButton.OK, MessageBoxImage.Error);
 			} finally {
-				this.Cursor = Cursors.Arrow;
+				Mouse.OverrideCursor = null;
 			}
 			return result;
 		}
@@ -145,7 +145,7 @@ namespace NShape_WPF_Demo {
 				// Select a file name
 				SaveFileDialog saveFileDialog = new SaveFileDialog();
 				saveFileDialog.CreatePrompt = false;		// Do not ask wether to create the file
-				saveFileDialog.CheckFileExists = false;	// Do not check wether the file does NOT exist
+				saveFileDialog.CheckFileExists = false;		// Do not check wether the file does NOT exist
 				saveFileDialog.CheckPathExists = true;		// Ask wether to overwrite existing file
 				saveFileDialog.Filter = "NShape XML Repositories|*.nspj;*.xml|All Files|*.*";
 				if (Directory.Exists(xmlStore.DirectoryName))
@@ -156,12 +156,14 @@ namespace NShape_WPF_Demo {
 
 				// Try to save repository to file...
 				if (saveFileDialog.ShowDialog().GetValueOrDefault(false)) {
+					// Set the selected project name (file name) and the location (directory)
 					xmlStore.DirectoryName = Path.GetDirectoryName(saveFileDialog.FileName);
 					project.Name = Path.GetFileNameWithoutExtension(saveFileDialog.FileName);
 					Title = string.Format("{0} - {1}", appTitle, project.Name);
 					// Delete file if it exists, because the user was prompted wether to overwrite it before (SaveFileDialog.CheckPathExists).
 					if (project.Repository.Exists()) project.Repository.Erase();
 					saveProjectMenuItem.IsEnabled = true;
+					// Save the project (with error handling and wait cursor)
 					result = SaveProject();
 				}
 			} else MessageBox.Show(this, "'Save as...' is not supported for database repositories.", "Not supported", MessageBoxButton.OK, MessageBoxImage.Error);
@@ -190,9 +192,9 @@ namespace NShape_WPF_Demo {
 			}
 
 			if (result) {
+				// Close the existing project
 				project.Close();
-
-				// clear all displays and diagramControllers
+				// Clear all displays and diagramControllers
 				tabControl.Items.Clear();
 			}
 
@@ -246,8 +248,8 @@ namespace NShape_WPF_Demo {
 		private void saveProjectAsMenuItem_Click(object sender, RoutedEventArgs e) {
 			SaveProjectAs();
 		}
-		
-		
+
+
 		private void closeProjectMenuItem_Click(object sender, RoutedEventArgs e) {
 			//if (project.Repository
 			if (project.IsOpen) project.Close();
@@ -263,7 +265,7 @@ namespace NShape_WPF_Demo {
 		private void aboutMenuItem_Click(object sender, RoutedEventArgs e) {
 			MessageBox.Show(this, string.Format("NShape WPF Demo, based on NShape version {0}", project.ProductVersion), "About...", MessageBoxButton.OK, MessageBoxImage.Information);
 		}
-		
+
 		#endregion
 
 

@@ -181,7 +181,6 @@ namespace WebVisists {
 			this.toolbox.TabIndex = 4;
 			this.toolbox.UseCompatibleStateImageBehavior = false;
 			this.toolbox.View = System.Windows.Forms.View.Details;
-			this.toolbox.SelectedIndexChanged += new System.EventHandler(this.toolbox_SelectedIndexChanged);
 			// 
 			// toolBoxAdapter
 			// 

@@ -30,6 +30,8 @@ namespace NShapeViewer {
 			get { return display; }
 		}
 
+		
+		#region Child form implementation
 
 		private void ClearDiagramInfoTexts() {
 			// Clear window title
@@ -68,6 +70,10 @@ namespace NShapeViewer {
 			}
 		}
 
+		#endregion
+
+
+		#region NShape Display event handler implementations
 
 		private void display_DiagramChanged(object sender, System.EventArgs e) {
 			UpdateWindowTitle();
@@ -119,6 +125,8 @@ namespace NShapeViewer {
 			display.ControlToDiagram(e.X, e.Y, out x, out y);
 			mousePosLabel.Text = string.Format(pointFormatStr, x, y);
 		}
+
+		#endregion
 
 
 		private const string windowTitleFormatStr = "{0} ({1} %)";

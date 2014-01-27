@@ -34,7 +34,7 @@ namespace Security_Demo {
 
 		private void UpdateSecurityControls() {
 			if (cboUser.SelectedItem != null && cboDomain.SelectedItem != null) {
-				// Update Security Infos and the owner's controls
+				// Update Security infos and the owner's controls
 				owner.SecurityManager.CurrentRole = (StandardRole)cboUser.SelectedItem;
 				owner.UpdateSecurityInfoCtrls();
 
@@ -75,7 +75,6 @@ namespace Security_Demo {
 						else owner.SecurityManager.RemovePermissions(domainName, role, permission, access);
 					}
 
-					
 					UpdateSecurityControls();
 				}
 			}
