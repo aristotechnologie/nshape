@@ -296,7 +296,7 @@ namespace Dataweb.NShape {
 			int idx = entityName.IndexOf('.');
 			if (idx < 0)
 				result = entityName;
-			else if (entityName.Substring(0, idx).Equals("Core", StringComparison.InvariantCultureIgnoreCase)
+			else if (entityName.Substring(0, idx).Equals(Project.CoreLibraryName, StringComparison.InvariantCultureIgnoreCase)
 				|| entityName.Substring(0, idx).Equals("GeneralShapes", StringComparison.InvariantCultureIgnoreCase))
 				result = entityName.Substring(idx + 1, entityName.Length - idx - 1);
 			else result = entityName.Replace('.', '_');
@@ -406,12 +406,12 @@ namespace Dataweb.NShape {
 			if (Version >= 5) cmdText += ", Description";
 			cmdText += ") VALUES (@ProjectInfo, @LastSavedUTC";
 			if (Version >= 5) cmdText += ", @Description";
-			cmdText += "); SELECT CAST(IDENT_CURRENT('Project') AS INT)";			
+			cmdText += "); SELECT CAST(IDENT_CURRENT('Project') AS INT)";
 			SetCommand(ProjectSettings.EntityTypeName, RepositoryCommandType.Insert,
 				CreateCommand(cmdText,
 					CreateParameter("ProjectInfo", DbType.Int32),
 					CreateParameter("LastSavedUTC", DbType.DateTime),
-					CreateParameter("Description", DbType.String)));
+					(Version >= 5) ? CreateParameter("Description", DbType.String) : null));
 			
 			cmdText = "UPDATE Project SET LastSavedUTC = @LastSavedUTC";
 			if (Version >= 5) cmdText += ", Description = @Description";
@@ -421,7 +421,7 @@ namespace Dataweb.NShape {
 					CreateParameter("Id", DbType.Int32),
 					CreateParameter("ProjectInfo", DbType.Int32),
 					CreateParameter("LastSavedUTC", DbType.DateTime),
-					CreateParameter("Description", DbType.String)));
+					(Version >= 5) ? CreateParameter("Description", DbType.String) : null));
 			
 			SetCommand(ProjectSettings.EntityTypeName, RepositoryCommandType.Delete,
 				CreateCommand("DELETE FROM Project WHERE Id = @Id",
@@ -469,13 +469,13 @@ namespace Dataweb.NShape {
 			cmdTxt = "INSERT INTO Design (Project, Name, ";
 			if (Version >= 4) cmdTxt += "Title, ";
 			cmdTxt += "Description) VALUES (@Project, @Name, ";
-			if (Version > 3)cmdTxt += "@Title, ";
+			if (Version >= 4) cmdTxt += "@Title, ";
 			cmdTxt += "@Description); SELECT CAST(IDENT_CURRENT('Design') AS INT)";
 			SetCommand(Design.EntityTypeName, RepositoryCommandType.Insert,
 				CreateCommand(cmdTxt,
 					CreateParameter("Project", DbType.Int32), // Not used, always null, needed for generic statement handling
 					CreateParameter("Name", DbType.String),
-					CreateParameter("Title", DbType.String),
+					(Version >= 4) ? CreateParameter("Title", DbType.String) : null,
 					CreateParameter("Description", DbType.String)));
 			
 			cmdTxt = "UPDATE Design SET Name = @Name, ";
@@ -485,7 +485,7 @@ namespace Dataweb.NShape {
 				CreateCommand(cmdTxt,
 					CreateParameter("Id", DbType.Int32),
 					CreateParameter("Name", DbType.String),
-					CreateParameter("Title", DbType.String),
+					(Version >= 4) ? CreateParameter("Title", DbType.String) : null,
 					CreateParameter("Description", DbType.String)));
 
 			SetCommand(Design.EntityTypeName, RepositoryCommandType.Delete,
@@ -609,8 +609,8 @@ namespace Dataweb.NShape {
 				CreateCommand(cmdTxt,
 					CreateParameter("Project", DbType.Int32),
 					CreateParameter("Name", DbType.String),
-					CreateParameter("Title", DbType.String),
-					CreateParameter("SecurityDomain", DbType.String),
+					(Version >= 3) ? CreateParameter("Title", DbType.String) : null,
+					(Version >= 4) ? CreateParameter("SecurityDomain", DbType.String) : null,
 					CreateParameter("Width", DbType.Int32),
 					CreateParameter("Height", DbType.Int32),
 					CreateParameter("BackgroundColor", DbType.Int32),
@@ -640,8 +640,8 @@ namespace Dataweb.NShape {
 				CreateCommand(cmdTxt,
 					CreateParameter("Id", DbType.Int32),
 					CreateParameter("Name", DbType.String),
-					CreateParameter("Title", DbType.String), 
-					CreateParameter("SecurityDomain", DbType.String),
+					(Version >= 3) ? CreateParameter("Title", DbType.String) : null,
+					(Version >= 4) ? CreateParameter("SecurityDomain", DbType.String) : null,
 					CreateParameter("Width", DbType.Int32),
 					CreateParameter("Height", DbType.Int32),
 					CreateParameter("BackgroundColor", DbType.Int32),

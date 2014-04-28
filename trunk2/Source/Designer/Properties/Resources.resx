@@ -175,9 +175,6 @@
   <data name="OpenBtn" type="System.Resources.ResXFileRef, System.Windows.Forms">
     <value>..\Resources\OpenBtn.bmp;System.Drawing.Bitmap, System.Drawing, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
   </data>
-  <data name="SaveBtn1" type="System.Resources.ResXFileRef, System.Windows.Forms">
-    <value>..\Resources\SaveBtn1.bmp;System.Drawing.Bitmap, System.Drawing, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
-  </data>
   <data name="SaveBtn" type="System.Resources.ResXFileRef, System.Windows.Forms">
     <value>..\Resources\SaveBtn.bmp;System.Drawing.Bitmap, System.Drawing, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
   </data>
@@ -222,5 +219,15 @@
   </data>
   <data name="CopyAsImage" type="System.Resources.ResXFileRef, System.Windows.Forms">
     <value>..\Resources\CopyAsImage.bmp;System.Drawing.Bitmap, System.Drawing, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
+  </data>
+  <assembly alias="System.Windows.Forms" name="System.Windows.Forms, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089" />
+  <data name="CloseBtn" type="System.Resources.ResXFileRef, System.Windows.Forms">
+    <value>..\Resources\CloseBtn.bmp;System.Drawing.Bitmap, System.Drawing, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
+  </data>
+  <data name="SaveAsBtn" type="System.Resources.ResXFileRef, System.Windows.Forms">
+    <value>..\Resources\SaveAsBtn.bmp;System.Drawing.Bitmap, System.Drawing, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
+  </data>
+  <data name="UpgradeFileVersion" type="System.Resources.ResXFileRef, System.Windows.Forms">
+    <value>..\Resources\UpgradeFileVersion.bmp;System.Drawing.Bitmap, System.Drawing, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
   </data>
 </root>

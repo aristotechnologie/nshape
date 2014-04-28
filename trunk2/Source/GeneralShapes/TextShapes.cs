@@ -56,6 +56,7 @@ namespace Dataweb.NShape.GeneralShapes {
 		protected internal Label(ShapeType shapeType, Template template)
 			: base(shapeType, template) {
 		}
+
 	}
 
 }

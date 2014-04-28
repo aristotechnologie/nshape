@@ -199,7 +199,7 @@ namespace Dataweb.NShape.Advanced {
 
 
 		static FreeHandTool() {
-			penCursorId = CursorProvider.RegisterCursor(Properties.Resources.PenCursor);
+			penCursorId = CursorProvider.RegisterCursor(Resources.PenCursor);
 		}
 
 
@@ -209,9 +209,9 @@ namespace Dataweb.NShape.Advanced {
 			Title = "Freehand Pen";
 			ToolTipText = "Draw the symbol of the object which should be created.";
 
-			SmallIcon = global::Dataweb.NShape.Properties.Resources.FreehandIconSmall;
+			SmallIcon = global::Dataweb.NShape.Resources.FreehandIconSmall;
 			SmallIcon.MakeTransparent(Color.Fuchsia);
-			LargeIcon = global::Dataweb.NShape.Properties.Resources.FreehandIconLarge;
+			LargeIcon = global::Dataweb.NShape.Resources.FreehandIconLarge;
 			LargeIcon.MakeTransparent(Color.Fuchsia);
 
 			polygone = new PathFigureShape();

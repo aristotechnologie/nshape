@@ -22,7 +22,7 @@ using System.Drawing.Drawing2D;
 
 namespace Dataweb.NShape.Advanced {
 
-	/// <remarks>RequiredPermissions set</remarks>
+	/// <ToBeCompleted></ToBeCompleted>
 	public abstract class RectangleBase : CaptionedShapeBase {
 
 		/// <summary>
@@ -53,7 +53,7 @@ namespace Dataweb.NShape.Advanced {
 		#region [Public] Properties
 
 		/// <ToBeCompleted></ToBeCompleted>
-		[Category("Layout")]
+		[CategoryLayout()]
 		[Description("The horizontal size of the Shape.")]
 		[PropertyMappingId(PropertyIdWidth)]
 		[RequiredPermission(Permission.Layout)]
@@ -80,7 +80,7 @@ namespace Dataweb.NShape.Advanced {
 
 
 		/// <ToBeCompleted></ToBeCompleted>
-		[Category("Layout")]
+		[CategoryLayout()]
 		[Description("The vertical size of the Shape.")]
 		[PropertyMappingId(PropertyIdHeight)]
 		[RequiredPermission(Permission.Layout)]

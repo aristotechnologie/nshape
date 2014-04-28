@@ -18,9 +18,8 @@ using System.Collections.Generic;
 using System.ComponentModel;
 using System.Diagnostics;
 using System.Drawing;
-using System.IO;
-using System.Text;
 using System.Runtime.Serialization;
+using System.Text;
 
 
 namespace Dataweb.NShape.Advanced {
@@ -39,49 +38,24 @@ namespace Dataweb.NShape.Advanced {
 		public Store Store {
 			get { return store; }
 			set {
-				AssertClosed();
-				if (store != null) store.ProjectName = string.Empty;
+				// Assigning a store when no store exists is ok but not exchanging the stores when 
+				// modifications are pending because the state of store implementations that write 
+				// only changed entities would become inconsistent.
+				if (store != null) {
+					if (IsModified) throw new NShapeException(ResourceStrings.MessageTxt_UnsavedRepositoryModificationsPending);
+					store.ProjectName = string.Empty;
+				}
 				store = value;
 				if (store != null) store.ProjectName = projectName;
 			}
 		}
 
-
 		/// <summary>
 		/// Specifies the version of the assembly containing the component.
 		/// </summary>
-		[Category("NShape")]
+		[CategoryNShape()]
 		public string ProductVersion {
 			get { return this.GetType().Assembly.GetName().Version.ToString(); }
-		}
-
-
-		/// <summary>
-		/// Returns the XML representation of the data stored in the cache.
-		/// </summary>
-		/// <returns></returns>
-		public string GetXml() {
-			throw new NotImplementedException();
-		}
-
-
-		/// <summary>
-		/// Reads XML data into the cache using the specified System.IO.Stream.
-		/// </summary>
-		/// <param name="stream"></param>
-		public void ReadXml(Stream stream) {
-			if (stream == null) throw new ArgumentNullException("stream");
-			throw new NotImplementedException();
-		}
-
-
-		/// <summary>
-		/// Writes the current cache content as XML data.
-		/// </summary>
-		/// <param name="stream"></param>
-		public void WriteXml(Stream stream) {
-			if (stream == null) throw new ArgumentNullException("stream");
-			throw new NotImplementedException();
 		}
 
 
@@ -103,7 +77,6 @@ namespace Dataweb.NShape.Advanced {
 
 		#region IRepository Members
 
-
 		/// <override></override>
 		public int Version {
 			get { return version; }
@@ -112,6 +85,12 @@ namespace Dataweb.NShape.Advanced {
 				version = value;
 				if (store != null) store.Version = version;
 			}
+		}
+
+
+		/// <override></override>
+		public bool CanModifyVersion {
+			get { return (store != null) ? store.CanModifyVersion : false; }
 		}
 
 
@@ -135,10 +114,10 @@ namespace Dataweb.NShape.Advanced {
 		public void AddEntityType(IEntityType entityType) {
 			if (entityType == null) throw new ArgumentNullException("entityType");
 			if (entityTypes.ContainsKey(CalcElementName(entityType.FullName)))
-				throw new NShapeException("The repository already contains an entity type called '{0}'.", entityType.FullName);
+				throw new NShapeException(ResourceStrings.MessageFmt_RepositoryAlreadyContainsAnEntityType0, entityType.FullName);
 			foreach (KeyValuePair<string, IEntityType> item in entityTypes) {
 				if (item.Value.FullName.Equals(entityType.FullName, StringComparison.InvariantCultureIgnoreCase))
-					throw new NShapeException("The repository already contains an entity type called '{0}'.", entityType.FullName);
+					throw new NShapeException(ResourceStrings.MessageFmt_RepositoryAlreadyContainsAnEntityType0, entityType.FullName);
 			}
 			// Calculate the XML element names for all entity identifiers
 			entityType.ElementName = CalcElementName(entityType.FullName);
@@ -156,7 +135,7 @@ namespace Dataweb.NShape.Advanced {
 		/// <override></override>
 		public void RemoveEntityType(string entityTypeName) {
 			if (entityTypeName == null) throw new ArgumentNullException("entityTypeName");
-			if (entityTypeName == string.Empty) throw new ArgumentException("Invalid entity type name.");
+			if (entityTypeName == string.Empty) throw new ArgumentException(ResourceStrings.MessageTxt_InvalidEntityTypeName);
 			entityTypes.Remove(CalcElementName(entityTypeName));
 		}
 
@@ -169,8 +148,8 @@ namespace Dataweb.NShape.Advanced {
 
 		/// <override></override>
 		public void ReadVersion() {
-			if (store == null) throw new Exception("Property Store is not set.");
-			else if (!store.Exists()) throw new Exception("Store does not exist.");
+			if (store == null) throw new Exception(ResourceStrings.MessageTxt_PropertyStoreNotSet);
+			else if (!store.Exists()) throw new NShapeException(ResourceStrings.MessageTxt_StoreDoesNotExist);
 			else store.ReadVersion(this);
 		}
 
@@ -184,7 +163,7 @@ namespace Dataweb.NShape.Advanced {
 		/// <override></override>
 		public virtual void Create() {
 			AssertClosed();
-			if (string.IsNullOrEmpty(projectName)) throw new NShapeException("No project name defined.");
+			if (string.IsNullOrEmpty(projectName)) throw new NShapeException(ResourceStrings.MessageTxt_ProjectNameNotDefined);
 			settings = new ProjectSettings();
 			newProjects.Add(settings, projectOwner);
 			projectDesign = new Design();
@@ -201,33 +180,15 @@ namespace Dataweb.NShape.Advanced {
 		/// <override></override>
 		public void Open() {
 			AssertClosed();
-			if (string.IsNullOrEmpty(projectName)) throw new NShapeException("No project name defined.");
+			if (string.IsNullOrEmpty(projectName)) throw new NShapeException(ResourceStrings.MessageTxt_ProjectNameNotDefined);
 			if (store == null)
-				throw new InvalidOperationException("Repository has no store attached. An in-memory repository must be created, not opened.");
+				throw new NShapeException(ResourceStrings.MessageTxt_RepositoryHasNoStoreAttachedOpenNotAllowed);
 			store.ProjectName = projectName;
 			store.Open(this);
-			// Load the project, must be exactly one.
-			store.LoadProjects(this, FindEntityType(ProjectSettings.EntityTypeName, true));
-			IEnumerator<EntityBucket<ProjectSettings>> projectEnumerator = loadedProjects.Values.GetEnumerator();
-			if (!projectEnumerator.MoveNext())
-				throw new NShapeException("Project '{0}' not found in repository.", projectName);
-			settings = projectEnumerator.Current.ObjectRef;
-			if (projectEnumerator.MoveNext())
-				throw new NShapeException("Two projects named '{0}' found in repository.", projectName);
-			// Load the design, there must be exactly one returned
-			store.LoadDesigns(this, ((IEntity)settings).Id);
-			IEnumerator<EntityBucket<Design>> designEnumerator = loadedDesigns.Values.GetEnumerator();
-			if (!designEnumerator.MoveNext())
-				throw new NShapeException("Project styles not found.");
-			projectDesign = designEnumerator.Current.ObjectRef;
-			if (designEnumerator.MoveNext()) {
-				//throw new NShapeException("More than one project design found in repository.");
-				// ToDo: Load addinional designs
-			}
+			DoLoadProjectAndDesign();
 			isOpen = true;
 			isModified = false;
 		}
-
 
 		/// <override></override>
 		public virtual void Close() {
@@ -240,14 +201,14 @@ namespace Dataweb.NShape.Advanced {
 
 		/// <override></override>
 		public void Erase() {
-			if (store == null) throw new InvalidOperationException("Repository has no store attached.");
+			if (store == null) throw new NShapeException(ResourceStrings.MessageTxt_RepositoryHasNoStoreAttached);
 			store.Erase();
 		}
 
 
 		/// <override></override>
 		public void SaveChanges() {
-			if (store == null) throw new Exception("Repository has no store attached.");
+			if (store == null) throw new NShapeException(ResourceStrings.MessageTxt_RepositoryHasNoStoreAttached);
 			store.SaveChanges(this);
 			AcceptAll();
 		}
@@ -403,8 +364,9 @@ namespace Dataweb.NShape.Advanced {
 				if (store != null && loadedDesigns.Count <= 0)
 					store.LoadDesigns(this, null);
 				if (!loadedDesigns.TryGetValue(id, out designBucket))
-					throw new NShapeException("Design with id '{0}' not found in repository.", id);
-				if (designBucket.State == ItemState.Deleted) throw new NShapeException("Design '{0}' was deleted.", designBucket.ObjectRef);
+					throw new NShapeException(ResourceStrings.MessageFmt_Entity0WithId1NotFoundInRepository, ResourceStrings.Text_Design, id);
+				if (designBucket.State == ItemState.Deleted) 
+					throw new NShapeException(ResourceStrings.MessageFmt_Entity01WasDeleted, ResourceStrings.Text_Design, designBucket.ObjectRef);
 				result = designBucket.ObjectRef;
 			}
 			return result;
@@ -422,7 +384,7 @@ namespace Dataweb.NShape.Advanced {
 				foreach (Design d in GetCachedEntities<Design>(loadedDesigns, newDesigns))
 					if (d.Name.Equals(name, StringComparison.InvariantCultureIgnoreCase))
 						return d;
-				throw new ArgumentException(string.Format("A design named '{0}' does not exist in the repository.", name));
+				throw new ArgumentException(string.Format(ResourceStrings.MessageFmt_Entity01DoesNotExistInTheRepository, name));
 			}
 		}
 
@@ -458,7 +420,8 @@ namespace Dataweb.NShape.Advanced {
 		/// <override></override>
 		public void Delete(Design design) {
 			if (design == null) throw new ArgumentNullException("design");
-			if (design == projectDesign) throw new InvalidOperationException("Current project design cannot be deleted.");
+			if (design == projectDesign) 
+				throw new InvalidOperationException(ResourceStrings.MessageTxt_CurrentProjectDesignCannotBeDeleted);
 			AssertOpen();
 			DoDeleteDesign(design, false);
 			if (DesignDeleted != null) DesignDeleted(this, GetDesignEventArgs(design));
@@ -468,7 +431,8 @@ namespace Dataweb.NShape.Advanced {
 		/// <override></override>
 		public void DeleteAll(Design design) {
 			if (design == null) throw new ArgumentNullException("design");
-			if (design == projectDesign) throw new InvalidOperationException("Current project design cannot be deleted.");
+			if (design == projectDesign) 
+				throw new InvalidOperationException(ResourceStrings.MessageTxt_CurrentProjectDesignCannotBeDeleted);
 			AssertOpen();
 			DoDeleteDesign(design, true);
 			if (DesignDeleted != null) DesignDeleted(this, GetDesignEventArgs(design));
@@ -572,7 +536,7 @@ namespace Dataweb.NShape.Advanced {
 		public Model GetModel() {
 			Model model = null;
 			if (!TryGetModel(out model))
-				throw new NShapeException("A model does not exist in the repository.");
+				throw new NShapeException(ResourceStrings.MessageTxt_AModelDoesNotExistInTheRepository);
 			return model;
 		}
 
@@ -584,7 +548,7 @@ namespace Dataweb.NShape.Advanced {
 			AssertCanInsert(model);
 			Model m = null;
 			if (TryGetModel(out m))
-				throw new NShapeException("A model aleady exists. More than one model per project is not supported.");
+				throw new NShapeException(ResourceStrings.MessageTxt_AModelAleadyExistsInTheRepository);
 			InsertEntity<Model>(newModels, model, GetProject());
 			if (ModelInserted != null) ModelInserted(this, GetModelEventArgs(model));
 		}
@@ -679,8 +643,9 @@ namespace Dataweb.NShape.Advanced {
 				Model model = GetModel();
 				if (store != null && model != null) store.LoadModelModelObjects(this, model.Id);
 				if (!loadedModelObjects.TryGetValue(id, out bucket))
-					throw new NShapeException("Model object with id '{0}' not found in repository.", id);
-				if (bucket.State == ItemState.Deleted) throw new NShapeException("ModelObject with id '{0}' was deleted.", id);
+					throw new NShapeException(ResourceStrings.MessageFmt_Entity0WithId1NotFoundInRepository, ResourceStrings.Text_ModelObject, id);
+				if (bucket.State == ItemState.Deleted)
+					throw new NShapeException(ResourceStrings.MessageFmt_Entity0WithId1WasDeleted, ResourceStrings.Text_ModelObject, id);
 				result = bucket.ObjectRef;
 			}
 			return result;
@@ -918,8 +883,9 @@ namespace Dataweb.NShape.Advanced {
 				AssertStoreExists();
 				store.LoadTemplates(this, ((IEntity)settings).Id);
 				if (!loadedTemplates.TryGetValue(id, out result))
-					throw new NShapeException("Template with id '{0}' not found in store.", id);
-				if (result.State == ItemState.Deleted) throw new NShapeException("Template '{0}' was deleted.", result.ObjectRef);
+					throw new NShapeException(ResourceStrings.MessageFmt_Entity0WithId1NotFoundInRepository, ResourceStrings.Text_Template, id);
+				if (result.State == ItemState.Deleted)
+					throw new NShapeException(ResourceStrings.MessageFmt_Entity01WasDeleted, ResourceStrings.Text_Template, result.ObjectRef);
 			}
 			return result.ObjectRef;
 		}
@@ -934,7 +900,7 @@ namespace Dataweb.NShape.Advanced {
 			foreach (Template t in GetCachedEntities<Template>(loadedTemplates, newTemplates))
 				if (t.Name.Equals(name, StringComparison.InvariantCultureIgnoreCase))
 					return t;
-			throw new ArgumentException(string.Format("A template named '{0}' does not exist in the repository.", name));
+			throw new ArgumentException(string.Format(ResourceStrings.MessageFmt_Entity01DoesNotExistInTheRepository, ResourceStrings.Text_Template, name));
 		}
 
 
@@ -1157,8 +1123,9 @@ namespace Dataweb.NShape.Advanced {
 				AssertStoreExists();
 				store.LoadDiagrams(this, ((IEntity)settings).Id);
 				if (!loadedDiagrams.TryGetValue(id, out result))
-					throw new NShapeException("Diagram with id '{0}' not found in repository.", id);
-				if (result.State == ItemState.Deleted) throw new NShapeException("Diagram '{0}' was deleted.", result.ObjectRef);
+					throw new NShapeException(ResourceStrings.MessageFmt_Entity0WithId1NotFoundInRepository, ResourceStrings.Text_Diagram, id);
+				if (result.State == ItemState.Deleted) 
+					throw new NShapeException(ResourceStrings.MessageFmt_Entity01WasDeleted, ResourceStrings.Text_Diagram, result.ObjectRef);
 			}
 			// Do *NOT* load diagram shapes here. The diagramController is responsible for 
 			// loading the diagram shapes. Otherwise partial (per diagram) loading does not work.
@@ -1174,14 +1141,14 @@ namespace Dataweb.NShape.Advanced {
 			// If there is a diagram, we assume we have already loaded them all.
 			if (store != null && loadedDiagrams.Count <= 0 && ((IEntity)settings).Id != null)
 				store.LoadDiagrams(this, ((IEntity)settings).Id);
-			foreach (Diagram d in GetCachedEntities(loadedDiagrams, newDiagrams))
-				if (d.Name.Equals(name, StringComparison.InvariantCultureIgnoreCase)) {
+			foreach (Diagram diagram in GetCachedEntities(loadedDiagrams, newDiagrams))
+				if (string.Compare(diagram.Name, name, Comparison) == 0) {
 					// Do *NOT* load diagram shapes here. The diagramController is responsible for 
 					// loading the diagram shapes. Otherwise partial (per diagram) loading does not work.
 					//store.LoadDiagramShapes(this, d);
-					return d;
+					return diagram;
 				}
-			throw new ArgumentException(string.Format("Diagram '{0}' does not exist in the repository.", name));
+			throw new ArgumentException(string.Format(ResourceStrings.MessageFmt_Entity01DoesNotExistInTheRepository, ResourceStrings.Text_Diagram, name));
 		}
 
 
@@ -1633,6 +1600,7 @@ namespace Dataweb.NShape.Advanced {
 			/// <override></override>
 			public object Id;
 
+
 			#region IEntity Members
 
 			object IEntity.Id {
@@ -1714,7 +1682,8 @@ namespace Dataweb.NShape.Advanced {
 
 
 		IEntityType IStoreCache.FindEntityTypeByElementName(string elementName) {
-			if (!entityTypes.ContainsKey(elementName)) throw new ArgumentException(string.Format("An entity type with element name '{0}' is not registered.", elementName));
+			if (!entityTypes.ContainsKey(elementName)) 
+				throw new ArgumentException(string.Format(ResourceStrings.MessageFmt_EntityTypeWithElementName0IsNotRegistered, elementName));
 			return entityTypes[elementName];
 		}
 
@@ -1870,6 +1839,28 @@ namespace Dataweb.NShape.Advanced {
 
 		#region [Private] Implementation
 
+		private void DoLoadProjectAndDesign() {
+			// Load the project, must be exactly one.
+			store.LoadProjects(this, FindEntityType(ProjectSettings.EntityTypeName, true));
+			IEnumerator<EntityBucket<ProjectSettings>> projectEnumerator = loadedProjects.Values.GetEnumerator();
+			if (!projectEnumerator.MoveNext())
+				throw new NShapeException(ResourceStrings.MessageFmt_Entity01DoesNotExistInTheRepository, ResourceStrings.Text_Project, projectName);
+			settings = projectEnumerator.Current.ObjectRef;
+			if (projectEnumerator.MoveNext())
+				throw new NShapeException(ResourceStrings.MessageFmt_TwoProjectsNamed0FoundInRepository, projectName);
+			// Load the design, there must be exactly one returned
+			store.LoadDesigns(this, ((IEntity)settings).Id);
+			IEnumerator<EntityBucket<Design>> designEnumerator = loadedDesigns.Values.GetEnumerator();
+			if (!designEnumerator.MoveNext())
+				throw new NShapeException(ResourceStrings.MessageTxt_ProjectStylesNotFound);
+			projectDesign = designEnumerator.Current.ObjectRef;
+			if (designEnumerator.MoveNext()) {
+				//throw new NShapeException("More than one project design found in repository.");
+				// ToDo: Load additional designs
+			}
+		}
+
+
 		private void AcceptAll() {
 			AcceptEntities<ProjectSettings>(loadedProjects, newProjects);
 			AcceptEntities<Design>(loadedDesigns, newDesigns);
@@ -1947,7 +1938,7 @@ namespace Dataweb.NShape.Advanced {
 			IEntityType result;
 			entityTypes.TryGetValue(CalcElementName(entityTypeName), out result);
 			if (mustExist && result == null)
-				throw new NShapeException("Entity type '{0}' does not exist in the repository.", entityTypeName);
+				throw new NShapeException(ResourceStrings.MessageFmt_EntityType0DoesNotExistInTheRepository, entityTypeName);
 			return result;
 		}
 
@@ -1984,7 +1975,7 @@ namespace Dataweb.NShape.Advanced {
 		private void InsertEntity<TEntity>(Dictionary<TEntity, IEntity> newEntities,
 			TEntity entity, IEntity owner) where TEntity : IEntity {
 			if (entity.Id != null)
-				throw new ArgumentException("Entities with an id cannot be inserted into the repository.");
+				throw new ArgumentException(ResourceStrings.MessageTxt_EntitiesWithAnIdCannotBeInsertedIntoTheRepository);
 			newEntities.Add(entity, owner);
 			isModified = true;
 		}
@@ -1997,12 +1988,13 @@ namespace Dataweb.NShape.Advanced {
 			Dictionary<TEntity, IEntity> newEntities, TEntity entity) where TEntity : IEntity {
 			if (entity.Id == null) {
 				if (!newEntities.ContainsKey(entity))
-					throw new NShapeException(string.Format("Entity not found in repository."));
+					throw new NShapeException(string.Format(ResourceStrings.MessageTxt_EntityNotFoundInRepository));
 			} else {
 				EntityBucket<TEntity> item;
 				if (!loadedEntities.TryGetValue(entity.Id, out item))
-					throw new NShapeException("Entity not found in repository.");
-				if (item.State == ItemState.Deleted) throw new NShapeException("Entity was deleted before. Undelete the entity before modifying it.");
+					throw new NShapeException(ResourceStrings.MessageTxt_EntityNotFoundInRepository);
+				if (item.State == ItemState.Deleted) 
+					throw new NShapeException(ResourceStrings.MessageTxt_EntityWasDeletedUndeleteBeforeModifying);
 				item.State = ItemState.Modified;
 			}
 			isModified = true;
@@ -2017,13 +2009,14 @@ namespace Dataweb.NShape.Advanced {
 			Dictionary<TEntity, IEntity> newEntities, TEntity entity) where TEntity : IEntity {
 			if (entity.Id == null) {
 				if (!newEntities.ContainsKey(entity))
-					throw new NShapeException(string.Format("Entity not found in repository.", entity.Id));
+					throw new NShapeException(ResourceStrings.MessageTxt_EntityNotFoundInRepository);
 				newEntities.Remove(entity);
 			} else {
 				EntityBucket<TEntity> item;
 				if (!loadedEntities.TryGetValue(entity.Id, out item))
-					throw new NShapeException("Entity not found in repository.");
-				if (item.State == ItemState.Deleted) throw new NShapeException("Entity is already deleted.");
+					throw new NShapeException(ResourceStrings.MessageTxt_EntityNotFoundInRepository);
+				if (item.State == ItemState.Deleted) 
+					throw new NShapeException(ResourceStrings.MessageTxt_EntityIsAlreadyDeleted);
 				item.State = ItemState.Deleted;
 			}
 			isModified = true;
@@ -2032,12 +2025,14 @@ namespace Dataweb.NShape.Advanced {
 
 		private void UndeleteEntity<TEntity>(Dictionary<object, EntityBucket<TEntity>> loadedEntities,
 			TEntity entity) where TEntity : IEntity {
-			if (entity.Id == null) throw new NShapeException(string.Format("An entity without id cannot be undeleted.", entity.Id));
+			if (entity.Id == null) 
+				throw new NShapeException(ResourceStrings.MessageTxt_AnEntityWithoutIdCannotBeUndeleted);
 			else {
 				EntityBucket<TEntity> item;
 				if (!loadedEntities.TryGetValue(entity.Id, out item))
-					throw new NShapeException("Entity not found in repository.");
-				if (item.State != ItemState.Deleted) throw new NShapeException("Entity was not deleted before. Onlydeleted entities can be undeleted.");
+					throw new NShapeException(ResourceStrings.MessageTxt_EntityNotFoundInRepository);
+				if (item.State != ItemState.Deleted) 
+					throw new NShapeException(ResourceStrings.MessageFmt_EntityWasNotDeletedBefore);
 				item.State = ItemState.Modified;
 			}
 			isModified = true;
@@ -2046,13 +2041,15 @@ namespace Dataweb.NShape.Advanced {
 
 		private void UndeleteEntity<TEntity>(Dictionary<object, EntityBucket<TEntity>> loadedEntities,
 			TEntity entity, IEntity owner) where TEntity : IEntity {
-			if (entity.Id == null) throw new NShapeException(string.Format("An entity without id cannot be undeleted.", entity.Id));
+			if (entity.Id == null) 
+				throw new NShapeException(ResourceStrings.MessageTxt_AnEntityWithoutIdCannotBeUndeleted);
 			else {
 				EntityBucket<TEntity> item;
 				if (!loadedEntities.TryGetValue(entity.Id, out item))
 					loadedEntities.Add(entity.Id, new EntityBucket<TEntity>(entity, owner, ItemState.New));
 				else {
-					if (item.State != ItemState.Deleted) throw new NShapeException("Entity was not deleted before. Onlydeleted entities can be undeleted.");
+					if (item.State != ItemState.Deleted) 
+						throw new NShapeException(ResourceStrings.MessageFmt_EntityWasNotDeletedBefore);
 					item.State = ItemState.Modified;
 					Debug.Assert(item.Owner == owner);
 				}
@@ -2222,8 +2219,9 @@ namespace Dataweb.NShape.Advanced {
 		private IStyle GetProjectStyle(object id) {
 			EntityBucket<IStyle> styleItem;
 			if (!loadedStyles.TryGetValue(id, out styleItem))
-				throw new NShapeException("Style with id '{0}' does not exist.", id);
-			if (styleItem.State == ItemState.Deleted) throw new NShapeException("Style '{0}' was deleted.", styleItem.ObjectRef);
+				throw new NShapeException(ResourceStrings.MessageFmt_Entity0WithId1NotFoundInRepository, ResourceStrings.Text_Style, id);
+			if (styleItem.State == ItemState.Deleted) 
+				throw new NShapeException(ResourceStrings.MessageFmt_Entity01WasDeleted, ResourceStrings.Text_Style, styleItem.ObjectRef);
 			return styleItem.ObjectRef;
 		}
 
@@ -2419,6 +2417,12 @@ namespace Dataweb.NShape.Advanced {
 
 		private void DoInsertDiagram(Diagram diagram, bool withContent) {
 			AssertCanInsert(diagram);
+			// Check for duplicate diagram names
+			foreach (Diagram d in GetDiagrams()) {
+				if (string.Compare(d.Name, diagram.Name, Comparison) == 0)
+					throw new CachedRepositoryException(ResourceStrings.MessageFmt_Entity01AlreadyExists, ResourceStrings.Text_Diagram, diagram.Name);
+			}
+
 			InsertEntity<Diagram>(newDiagrams, diagram, GetProject());
 			if (withContent) {
 				AssertCanInsert(diagram.Shapes, diagram);
@@ -2605,7 +2609,8 @@ namespace Dataweb.NShape.Advanced {
 			// If the inserted connection is not in the list of deleted connections, it's a new 
 			// connection and has to be added to the list of new connections.
 			if (!deletedShapeConnections.Remove(connection)) {
-				Debug.Assert(!newShapeConnections.Contains(connection), "Connection already inserted in repository.");
+				Debug.Assert(!newShapeConnections.Contains(connection), 
+					string.Format(ResourceStrings.MessageFmt_0AlreadyExistsInRepository, ResourceStrings.Text_Connection));
 				newShapeConnections.Add(connection);
 			}
 			isModified = true;
@@ -2630,7 +2635,8 @@ namespace Dataweb.NShape.Advanced {
 			// If the deleted connection is not in the list of new connections, it's a loaded 
 			// connection and has to be added to the list of deleted connections
 			if (!newShapeConnections.Remove(connection)) {
-				Debug.Assert(!deletedShapeConnections.Contains(connection), "Connection already deleted from repository.");
+				Debug.Assert(!deletedShapeConnections.Contains(connection),
+					string.Format(ResourceStrings.MessageFmt_0AlreadyDeletedFromTheRepository, ResourceStrings.Text_Connection));
 				deletedShapeConnections.Add(connection);
 			}
 			isModified = true;
@@ -2686,10 +2692,10 @@ namespace Dataweb.NShape.Advanced {
 
 
 		private EntityBucket<IModelObject> GetModelObjectItem(object id) {
-			if (id == null) throw new NShapeException("ModelObject has no identifier.");
+			if (id == null) throw new NShapeException(ResourceStrings.MessageFmt_Entity0HasNoId, ResourceStrings.Text_ModelObject);
 			EntityBucket<IModelObject> item;
 			if (!loadedModelObjects.TryGetValue(id, out item))
-				throw new NShapeException(string.Format("ModelObject {0} not found.", id));
+				throw new NShapeException(ResourceStrings.MessageFmt_Entity0WithId1NotFoundInRepository, ResourceStrings.Text_ModelObject, id);
 			return item;
 		}
 
@@ -3065,18 +3071,18 @@ namespace Dataweb.NShape.Advanced {
 		#region [Private] Methods: Consistency checks implementation
 
 		private void AssertOpen() {
-			if (!isOpen) throw new NShapeException("Repository is not open.");
+			if (!isOpen) throw new NShapeException(ResourceStrings.MessageTxt_RepositoryIsNotOpen);
 			Debug.Assert(settings != null && projectDesign != null);
 		}
 
 
 		private void AssertClosed() {
-			if (isOpen) throw new NShapeException("Repository is already open.");
+			if (isOpen) throw new NShapeException(ResourceStrings.MessageTxt_RepositoryIsAlreadyOpen);
 		}
 
 
 		private void AssertStoreExists() {
-			if (store == null) throw new NShapeException("There is no store component connected to the repository.");
+			if (store == null) throw new NShapeException(ResourceStrings.MessageTxt_NoStoreComponentConnectedToTheRepository);
 		}
 
 
@@ -3125,8 +3131,10 @@ namespace Dataweb.NShape.Advanced {
 		private bool CanDelete(IEnumerable<IStyle> styles, out string reason) {
 			reason = null;
 			foreach (IStyle style in styles) {
-				if (IsStyleInUse(style, styles)) reason = "Style is still in use.";
-				else if (!IsExistent(style, newStyles, loadedStyles)) reason = "Style does not exist in the repository.";
+				if (IsStyleInUse(style, styles)) 
+					reason = string.Format(ResourceStrings.MessageTxt_Type0IsStillInUse, ResourceStrings.Text_Style);
+				else if (!IsExistent(style, newStyles, loadedStyles)) 
+					reason = string.Format(ResourceStrings.MessageFmt_Entity01DoesNotExistInTheRepository, ResourceStrings.Text_Style, style.Title);
 				if (!string.IsNullOrEmpty(reason)) break;
 			}
 			return string.IsNullOrEmpty(reason);
@@ -3243,7 +3251,7 @@ namespace Dataweb.NShape.Advanced {
 						}
 					}
 				}
-				if (usedByShapes) reason = "Model object is still used by shapes.";
+				if (usedByShapes) reason = ResourceStrings.MessageTxt_ModelObjectIsStillUsedByShapes;
 
 				if (string.IsNullOrEmpty(reason)) {
 					bool usedByModelObjects = false;
@@ -3593,9 +3601,9 @@ namespace Dataweb.NShape.Advanced {
 			where TEntity : IEntity {
 			reason=null;
 			if (entity.Id != null) 
-				reason = string.Format("{0} '{1}' already has an Id assigned. Entities with Id cannot be inserted.", entity.GetType().Name, entity);
+				reason = string.Format(ResourceStrings.MessageFmt_EntityAlreadyHasAnIdAssigned, entity.GetType().Name, entity);
 			else if (IsExistent(entity, newEntities, loadedEntities)) 
-				reason = string.Format("{0} '{1}' already exists in the repository.", entity.GetType().Name, entity);
+				reason = string.Format(ResourceStrings.MessageFmt_EntityAlreadyExistsInTheRepository, entity.GetType().Name, entity);
 			return string.IsNullOrEmpty(reason);
 		}
 
@@ -3604,7 +3612,7 @@ namespace Dataweb.NShape.Advanced {
 			where TEntity : IEntity {
 			reason = null;
 			if (!IsExistent(entity, newEntities, loadedEntities))
-				reason = string.Format("{0} '{1}' does not exist in the repository or is already deleted.", entity.GetType().Name, entity);
+				reason = string.Format(ResourceStrings.MessageFmt_EntityDoesNotExistInTheRepository, entity.GetType().Name, entity);
 			return string.IsNullOrEmpty(reason);
 		}
 
@@ -3613,7 +3621,7 @@ namespace Dataweb.NShape.Advanced {
 			where TEntity : IEntity {
 			reason = null;
 			if (!IsExistent(entity, newEntities, loadedEntities))
-				reason = string.Format("{0} '{1}' does not exist in the repository or is already deleted.", entity.GetType().Name, entity);
+				reason = string.Format(ResourceStrings.MessageFmt_EntityDoesNotExistInTheRepository, entity.GetType().Name, entity);
 			return string.IsNullOrEmpty(reason);
 		}
 
@@ -3621,7 +3629,7 @@ namespace Dataweb.NShape.Advanced {
 		private bool CanUndeleteEntity<TEntity>(TEntity entity, LoadedEntities<TEntity> loadedEntities, out string reason) where TEntity : IEntity {
 			reason = null;
 			if (!CanUndeleteEntity(entity, loadedEntities)) {
-				reason = "Shape cannot be undeleted. It was not loaded from a store or it was not deleted.";
+				reason = string.Format(ResourceStrings.MessageFmt_EntityCannotBeUndeleted, entity.GetType().Name, entity);
 				return false;
 			} else return true;
 		}
@@ -3753,10 +3761,64 @@ namespace Dataweb.NShape.Advanced {
 		#endregion
 
 
+		private class ResourceStrings {
+			internal const string MessageFmt_0AlreadyDeletedFromTheRepository = "{0} already deleted from the repository.";
+			internal const string MessageFmt_0AlreadyExistsInRepository = "{0} already exists in the repository.";
+			internal const string MessageFmt_Entity01AlreadyExists = "{0} '{1}' already exists.";
+			internal const string MessageFmt_Entity01DoesNotExistInTheRepository = "{0} '{1}' does not exist in the repository.";
+			internal const string MessageFmt_Entity01WasDeleted = "{0} '{1}' was deleted.";
+			internal const string MessageFmt_Entity0HasNoId = "{0} has no id.";
+			internal const string MessageFmt_Entity0WithId1NotFoundInRepository = "{0} with id '{1}' not found in repository.";
+			internal const string MessageFmt_Entity0WithId1WasDeleted = "{0} with id '{1}' was deleted.";
+			internal const string MessageFmt_EntityAlreadyExistsInTheRepository = "{0} '{1}' already exists in the repository.";
+			internal const string MessageFmt_EntityAlreadyHasAnIdAssigned = "{0} '{1}' already has an Id assigned. Entities with Id cannot be inserted.";
+			internal const string MessageFmt_EntityCannotBeUndeleted = "{0} '{1}' cannot be undeleted. It was not loaded from a store or it was not deleted.";
+			internal const string MessageFmt_EntityDoesNotExistInTheRepository = "{0} '{1}' does not exist in the repository or is already deleted.";
+			internal const string MessageFmt_EntityType0DoesNotExistInTheRepository = "Entity type '{0}' does not exist in the repository.";
+			internal const string MessageFmt_EntityTypeWithElementName0IsNotRegistered = "An entity type with element name '{0}' is not registered.";
+			internal const string MessageFmt_EntityWasNotDeletedBefore = "Entity was not deleted before. Only deleted entities can be undeleted.";
+			internal const string MessageFmt_RepositoryAlreadyContainsAnEntityType0 = "The repository already contains an entity type called '{0}'.";
+			internal const string MessageFmt_TwoProjectsNamed0FoundInRepository = "Two projects named '{0}' found in repository.";
+			internal const string MessageTxt_AModelAleadyExistsInTheRepository = "A model aleady exists. More than one model per project is not supported.";
+			internal const string MessageTxt_AModelDoesNotExistInTheRepository = "A model does not exist in the repository.";
+			internal const string MessageTxt_AnEntityWithoutIdCannotBeUndeleted = "An entity without id cannot be undeleted.";
+			internal const string MessageTxt_CurrentProjectDesignCannotBeDeleted = "Current project design cannot be deleted.";
+			internal const string MessageTxt_EntitiesWithAnIdCannotBeInsertedIntoTheRepository = "Entities with an id cannot be inserted into the repository.";
+			internal const string MessageTxt_EntityIsAlreadyDeleted = "Entity is already deleted.";
+			internal const string MessageTxt_EntityNotFoundInRepository = "Entity not found in repository.";
+			internal const string MessageTxt_EntityWasDeletedUndeleteBeforeModifying = "Entity was deleted before. Undelete the entity before modifying it.";
+			internal const string MessageTxt_InvalidEntityTypeName = "Invalid entity type name.";
+			internal const string MessageTxt_ModelObjectIsStillUsedByShapes = "Model object is still used by shapes.";
+			internal const string MessageTxt_NoStoreComponentConnectedToTheRepository = "There is no store component connected to the repository.";
+			internal const string MessageTxt_ProjectNameNotDefined = "No project name defined.";
+			internal const string MessageTxt_ProjectStylesNotFound = "Project styles not found.";
+			internal const string MessageTxt_PropertyStoreNotSet = "Property Store is not set.";
+			internal const string MessageTxt_RepositoryHasNoStoreAttached = "Repository has no store attached.";
+			internal const string MessageTxt_RepositoryHasNoStoreAttachedOpenNotAllowed = "Repository has no store attached. An in-memory repository must be created, not opened.";
+			internal const string MessageTxt_RepositoryIsAlreadyOpen = "Repository is already open.";
+			internal const string MessageTxt_RepositoryIsNotOpen = "Repository is not open.";
+			internal const string MessageTxt_StoreDoesNotExist = "Store does not exist.";
+			internal const string MessageTxt_Type0IsStillInUse = "{0} is still in use.";
+			internal const string MessageTxt_UnsavedRepositoryModificationsPending = "There are unsaved modifications of the repository. Please save all changes first."; 
+			internal const string Text_Connection = "Connection";
+			internal const string Text_Design = "Design";
+			internal const string Text_Diagram = "Diagram";
+			internal const string Text_Entity = "Entity";
+			internal const string Text_ModelObject = "Model Object";
+			internal const string Text_ModelObjects = "Model Objects";
+			internal const string Text_Project = "Project";
+			internal const string Text_Shapes = "Shapes";
+			internal const string Text_Style = "Style";
+			internal const string Text_Template = "Template";
+		}
+
+
 		#region [Private] Constants and Fields
 
 		private const string REPOSITORY_CHECK_DEFINE = "REPOSITORY_CHECK";
 		private const string DEBUG_DEFINE = "DEBUG";
+
+		private const StringComparison Comparison = StringComparison.InvariantCultureIgnoreCase;
 
 		// project info is an internal entity type
 		private const string projectInfoEntityTypeName = "ProjectInfo";
@@ -3842,10 +3904,13 @@ namespace Dataweb.NShape.Advanced {
 		private RepositoryModelObjectsEventArgs modelObjectEventArgs = new RepositoryModelObjectsEventArgs();
 
 		#endregion
+
 	}
 
 
-	/// <ToBeCompleted></ToBeCompleted>
+	/// <summary>
+	/// An exception class raised by the CachedRepository class to indicate a fatal error.
+	/// </summary>
 	public class CachedRepositoryException : NShapeInternalException {
 
 		/// <summary>
@@ -3946,10 +4011,10 @@ namespace Dataweb.NShape.Advanced {
 
 	#region ShapeConnection Struct
 
-	/// <ToBeCompleted></ToBeCompleted>
+	/// <summary>Represents a connection between two shapes.</summary>
 	public struct ShapeConnection : IEquatable<ShapeConnection> {
 
-		/// <ToBeCompleted></ToBeCompleted>
+		/// <summary>Implementation of the equality operator.</summary>
 		public static bool operator ==(ShapeConnection x, ShapeConnection y) {
 			return (
 				x.ConnectorShape == y.ConnectorShape
@@ -3958,7 +4023,7 @@ namespace Dataweb.NShape.Advanced {
 				&& x.TargetPointId == y.TargetPointId);
 		}
 
-		/// <ToBeCompleted></ToBeCompleted>
+		/// <summary>Implementation of the unequality operator.</summary>
 		public static bool operator !=(ShapeConnection x, ShapeConnection y) { return !(x == y); }
 
 		/// <summary>
@@ -3989,19 +4054,19 @@ namespace Dataweb.NShape.Advanced {
 			return result;
 		}
 
-		/// <ToBeCompleted></ToBeCompleted>
+		/// <summary>Represents an empty ShapeConnection.</summary>
 		public static readonly ShapeConnection Empty;
 
-		/// <ToBeCompleted></ToBeCompleted>
+		/// <summary>Gets or sets the active shape that will follow the passive shape when it moves.</summary>
 		public Shape ConnectorShape;
 
-		/// <ToBeCompleted></ToBeCompleted>
+		/// <summary>Gets or sets the glue control point id of the active shape.</summary>
 		public ControlPointId GluePointId;
 
-		/// <ToBeCompleted></ToBeCompleted>
+		/// <summary>Gets or sets the passive shape.</summary>
 		public Shape TargetShape;
 
-		/// <ToBeCompleted></ToBeCompleted>
+		/// <summary>Gets or sets the connection point id the active shape is connected to.</summary>
 		public ControlPointId TargetPointId;
 
 
@@ -4802,15 +4867,11 @@ namespace Dataweb.NShape.Advanced {
 
 
 		/// <summary>
-		/// Writes a template.
+		/// Writes a model object.
 		/// </summary>
-		public void WriteTemplate(Template template) {
-			if (template != null && template.Id == null)
-				throw new InvalidOperationException(string.Format("Template '{0}' was not inserted in the repository.", template.Name));
-			if (innerObjectsWriter == null) {
-				if (template == null) WriteId(null);
-				else WriteId(template.Id);
-			} else innerObjectsWriter.WriteTemplate(template);
+		public void WriteModelObject(IModelObject modelObject) {
+			if (innerObjectsWriter == null) DoWriteModelObject(modelObject);
+			else innerObjectsWriter.WriteModelObject(modelObject);
 		}
 
 
@@ -4818,27 +4879,17 @@ namespace Dataweb.NShape.Advanced {
 		/// Writes a style.
 		/// </summary>
 		public void WriteStyle(IStyle style) {
-			if (style != null && style.Id == null) throw new InvalidOperationException(
-				 string.Format("{0} '{1}' was not inserted in the repository.", style.GetType().Name, style.Name));
-			if (innerObjectsWriter == null) {
-				if (style == null) WriteId(null);
-				else WriteId(style.Id);
-			} else innerObjectsWriter.WriteStyle(style);
+			if (innerObjectsWriter == null) DoWriteStyle(style);
+			else innerObjectsWriter.WriteStyle(style);
 		}
 
 
 		/// <summary>
-		/// Writes a model object.
+		/// Writes a template.
 		/// </summary>
-		public void WriteModelObject(IModelObject modelObject) {
-			if (modelObject != null && modelObject.Id == null)
-				throw new InvalidOperationException(string.Format("{0} '{1}' was not inserted in the repository.",
-					modelObject.Type.FullName, modelObject.Name));
-			if (innerObjectsWriter == null) {
-				Debug.Assert(modelObject == null || modelObject.Id != null);
-				if (modelObject == null) WriteId(null);
-				else WriteId(modelObject.Id);
-			} else innerObjectsWriter.WriteModelObject(modelObject);
+		public void WriteTemplate(Template template) {
+			if (innerObjectsWriter == null) DoWriteTemplate(template);
+			else innerObjectsWriter.WriteTemplate(template);
 		}
 
 		#endregion
@@ -4856,7 +4907,8 @@ namespace Dataweb.NShape.Advanced {
 
 
 		/// <summary>
-		/// When reading inner objects, this property stores the owner entity of the inner objects. Otherwise, this property is null/Nothing.
+		/// This property stores the entity that is currently written.
+		/// When writing inner objects, this is the owner of the inner objects.
 		/// </summary>
 		protected IEntity Entity {
 			get { return entity; }
@@ -4934,6 +4986,38 @@ namespace Dataweb.NShape.Advanced {
 		/// Implementation of writing an image.
 		/// </summary>
 		protected abstract void DoWriteImage(System.Drawing.Image image);
+		
+		/// <summary>
+		/// Implementation of writing a model object.
+		/// </summary>
+		protected virtual void DoWriteModelObject(IModelObject modelObject) {
+			if (modelObject != null && modelObject.Id == null)
+				throw new InvalidOperationException(string.Format("{0} '{1}' was not inserted in the repository.",
+					modelObject.Type.FullName, modelObject.Name));
+			Debug.Assert(modelObject == null || modelObject.Id != null);
+			if (modelObject == null) WriteId(null);
+			else WriteId(modelObject.Id);
+		}
+
+		/// <summary>
+		/// Implementation of writing a style.
+		/// </summary>
+		protected virtual void DoWriteStyle(IStyle style) {
+			if (style != null && style.Id == null) throw new InvalidOperationException(
+				 string.Format("{0} '{1}' was not inserted in the repository.", style.GetType().Name, style.Name));
+			if (style == null) WriteId(null);
+			else WriteId(style.Id);
+		}
+
+		/// <summary>
+		/// Implementation of writing a template.
+		/// </summary>
+		protected virtual void DoWriteTemplate(Template template) {
+			if (template != null && template.Id == null)
+				throw new InvalidOperationException(string.Format("Template '{0}' was not inserted in the repository.", template.Name));
+			if (template == null) WriteId(null);
+			else WriteId(template.Id);
+		}
 
 		/// <summary>
 		/// Implementation of BeginWriteInnerObjects.
@@ -5017,6 +5101,5 @@ namespace Dataweb.NShape.Advanced {
 	}
 
 	#endregion
-
 
 }

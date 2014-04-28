@@ -22,7 +22,9 @@ namespace Dataweb.NShape.SoftwareArchitectureShapes {
 	public static class NShapeLibraryInitializer {
 
 		public static void Initialize(IRegistrar registrar) {
+			// Register library
 			registrar.RegisterLibrary(namespaceName, preferredRepositoryVersion);
+			// Register shape types
 			registrar.RegisterShapeType(new ShapeType("DataFlow", namespaceName, namespaceName,
 				delegate(ShapeType shapeType, Template t) { return new DataFlowArrow(shapeType, t); },
 				DataFlowArrow.GetPropertyDefinitions));

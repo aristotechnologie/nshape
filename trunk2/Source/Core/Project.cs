@@ -23,6 +23,7 @@ using System.Reflection;
 
 using Dataweb.NShape.Advanced;
 using Dataweb.NShape.Commands;
+using System.Text;
 
 
 namespace Dataweb.NShape {
@@ -105,7 +106,7 @@ namespace Dataweb.NShape {
 		/// <summary>
 		/// Specifies the version of the assembly containing the component.
 		/// </summary>
-		[Category("NShape")]
+		[CategoryNShape()]
 		public string ProductVersion {
 			get { return this.GetType().Assembly.GetName().Version.ToString(); }
 		}
@@ -115,7 +116,7 @@ namespace Dataweb.NShape {
 		/// Specifies the name of the project.
 		/// </summary>
 		/// <remarks>The name is used as the repository name as well.</remarks>
-		[Category("NShape")]
+		[CategoryNShape()]
 		public string Name {
 			get { return name; }
 			set {
@@ -126,10 +127,9 @@ namespace Dataweb.NShape {
 
 
 		/// <summary>
-		/// Specifies the name of the project.
+		/// Gets or sets a descritive text for the project.
 		/// </summary>
-		/// <remarks>The name is used as the repository name as well.</remarks>
-		[Category("NShape")]
+		[CategoryNShape()]
 		public string Description {
 			get { return settings.Description; }
 			set { settings.Description  = value; }
@@ -139,7 +139,7 @@ namespace Dataweb.NShape {
 		/// <summary>
 		/// Specifies the directories, where NShape libraries are looked for.
 		/// </summary>
-		[Category("NShape")]
+		[CategoryNShape()]
 		[Description("A collection of paths where shape and model library assemblies are expected to be found.")]
 		[TypeConverter("Dataweb.NShape.WinFormsUI.TextTypeConverter, Dataweb.NShape.WinFormsUI")]
 		[Editor("Dataweb.NShape.WinFormsUI.TextUITypeEditor, Dataweb.NShape.WinFormsUI", typeof(UITypeEditor))]
@@ -155,7 +155,7 @@ namespace Dataweb.NShape {
 		/// <summary>
 		/// Specifies the repository used to store the project.
 		/// </summary>
-		[Category("NShape")]
+		[CategoryNShape()]
 		[Description("Specifies the IRepository class used for loading/saving project and diagram data.")]
 		public IRepository Repository {
 			get { return repository; }
@@ -179,7 +179,7 @@ namespace Dataweb.NShape {
 		/// Specifies whether the project creates templates for each item in registered 
 		/// shape and model libraries.
 		/// </summary>
-		[Category("Behavior")]
+		[CategoryBehavior()]
 		[DefaultValue(true)]
 		public bool AutoGenerateTemplates {
 			get { return autoCreateTemplates; }
@@ -190,7 +190,7 @@ namespace Dataweb.NShape {
 		/// <summary>
 		/// Specifies whether the project automatically loads missing libraries when opening a repository.
 		/// </summary>
-		[Category("Behavior")]
+		[CategoryBehavior()]
 		[DefaultValue(false)]
 		public bool AutoLoadLibraries {
 			get { return autoLoadLibraries; }
@@ -432,6 +432,16 @@ namespace Dataweb.NShape {
 
 
 		/// <summary>
+		/// Modifies the repository version of this project to the latest version supported by the repository and the loaded libraries.
+		/// </summary>
+		public void UpgradeVersion() {
+			if (!Repository.CanModifyVersion)
+				throw new NShapeException("The current repository does not support modifying the repository storage version.");
+			ChangeVersion(LastSupportedSaveVersion);
+		}
+
+
+		/// <summary>
 		/// Executes a command and adds it to the project's history.
 		/// </summary>
 		/// <param name="command"></param>
@@ -508,16 +518,117 @@ namespace Dataweb.NShape {
 			RegisterEntityTypesCore(true);
 		}
 
+
+		/// <summary>
+		/// Returns the XML representation of the data stored in the repository.
+		/// </summary>
+		/// <remarks>Only supported by <see cref="T:Dataweb.NShape.Advanced.CachedRepository" />.</remarks>
+		public string GetXml() {
+			string result = null;
+			using (MemoryStream xmlStream = new MemoryStream()) {
+				WriteXml(xmlStream);
+				result = Encoding.UTF8.GetString(xmlStream.GetBuffer(), 0, (int)xmlStream.Length);
+			}
+			return result;
+		}
+
+
+		/// <summary>
+		/// Reads XML data into the project using the specified <see cref="T:System.IO.Stream" />.
+		/// Throws an exception if a Repository instance is assigned. The repository will be created.
+		/// </summary>
+		/// <remarks>Only supported by <see cref="T:Dataweb.NShape.Advanced.CachedRepository" />.</remarks>
+		public void ReadXml(Stream stream) {
+			if (stream == null) throw new ArgumentNullException("stream");
+			AssertClosed();
+			if (Repository != null) 
+				throw new NShapeException("A repository is assigned to the project. Repository property must be null.");
+
+			CachedRepository cachedRepository = null;
+			XmlStore tmpStore = null;
+			try {
+				// Create and initialize a temporary XML store
+				tmpStore = new XmlStore(stream);
+				tmpStore.ImageLocation = XmlStore.ImageFileLocation.Embedded;
+
+				// Create a new CachedRepository and assign the store
+				cachedRepository = new CachedRepository();
+				cachedRepository.Store = tmpStore;
+
+				// Now open the project
+				this.repository = cachedRepository;
+				this.repository.ProjectName = Name;
+				this.Open();
+
+				// Todo: Find a solution for the following problems:
+				// * When loading the entities from stream, the referenced Id's won't match the Id's of 
+				//   the existing entity instances.
+				// * When closing the repository before loading the stream, the shape libraries
+				//   will not be / cannot be registered from here (both managed by the project component).
+			} catch (Exception) {
+				throw;
+			} finally {
+				if (cachedRepository != null)
+					cachedRepository.Store = null;
+				if (tmpStore != null) {
+					tmpStore.Dispose();
+					tmpStore = null;
+				}
+			}
+		}
+
+
+		/// <summary>
+		/// Writes the current cache content as XML data.
+		/// </summary>
+		/// <remarks>Only supported by <see cref="T:Dataweb.NShape.Advanced.CachedRepository" />.</remarks>
+		public void WriteXml(Stream stream) {
+			if (stream == null) throw new ArgumentNullException("stream");
+			//if (!stream.CanSeek) throw new ArgumentException("The provided stream does not support seeking.");
+			if (Repository.IsModified) throw new NShapeException(MessageTxt_UnsavedRepositoryModificationsPending);
+			
+			CachedRepository cachedRepository = Repository as CachedRepository;
+			if (cachedRepository == null) throw new NotSupportedException();
+
+			XmlStore tmpStore = null;
+			Store currentStore = cachedRepository.Store;
+			try {
+				// Create and initialize temporary XML store
+				tmpStore = new XmlStore(stream);
+				tmpStore.ImageLocation = XmlStore.ImageFileLocation.Embedded;
+				tmpStore.ProjectName = cachedRepository.ProjectName;
+				tmpStore.Version = cachedRepository.Version;
+
+				// Make sure all diagrams are loaded completely
+				foreach (Diagram d in Repository.GetDiagrams())
+					Repository.GetDiagramShapes(d);
+
+				// Assign store to repository and save data
+				cachedRepository.Store = tmpStore;
+				tmpStore.Create(cachedRepository);
+				tmpStore.SaveChanges(cachedRepository);
+				tmpStore.Close(cachedRepository);
+			} finally {
+				cachedRepository.Store = currentStore;
+				if (tmpStore != null) {
+					tmpStore.Dispose();
+					tmpStore = null;
+				}
+			}
+		}
+
 		#endregion
 
 
 		#region IRegistrar Members
 
 		/// <override></override>
-		void IRegistrar.RegisterLibrary(string name, int defaultRepositoryVersion) {
+		void IRegistrar.RegisterLibrary(string name, int preferredRepositoryVersion) {
 			if (!Project.IsValidName(name)) throw new ArgumentException(string.Format("'{0}' is not a valid library name.", name));
 			initializingLibrary.Name = name;
-			if (addingLibrary) settings.AddLibrary(name, initializingLibrary.Assembly.FullName, defaultRepositoryVersion);
+			initializingLibrary.PreferredRepositoryVersion = preferredRepositoryVersion;
+			if (addingLibrary)
+				settings.AddLibrary(name, initializingLibrary.Assembly.FullName, preferredRepositoryVersion);
 		}
 
 
@@ -581,6 +692,8 @@ namespace Dataweb.NShape {
 		#endregion
 
 
+		#region [Internal] Methods
+
 		/// <ToBeCompleted></ToBeCompleted>
 		internal static void AssertSupportedVersion(bool save, int version) {
 			int minVersion = save ? FirstSupportedSaveVersion : FirstSupportedLoadVersion;
@@ -591,6 +704,47 @@ namespace Dataweb.NShape {
 				throw new NShapeException(msg);
 			}
 		}
+
+
+		// Changes the version of the repository to the specified version number (even downgrades are possible)
+		internal void ChangeVersion(int version) {
+			bool isUpgradeToMaxVersion = !(version < LastSupportedSaveVersion);
+
+			// Make sure the repository is loaded completely before upgrading the repository version
+			foreach (Diagram d in Repository.GetDiagrams())
+				repository.GetDiagramShapes(d, Geometry.InvalidRectangle);
+
+			// Update repository version
+			repository.Version = version;
+
+			// Set all version numbers to the library version (which reflects the lastest supported version)
+			foreach (Library lib in libraries)
+				settings.SetRepositoryVersion(lib.Name, isUpgradeToMaxVersion ? lib.PreferredRepositoryVersion : version);
+
+			// Recreate all core library entity types using the latest version
+			repository.RemoveAllEntityTypes();
+			foreach (IEntityType entityType in CreateCoreLibraryBaseEntityTypes(isUpgradeToMaxVersion ? LastSupportedSaveVersion : version))
+				repository.AddEntityType(entityType);
+			foreach (IEntityType modelObjectEntityType in CreateCoreLibraryModelObjectEntityTypes(isUpgradeToMaxVersion ? LastSupportedSaveVersion : version))
+				repository.AddEntityType(modelObjectEntityType);
+			foreach (IEntityType shapeEntityType in CreateCoreLibraryShapeEntityTypes(isUpgradeToMaxVersion ? LastSupportedSaveVersion : version))
+				repository.AddEntityType(shapeEntityType);
+
+			// Recreate entity types for all registered shape- and model object types using the latest library version
+			foreach (ModelObjectType modelObjectType in ModelObjectTypes) {
+				if (string.Compare(modelObjectType.LibraryName, CoreLibraryName) == 0) continue;
+				RegisterModelObjectEntityType(modelObjectType, isUpgradeToMaxVersion);
+			}
+			foreach (ShapeType shapeType in ShapeTypes) {
+				if (string.Compare(shapeType.LibraryName, CoreLibraryName) == 0) continue;
+				RegisterShapeEntityType(shapeType, isUpgradeToMaxVersion);
+			}
+
+			// Save repository after upgrading
+			repository.SaveChanges();
+		}
+
+		#endregion
 
 
 		#region [Private] Library Class
@@ -632,6 +786,15 @@ namespace Dataweb.NShape {
 
 
 			/// <summary>
+			/// Specifies the preferred repository version for the library.
+			/// </summary>
+			public int PreferredRepositoryVersion {
+				get { return preferredRepositoryVersion; }
+				set { preferredRepositoryVersion = value; }
+			}
+
+
+			/// <summary>
 			/// Specifies whether the library will be unloaded when the project is closed.
 			/// </summary>
 			public bool UnloadOnClose {
@@ -643,6 +806,7 @@ namespace Dataweb.NShape {
 
 			private string name;
 			private Assembly assembly;
+			private int preferredRepositoryVersion;
 			private bool unloadOnClose = true;
 
 			#endregion
@@ -778,7 +942,7 @@ namespace Dataweb.NShape {
 				repository.ReadVersion();
 				if (repository.Version <= 0)
 					throw new NShapeException("Invalid repository base version: {0}", repository.Version);
-				RegisterBaseLibraryTypes(false);
+				RegisterCoreLibraryTypes(false);
 				repository.Open();
 				try {
 					settings = repository.GetProject();
@@ -816,89 +980,152 @@ namespace Dataweb.NShape {
 
 		private void RegisterEntityTypesCore(bool create) {
 			repository.RemoveAllEntityTypes();
-			RegisterBaseLibraryTypes(create);
+			RegisterCoreLibraryTypes(create);
 			foreach (Library l in libraries)
 				DoRegisterLibrary(l, true);
 
 			// Register static model entity types
 			foreach (ModelObjectType mot in modelObjectTypes)
-				if (!mot.LibraryName.Equals("Core", StringComparison.InvariantCultureIgnoreCase))
+				if (!mot.LibraryName.Equals(CoreLibraryName, StringComparison.InvariantCultureIgnoreCase))
 					RegisterModelObjectEntityType(mot, create);
 			// Register static shape entity types
 			foreach (ShapeType st in shapeTypes)
-				if (!st.LibraryName.Equals("Core", StringComparison.InvariantCultureIgnoreCase))
+				if (!st.LibraryName.Equals(CoreLibraryName, StringComparison.InvariantCultureIgnoreCase))
 					RegisterShapeEntityType(st, create);
 		}
 
 
-		// Registers entity types for styles, designs, projectData, templates and diagramControllers 
-		// with the cache.
-		private void RegisterBaseLibraryTypes(bool create) {
+		// Registers entity types for styles, designs, projectData, templates and diagramControllers with the repository.
+		private void RegisterCoreLibraryTypes(bool create) {
 			int version;
 			// When creating a repository without a valid version, we use the last supported save version.
 			if (create && repository.Version <= 0)
 				repository.Version = LastSupportedSaveVersion;
 			version = repository.Version;
 			//
-			repository.AddEntityType(new EntityType(CapStyle.EntityTypeName, EntityCategory.Style,
-				version, () => new CapStyle(), CapStyle.GetPropertyDefinitions(version)));
-			repository.AddEntityType(new EntityType(CharacterStyle.EntityTypeName, EntityCategory.Style,
-				version, () => new CharacterStyle(), CharacterStyle.GetPropertyDefinitions(version)));
-			repository.AddEntityType(new EntityType(ColorStyle.EntityTypeName, EntityCategory.Style,
-				version, () => new ColorStyle(), ColorStyle.GetPropertyDefinitions(version)));
-			repository.AddEntityType(new EntityType(FillStyle.EntityTypeName, EntityCategory.Style,
-				version, () => new FillStyle(), FillStyle.GetPropertyDefinitions(version)));
-			repository.AddEntityType(new EntityType(LineStyle.EntityTypeName, EntityCategory.Style,
-				version, () => new LineStyle(), LineStyle.GetPropertyDefinitions(version)));
-			repository.AddEntityType(new EntityType(ParagraphStyle.EntityTypeName, EntityCategory.Style,
-				version, () => new ParagraphStyle(), ParagraphStyle.GetPropertyDefinitions(version)));
-			repository.AddEntityType(new EntityType(Design.EntityTypeName, EntityCategory.Design,
-				version, () => new Design(), Design.GetPropertyDefinitions(version)));
-			repository.AddEntityType(new EntityType(ProjectSettings.EntityTypeName, EntityCategory.ProjectSettings,
-				version, () => new ProjectSettings(), ProjectSettings.GetPropertyDefinitions(version)));
-			repository.AddEntityType(new EntityType(Template.EntityTypeName, EntityCategory.Template,
-				version, () => new Template(), Template.GetPropertyDefinitions(version)));
-			repository.AddEntityType(new EntityType(Diagram.EntityTypeName, EntityCategory.Diagram,
-				version, () => new Diagram(""), Diagram.GetPropertyDefinitions(version)));
-			// Register ModelMapping types
-			// Create mandatory Model type
-			repository.AddEntityType(new EntityType(Model.EntityTypeName, EntityCategory.Model,
-				version, () => new Model(), Model.GetPropertyDefinitions(version)));
-			// Register mandatory ModelMapping types
-			repository.AddEntityType(new EntityType(NumericModelMapping.EntityTypeName, EntityCategory.ModelMapping,
-				version, () => new NumericModelMapping(), NumericModelMapping.GetPropertyDefinitions(version)));
-			repository.AddEntityType(new EntityType(FormatModelMapping.EntityTypeName, EntityCategory.ModelMapping,
-				version, () => new FormatModelMapping(), FormatModelMapping.GetPropertyDefinitions(version)));
-			repository.AddEntityType(new EntityType(StyleModelMapping.EntityTypeName, EntityCategory.ModelMapping,
-				version, () => new StyleModelMapping(), StyleModelMapping.GetPropertyDefinitions(version)));
-
+			foreach (IEntityType entityType in CreateCoreLibraryBaseEntityTypes(version))
+				repository.AddEntityType(entityType);
 			//
-			// Create the mandatory shape types
+			IRegistrar registrar = (IRegistrar)this;
+			// Register core library
 			initializingLibrary = new Library(GetType().Assembly);
-			((IRegistrar)this).RegisterLibrary("Core", LastSupportedSaveVersion);
-			ShapeType groupShapeType = new ShapeType(
-				"ShapeGroup", "Core", "Core", ShapeGroup.CreateInstance, ShapeGroup.GetPropertyDefinitions, false);
-			((IRegistrar)this).RegisterShapeType(groupShapeType);
-			// Create mandatory model object types
-			ModelObjectType genericModelObjectType = new GenericModelObjectType(
-				"GenericModelObject", "Core", "Core", GenericModelObject.CreateInstance, GenericModelObject.GetPropertyDefinitions, 4);
-			((IRegistrar)this).RegisterModelObjectType(genericModelObjectType);
+			registrar.RegisterLibrary(CoreLibraryName, version);
+			// Register the framework's mandatory core library shape types
+			foreach (ShapeType shapeType in CreateCoreLibraryShapeTypes())
+				registrar.RegisterShapeType(shapeType);
+			// Register the framework's mandatory core library model object types
+			foreach (ModelObjectType modelObjectType in CreateCoreLibraryModelObjectTypes())
+				registrar.RegisterModelObjectType(modelObjectType);
 			initializingLibrary = null;
 			//
-			// Register static model entity types
-			foreach (ModelObjectType mot in modelObjectTypes)
-				RegisterModelObjectEntityType(mot, create);
-			// Register static shape entity types
-			foreach (ShapeType st in shapeTypes)
-				RegisterShapeEntityType(st, create);
+			// Register the framework's mandatory core shape and model object entity types
+			foreach (IEntityType modelObjectEntityType in CreateCoreLibraryModelObjectEntityTypes(version))
+				repository.AddEntityType(modelObjectEntityType);
+			foreach (IEntityType shapeEntityType in CreateCoreLibraryShapeEntityTypes(version))
+				repository.AddEntityType(shapeEntityType);
+			//int libVersion = FindLibraryVersion(shapeType.LibraryName, create);
+			//    IEntityType entityType = new EntityType(shapeType.FullName, EntityCategory.Shape,
+			//        version, () => shapeType.CreateInstanceForLoading(), shapeType.GetPropertyDefinitions(version));
+			//    repository.AddEntityType(entityType);
+
+
+			//// Register static model entity types
+			//foreach (ModelObjectType mot in modelObjectTypes)
+			//    RegisterModelObjectEntityType(mot, create);
+			//// Register static shape entity types
+			//foreach (ShapeType st in shapeTypes)
+			//    RegisterShapeEntityType(st, create);
 		}
 
 
-		private Library DoLoadLibrary(Assembly a, bool unloadOnCLose) {
+		/// <summary>
+		/// Creates entity types for all framework base entities such as project settings, styles, templates, diagrams, etc.
+		/// </summary>
+		private IEnumerable<IEntityType> CreateCoreLibraryBaseEntityTypes(int version) {
+			AssertSupportedVersion(true, version);
+
+			// Create Design and Style entity types
+			yield return new EntityType(CapStyle.EntityTypeName, EntityCategory.Style,
+				version, () => new CapStyle(), CapStyle.GetPropertyDefinitions(version));
+			yield return new EntityType(CharacterStyle.EntityTypeName, EntityCategory.Style,
+				version, () => new CharacterStyle(), CharacterStyle.GetPropertyDefinitions(version));
+			yield return new EntityType(ColorStyle.EntityTypeName, EntityCategory.Style,
+				version, () => new ColorStyle(), ColorStyle.GetPropertyDefinitions(version));
+			yield return new EntityType(FillStyle.EntityTypeName, EntityCategory.Style,
+				version, () => new FillStyle(), FillStyle.GetPropertyDefinitions(version));
+			yield return new EntityType(LineStyle.EntityTypeName, EntityCategory.Style,
+				version, () => new LineStyle(), LineStyle.GetPropertyDefinitions(version));
+			yield return new EntityType(ParagraphStyle.EntityTypeName, EntityCategory.Style,
+				version, () => new ParagraphStyle(), ParagraphStyle.GetPropertyDefinitions(version));
+			yield return new EntityType(Design.EntityTypeName, EntityCategory.Design,
+				version, () => new Design(), Design.GetPropertyDefinitions(version));
+			
+			// Create Project, Template and Diagram entity types
+			yield return new EntityType(ProjectSettings.EntityTypeName, EntityCategory.ProjectSettings,
+				version, () => new ProjectSettings(), ProjectSettings.GetPropertyDefinitions(version));
+			yield return new EntityType(Template.EntityTypeName, EntityCategory.Template,
+				version, () => new Template(), Template.GetPropertyDefinitions(version));
+			yield return new EntityType(Diagram.EntityTypeName, EntityCategory.Diagram,
+				version, () => new Diagram(""), Diagram.GetPropertyDefinitions(version));
+			
+			// Create mandatory Model and modelMapping entity types
+			yield return new EntityType(Model.EntityTypeName, EntityCategory.Model,
+				version, () => new Model(), Model.GetPropertyDefinitions(version));
+			yield return new EntityType(NumericModelMapping.EntityTypeName, EntityCategory.ModelMapping,
+				version, () => new NumericModelMapping(), NumericModelMapping.GetPropertyDefinitions(version));
+			yield return new EntityType(FormatModelMapping.EntityTypeName, EntityCategory.ModelMapping,
+				version, () => new FormatModelMapping(), FormatModelMapping.GetPropertyDefinitions(version));
+			yield return new EntityType(StyleModelMapping.EntityTypeName, EntityCategory.ModelMapping,
+				version, () => new StyleModelMapping(), StyleModelMapping.GetPropertyDefinitions(version));
+		}
+
+
+		/// <summary>
+		/// Creates entity types for all mandatory framework shape entities such as ShapeGroup.
+		/// </summary>
+		private IEnumerable<ShapeType> CreateCoreLibraryShapeTypes() {
+			yield return new ShapeType(ShapeGroupName, CoreLibraryName, CoreLibraryName, 
+				ShapeGroup.CreateInstance, ShapeGroup.GetPropertyDefinitions, false);
+		}
+
+
+		/// <summary>
+		/// Creates shape types for all mandatory framework shapes such as ShapeGroup.
+		/// </summary>
+		private IEnumerable<IEntityType> CreateCoreLibraryShapeEntityTypes(int version) {
+			foreach (ShapeType shapeType in CreateCoreLibraryShapeTypes()) {
+				yield return new EntityType(shapeType.FullName, EntityCategory.Shape,
+					version, () => shapeType.CreateInstanceForLoading(), shapeType.GetPropertyDefinitions(version));
+			}
+		}
+
+
+		/// <summary>
+		/// Creates model object types for all mandatory framework model objects such as GenericModelObject.
+		/// </summary>
+		private IEnumerable<ModelObjectType> CreateCoreLibraryModelObjectTypes() {
+			TerminalId maxTerminalId = 4;
+			yield return new GenericModelObjectType(GenericModelObjectName, CoreLibraryName, CoreLibraryName, 
+				GenericModelObject.CreateInstance, GenericModelObject.GetPropertyDefinitions, maxTerminalId);
+		}
+
+
+		/// <summary>
+		/// Creates entity types for all mandatory framework model object entities such as GenericModelObject.
+		/// </summary>
+		private IEnumerable<IEntityType> CreateCoreLibraryModelObjectEntityTypes(int version) {
+			foreach (ModelObjectType modelObjectType in CreateCoreLibraryModelObjectTypes()) {
+				yield return new EntityType(modelObjectType.FullName, EntityCategory.ModelObject,
+					version, () => modelObjectType.CreateInstance(), modelObjectType.GetPropertyDefinitions(version));
+			}
+		}
+
+
+		private Library DoLoadLibrary(Assembly a, bool unloadOnClose) {
 			if (a == null) throw new ArgumentNullException("a");
 			Library result = FindLibraryByAssemblyName(a.FullName);
 			if (result != null) throw new InvalidOperationException(string.Format("Library '{0}' is already loaded.", a.FullName));
-			result = new Library(a, unloadOnCLose);
+			result = new Library(a, unloadOnClose);
 			libraries.Add(result);
 			return result;
 		}
@@ -1162,10 +1389,21 @@ namespace Dataweb.NShape {
 
 		// Determines the repository version to use for the given library.
 		private int FindLibraryVersion(string libraryName, bool create) {
-			int result;
-			if (libraryName.Equals("Core", StringComparison.InvariantCultureIgnoreCase))
-				result = repository.Version;
-			else result = settings.GetRepositoryVersion(libraryName);
+			int result = -1;
+			if (libraryName.Equals(CoreLibraryName, StringComparison.InvariantCultureIgnoreCase))
+				result = create ? LastSupportedSaveVersion : repository.Version;
+			else {
+				if (create) {
+					// Find library and return the preferred version
+					foreach (Library lib in libraries) {
+						if (string.Compare(lib.Name, libraryName) == 0) {
+							result = lib.PreferredRepositoryVersion;
+							break;
+						}
+					}
+				} else
+					result = settings.GetRepositoryVersion(libraryName);
+			}
 			if (result <= 0) throw new Exception(string.Format("Invalid repository version {0}.", result));
 			return result;
 		}
@@ -1173,16 +1411,22 @@ namespace Dataweb.NShape {
 		#endregion
 
 
-		// Supported repository versions of the Core library
-		internal const int FirstSupportedSaveVersion = 1;
-		internal const int LastSupportedSaveVersion = 5;
-		internal const int FirstSupportedLoadVersion = 1;
-		internal const int LastSupportedLoadVersion = 5;
-
 		/// <ToBeCompleted></ToBeCompleted>
 		public const string NShapeLibraryInitializerClassName = "NShapeLibraryInitializer";
 		/// <ToBeCompleted></ToBeCompleted>
 		public const string InitializeMethodName = "Initialize";
+
+		// Supported repository versions of the Core library:
+		internal const int LastSupportedSaveVersion = 5;
+		internal const int LastSupportedLoadVersion = 5;
+		// NShape 1.0.0 was released using repository version 2.
+		internal const int FirstSupportedSaveVersion = 2;
+		internal const int FirstSupportedLoadVersion = 2;
+
+		/// <summary>Library name of the core library</summary>
+		internal const string CoreLibraryName = "Core";
+		private const string ShapeGroupName = "ShapeGroup";
+		private const string GenericModelObjectName = "GenericModelObject";
 
 		#region Fields
 
@@ -1220,6 +1464,8 @@ namespace Dataweb.NShape {
 		private object[] registerArgs;
 
 		#endregion
+
+		private const string MessageTxt_UnsavedRepositoryModificationsPending = "There are unsaved modifications of the repository. Please save all changes first.";
 	}
 
 

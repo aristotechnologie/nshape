@@ -812,17 +812,47 @@ namespace Dataweb.NShape.Advanced {
 		#region Exporting Images
 
 		/// <ToBeCompleted></ToBeCompleted>
-		public static void SaveImageToFile(Image image, string filePath, ImageFileFormat imageFormat) {
-			SaveImageToFile(image, filePath, imageFormat, 85);
+		public static void SaveImage(Image image, string filePath) {
+			if (string.IsNullOrEmpty(filePath)) throw new ArgumentNullException("filePath");
+			using (Stream stream = File.Open(filePath, FileMode.OpenOrCreate, FileAccess.Write))
+				SaveImage(image, stream);
 		}
 
 
 		/// <ToBeCompleted></ToBeCompleted>
-		public static void SaveImageToFile(Image image, string filePath, ImageFileFormat imageFormat, int compressionQuality) {
-			if (image == null) throw new ArgumentNullException("image");
+		public static void SaveImage(Image image, string filePath, ImageFileFormat imageFormat) {
 			if (string.IsNullOrEmpty(filePath)) throw new ArgumentNullException("filePath");
+			using (Stream stream = File.Open(filePath, FileMode.OpenOrCreate, FileAccess.Write))
+				SaveImage(image, stream, imageFormat);
+		}
+
+
+		/// <ToBeCompleted></ToBeCompleted>
+		public static void SaveImage(Image image, string filePath, ImageFileFormat imageFormat, int compressionQuality) {
+			if (string.IsNullOrEmpty(filePath)) throw new ArgumentNullException("filePath");
+			using (Stream stream = File.Open(filePath, FileMode.OpenOrCreate, FileAccess.Write))
+				SaveImage(image, stream, imageFormat, compressionQuality);
+		}
+
+
+		/// <ToBeCompleted></ToBeCompleted>
+		public static void SaveImage(Image image, Stream stream) {
+			SaveImage(image, stream, GetImageFileFormat(image.RawFormat), 85);
+		}
+
+
+		/// <ToBeCompleted></ToBeCompleted>
+		public static void SaveImage(Image image, Stream stream, ImageFileFormat imageFormat) {
+			SaveImage(image, stream, imageFormat, 85);
+		}
+
+
+		/// <ToBeCompleted></ToBeCompleted>
+		public static void SaveImage(Image image, Stream stream, ImageFileFormat imageFormat, int compressionQuality) {
+			if (image == null) throw new ArgumentNullException("image");
+			if (stream == null) throw new ArgumentNullException("stream");
 			if (image is Metafile) {
-				EmfHelper.SaveEnhMetaFile(filePath, (Metafile)image.Clone());
+				EmfHelper.SaveEnhMetaFile(stream, (Metafile)image.Clone());
 
 				#region Old version: Works but replaces all metafile records with a single DrawImage record
 				//// Create a new metafile
@@ -841,14 +871,13 @@ namespace Dataweb.NShape.Advanced {
 				//GdiHelpers.ApplyGraphicsSettings(gfx, NShapeRenderingQuality.MaximumQuality);
 				//// Draw image
 				//gfx.DrawImage(image, Point.Empty);
-				
+
 				//gfx.Dispose();
 				//metaFile.Dispose();
 				#endregion
 
 			} else if (image is Bitmap) {
 				ImageCodecInfo codecInfo = GetEncoderInfo(imageFormat);
-
 				EncoderParameters encoderParams = new EncoderParameters(3);
 				encoderParams.Param[0] = new EncoderParameter(Encoder.RenderMethod, (long)EncoderValue.RenderProgressive);
 				// JPG specific encoder parameter
@@ -856,8 +885,10 @@ namespace Dataweb.NShape.Advanced {
 				// TIFF specific encoder parameter
 				encoderParams.Param[2] = new EncoderParameter(Encoder.Compression, (long)EncoderValue.CompressionLZW);
 
-				image.Save(filePath, codecInfo, encoderParams);
-			} else image.Save(filePath, GetGdiImageFormat(imageFormat));
+				image.Save(stream, codecInfo, encoderParams);
+			} else {
+				image.Save(stream, GetGdiImageFormat(imageFormat));
+			}
 		}
 
 
@@ -906,6 +937,29 @@ namespace Dataweb.NShape.Advanced {
 				case ImageFileFormat.Tiff: result = ImageFormat.Tiff; break;
 				default: return result = ImageFormat.Bmp;
 			}
+			return result;
+		}
+
+
+		/// <ToBeCompleted></ToBeCompleted>
+		public static ImageFileFormat GetImageFileFormat(ImageFormat imageFormat) {
+			ImageFileFormat result;
+			if (imageFormat.Guid == ImageFormat.Bmp.Guid)
+				result = ImageFileFormat.Bmp;
+			else if (imageFormat.Guid == ImageFormat.Emf.Guid)
+				result = ImageFileFormat.EmfPlus;
+			else if (imageFormat.Guid == ImageFormat.Gif.Guid)
+				result = ImageFileFormat.Gif;
+			else if (imageFormat.Guid == ImageFormat.Jpeg.Guid)
+				result = ImageFileFormat.Jpeg;
+			else if (imageFormat.Guid == ImageFormat.Png.Guid)
+				result = ImageFileFormat.Png;
+			else if (imageFormat.Guid == ImageFormat.Tiff.Guid)
+				result = ImageFileFormat.Tiff;
+			else if (imageFormat.Guid == ImageFormat.Wmf.Guid)
+				result = ImageFileFormat.Emf;
+			else
+				result = ImageFileFormat.Bmp;
 			return result;
 		}
 

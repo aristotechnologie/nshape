@@ -39,7 +39,7 @@ namespace Dataweb.NShape.GeneralShapes {
 		}
 
 
-		[Category("Appearance")]
+		[CategoryAppearance()]
 		[Description("Defines the line cap appearance of the line's beginning.\nUse the template editor to modify all shapes of a template.\nUse the design editor to modify and create styles.")]
 		[PropertyMappingId(PropertyIdStartCapStyle)]
 		[RequiredPermission(Permission.Present)]
@@ -54,7 +54,7 @@ namespace Dataweb.NShape.GeneralShapes {
 		}
 
 
-		[Category("Appearance")]
+		[CategoryAppearance()]
 		[Description("Defines the line cap appearance of the line's ending.\nUse the template editor to modify all shapes of a template.\nUse the design editor to modify and create styles.")]
 		[PropertyMappingId(PropertyIdEndCapStyle)]
 		[RequiredPermission(Permission.Present)]
@@ -104,7 +104,7 @@ namespace Dataweb.NShape.GeneralShapes {
 		}
 
 
-		[Category("Appearance")]
+		[CategoryAppearance()]
 		[Description("Defines the line cap appearance of the line's beginning.\nUse the template editor to modify all shapes of a template.\nUse the design editor to modify and create styles.")]
 		[PropertyMappingId(PropertyIdStartCapStyle)]
 		[RequiredPermission(Permission.Present)]
@@ -119,7 +119,7 @@ namespace Dataweb.NShape.GeneralShapes {
 		}
 
 
-		[Category("Appearance")]
+		[CategoryAppearance()]
 		[Description("Defines the line cap appearance of the line's ending.\nUse the template editor to modify all shapes of a template.\nUse the design editor to modify and create styles.")]
 		[PropertyMappingId(PropertyIdEndCapStyle)]
 		[RequiredPermission(Permission.Present)]
@@ -170,7 +170,7 @@ namespace Dataweb.NShape.GeneralShapes {
 		}
 
 
-		[Category("Appearance")]
+		[CategoryAppearance()]
 		[Description("Defines the line cap appearance of the line's beginning.\nUse the template editor to modify all shapes of a template.\nUse the design editor to modify and create styles.")]
 		[PropertyMappingId(PropertyIdStartCapStyle)]
 		[RequiredPermission(Permission.Present)]
@@ -185,7 +185,7 @@ namespace Dataweb.NShape.GeneralShapes {
 		}
 
 
-		[Category("Appearance")]
+		[CategoryAppearance()]
 		[Description("Defines the line cap appearance of the line's ending.\nUse the template editor to modify all shapes of a template.\nUse the design editor to modify and create styles.")]
 		[PropertyMappingId(PropertyIdEndCapStyle)]
 		[RequiredPermission(Permission.Present)]
@@ -204,4 +204,5 @@ namespace Dataweb.NShape.GeneralShapes {
 			: base(shapeType, template) {
 		}
 	}
+
 }

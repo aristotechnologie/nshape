@@ -29,7 +29,6 @@ namespace Dataweb.NShape {
 	/// <summary>
 	/// Interface for all graphical objects.
 	/// </summary>
-	/// <remarks>RequiredPermissions set</remarks>
 	/// <status>reviewed</status>
 	[TypeDescriptionProvider(typeof(TypeDescriptionProviderDg))]
 	public abstract class Shape : IEntity, ISecurityDomainObject, IDisposable, IEquatable<Shape> {
@@ -44,7 +43,7 @@ namespace Dataweb.NShape {
 		/// <summary>
 		/// Indicates the type of the shape. Is always defined.
 		/// </summary>
-		[Category("General")]
+		[CategoryGeneral()]
 		[Description("The .NET data type of the shape.")]
 		[RequiredPermission(Permission.Data)]
 		public abstract ShapeType Type { get; }
@@ -59,7 +58,7 @@ namespace Dataweb.NShape {
 		/// <summary>
 		/// Indicates the template for this shape. Is null, if the shape has no template.
 		/// </summary>
-		[Category("General")]
+		[CategoryGeneral()]
 		[RequiredPermission(Permission.Data)]
 		public abstract Template Template { get; }
 
@@ -95,7 +94,7 @@ namespace Dataweb.NShape {
 		/// <summary>
 		/// Indicates the name of the security domain this shape belongs to.
 		/// </summary>
-		[Category("General")]
+		[CategoryGeneral()]
 		[Description("Modify the security domain of the shape.")]
 		[RequiredPermission(Permission.Security)]
 		public abstract char SecurityDomainName { get; set; }
@@ -103,7 +102,7 @@ namespace Dataweb.NShape {
 		/// <summary>
 		/// Gets or sets the x-coordinate of the shape's location.
 		/// </summary>
-		[Category("Layout")]
+		[CategoryLayout()]
 		[Description("Horizontal position of the shape's reference point.")]
 		[RequiredPermission(Permission.Layout)]
 		public abstract int X { get; set; }
@@ -111,7 +110,7 @@ namespace Dataweb.NShape {
 		/// <summary>
 		/// Gets or sets the y-coordinate of the shape's location.
 		/// </summary>
-		[Category("Layout")]
+		[CategoryLayout()]
 		[Description("Vertical position of the shape's reference point.")]
 		[RequiredPermission(Permission.Layout)]
 		public abstract int Y { get; set; }
@@ -266,6 +265,19 @@ namespace Dataweb.NShape {
 		/// </summary>
 		public abstract void Fit(int x, int y, int width, int height);
 
+
+		/// <summary>
+		/// Fits the shape in the given rectangle.
+		/// </summary>
+		public virtual void Fit(int x, int y, int width, int height, bool maintainAspect) {
+			Rectangle bounds = GetBoundingRectangle(true);
+			float deltaX = bounds.Width - width;
+			float deltaY = bounds.Height - height;
+			Geometry.MaintainAspectRatio(width, height, Geometry.Signum(deltaX), Geometry.Signum(deltaY), ref deltaX, ref deltaY);
+			
+			Fit(x, y, (int)Math.Round(width + deltaX), (int)Math.Round(height + deltaY));
+		}
+
 		/// <summary>
 		/// Moves the shape to the given coordinates, if possible.
 		/// </summary>
@@ -386,7 +398,7 @@ namespace Dataweb.NShape {
 		/// Style used to draw the shape's outline.
 		/// </summary>
 		/// <remarks>Can be null, if no outline has to be drawn.</remarks>
-		[Category("Appearance")]
+		[CategoryAppearance()]
 		[Description("Defines the appearence of the shape's outline.\nUse the template editor to modify all shapes of a template.\nUse the design editor to modify and create styles.")]
 		[PropertyMappingId(PropertyIdLineStyle)]
 		[RequiredPermission(Permission.Present)]
@@ -439,7 +451,7 @@ namespace Dataweb.NShape {
 		public abstract void FollowConnectionPointWithGluePoint(ControlPointId gluePointId, Shape connectedShape, ControlPointId connectedPointId);
 
 		/// <ToBeCompleted></ToBeCompleted>
-		[Category("Layout")]
+		[CategoryLayout()]
 		[Description("Specifies the layers the shape is part of.")]
 		[RequiredPermission(Permission.Layout)]
 		[Editor("Dataweb.NShape.WinFormsUI.LayerUITypeEditor, Dataweb.NShape.WinFormsUI", typeof(System.Drawing.Design.UITypeEditor))]
@@ -479,8 +491,22 @@ namespace Dataweb.NShape {
 		protected internal abstract object InternalTag { get; set; }
 
 
+		/// <summary>Gets the collection that stores and manages the shape's child shapes.</summary>
+		protected internal virtual ShapeAggregation ChildrenCollection {
+			get { return childrenCollection; }
+			internal set { childrenCollection = value; }
+		}
+
+
+		/// <summary>Creates the collection that stores and manages the shape's child shapes.</summary>
+		protected virtual ShapeAggregation CreateChildrenCollection(int capacity) {
+			return new CompositeShapeAggregation(this, capacity);
+		}
+
+
 		/// <ToBeCompleted></ToBeCompleted>
 		protected const int PropertyIdLineStyle = 1;
+
 
 		// For performance reasons the diagram stores the z-order and the layers
 		// of its shapes within the shapes themselves.
@@ -491,12 +517,6 @@ namespace Dataweb.NShape {
 			get { return zOrder; }
 			set { zOrder = value; }
 		}
-
-		private int zOrder = 0;
-		private LayerIds layers = LayerIds.None;
-		
-		// ToDo: Make protected?
-		internal ShapeAggregation children;
 
 		#endregion
 
@@ -525,7 +545,7 @@ namespace Dataweb.NShape {
 		public bool Equals(Shape other) {
 			return other == this;
 		}
-		
+
 		#endregion
 
 
@@ -598,6 +618,15 @@ namespace Dataweb.NShape {
 		/// <param name="styleSet"></param>
 		/// <remarks>Only used by the ShapeType class.</remarks>
 		protected internal abstract void InitializeToDefault(IStyleSet styleSet);
+
+
+		#region Fields
+
+		private int zOrder = 0;
+		private LayerIds layers = LayerIds.None;
+		private ShapeAggregation childrenCollection = null;
+		
+		#endregion
 
 	}
 
@@ -783,9 +812,16 @@ namespace Dataweb.NShape {
 
 		/// <override></override>
 		public override int GetHashCode() {
-			int result = otherPointId.GetHashCode() ^ ownPointId.GetHashCode();
-			if (otherShape != null) result ^= otherShape.GetHashCode();
-			return result;
+			// Overflow is fine, just wrap
+			unchecked {
+				// We use prime numbers 17 and 23, could also be other prime numbers
+				int result = 17;
+				result = result * 23 + otherPointId.GetHashCode();
+				result = result * 23 + ownPointId.GetHashCode();
+				if (otherShape != null)
+					result = result * 23 + otherShape.GetHashCode();
+				return result;
+			}
 		}
 
 

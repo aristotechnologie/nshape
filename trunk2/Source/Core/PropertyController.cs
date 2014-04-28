@@ -76,7 +76,7 @@ namespace Dataweb.NShape.Controllers {
 		/// <summary>
 		/// Provides access to a <see cref="T:Dataweb.NShape.Project" />.
 		/// </summary>
-		[Category("NShape")]
+		[CategoryNShape()]
 		public Project Project {
 			get { return project; }
 			set {
@@ -97,7 +97,7 @@ namespace Dataweb.NShape.Controllers {
 		/// <summary>
 		/// Specifies the version of the assembly containing the component.
 		/// </summary>
-		[Category("NShape")]
+		[CategoryNShape()]
 		public string ProductVersion {
 			get { return this.GetType().Assembly.GetName().Version.ToString(); }
 		}
@@ -106,7 +106,7 @@ namespace Dataweb.NShape.Controllers {
 		/// <summary>
 		/// Specifies the display mode for properties that are not editable, in most cases due to insufficient permissions.
 		/// </summary>
-		[Category("Behavior")]
+		[CategoryBehavior()]
 		public NonEditableDisplayMode PropertyDisplayMode {
 			get { return propertyDisplayMode; }
 			set { propertyDisplayMode = value; }

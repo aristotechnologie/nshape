@@ -81,7 +81,7 @@ namespace Dataweb.NShape.Controllers {
 		/// <summary>
 		/// Specifies the version of the assembly containing the component.
 		/// </summary>
-		[Category("NShape")]
+		[CategoryNShape()]
 		public string ProductVersion {
 			get { return this.GetType().Assembly.GetName().Version.ToString(); }
 		}
@@ -90,7 +90,7 @@ namespace Dataweb.NShape.Controllers {
 		/// <summary>
 		/// Provides access to a DiagramSetController.
 		/// </summary>
-		[Category("NShape")]
+		[CategoryNShape()]
 		public DiagramSetController DiagramSetController {
 			get { return diagramSetController; }
 			set {
@@ -104,7 +104,7 @@ namespace Dataweb.NShape.Controllers {
 		/// <summary>
 		/// Provides access to a <see cref="T:Dataweb.NShape.Project" />.
 		/// </summary>
-		[Category("NShape")]
+		[CategoryNShape()]
 		public Project Project {
 			get {
 				if (diagramSetController == null) return null;
@@ -222,18 +222,20 @@ namespace Dataweb.NShape.Controllers {
 			string description;
 			
 			isFeasible = diagram.Layers.Count < Enum.GetValues(typeof(LayerIds)).Length;
-			description = isFeasible ? "Add a new layer to the diagram" : "Maximum number of layers reached";
-			yield return new DelegateMenuItemDef("Add Layer",
+			description = isFeasible ? Properties.Resources.MessageTxt_AddANewLayerToTheDiagram 
+				: Properties.Resources.MessageTxt_MaximumNumberOfLayersReached;
+			yield return new DelegateMenuItemDef(Properties.Resources.CaptionTxt_AddLayer,
 				Properties.Resources.NewLayer, description, isFeasible, Permission.Data,
 				diagram != null ? diagram.SecurityDomainName : 'A',
 				(a, p) => AddLayer(diagram));
 
 			isFeasible = selectedLayers.Count > 0;
-			description = isFeasible ? string.Format("Delete {0} Layers", selectedLayers.Count) : "No layers selected";
-			yield return new DelegateMenuItemDef(string.Format("Delete Layer{0}", selectedLayers.Count > 1 ? "s" : string.Empty),
+			description = isFeasible ? string.Format(Properties.Resources.MessageFmt_Delete0Layers, selectedLayers.Count) : Properties.Resources.MessageTxt_NoLayersSelected;
+			yield return new DelegateMenuItemDef((selectedLayers.Count > 1) ? Properties.Resources.CaptionTxt_DeleteLayer : Properties.Resources.CaptionTxt_DeleteLayers,
 				Properties.Resources.DeleteBtn, description, isFeasible, Permission.Data, 
 				diagram != null ? diagram.SecurityDomainName : 'A',
-				(a, p) => this.RemoveLayers(diagram, selectedLayers));
+				(a, p) => this.RemoveLayers(diagram, selectedLayers)
+			);
 		}
 
 		#endregion
@@ -286,7 +288,7 @@ namespace Dataweb.NShape.Controllers {
 		private void UnregisterRepositoryEvents() {
 			AssertRepositoryIsSet();
 			if (repositoryEventsRegistered) {
-				Project.Repository.DiagramUpdated += Repository_DiagramUpdated;
+				Project.Repository.DiagramUpdated -= Repository_DiagramUpdated;
 				repositoryEventsRegistered = false;
 			}
 		}

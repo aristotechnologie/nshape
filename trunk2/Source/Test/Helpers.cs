@@ -220,25 +220,39 @@ namespace NShapeTest {
 	public static class RepositoryHelper {
 
 		public static SqlStore CreateSqlStore() {
+			return CreateSqlStore(DatabaseName);
+		}
+
+
+		public static SqlStore CreateSqlStore(string databaseName) {
 			string server = Environment.MachineName + SqlServerName;
-			return new SqlStore(server, DatabaseName);
+			return new SqlStore(server, databaseName);
 		}
 
 
 		public static XmlStore CreateXmlStore() {
-			return new XmlStore(Path.GetTempPath(), ".xml");
+			return new XmlStore(Path.GetTempPath(), ".nspj");
 		}
 
 
 		public static void SQLCreateDatabase() {
-			using (SqlStore sqlStore = CreateSqlStore()) {
+			string[] libraryNames = new string[]{
+				"Dataweb.NShape.GeneralShapes",
+				"Dataweb.NShape.FlowChartShapes"
+			};
+			SQLCreateDatabase(DatabaseName, Project.LastSupportedSaveVersion, libraryNames);
+		}
+
+
+		public static void SQLCreateDatabase(string databaseName, int version, IEnumerable<string> libraryNames) {
+			using (SqlStore sqlStore = CreateSqlStore(databaseName)) {
 				// Create database
 				string connectionString = string.Format("server={0};Integrated Security=True", sqlStore.ServerName);
 				using (SqlConnection conn = new SqlConnection(connectionString)) {
 					conn.Open();
 					try {
 						SqlCommand command = conn.CreateCommand();
-						command.CommandText = string.Format("CREATE DATABASE {0}", DatabaseName);
+						command.CommandText = string.Format("CREATE DATABASE {0}", databaseName);
 						command.ExecuteNonQuery();
 					} catch (SqlException exc) {
 						// Ignore "Database already exists" error
@@ -248,19 +262,20 @@ namespace NShapeTest {
 
 				// Create Repository
 				CachedRepository repository = new CachedRepository();
-				repository.Store = CreateSqlStore();
+				repository.Version = version;
+				repository.Store = CreateSqlStore(databaseName);
 
 				// Create project
 				Project project = new Project();
 				project.AutoLoadLibraries = true;
-				project.Name = "NShape SQL Test";
+				project.Name = "...";
 				project.Repository = repository;
 
 				// Add and register libraries
 				project.RemoveAllLibraries();
 				project.AddLibrary(typeof(ValueDevice).Assembly, true);
-				project.AddLibrary(typeof(Circle).Assembly, true);
-				project.AddLibrary(typeof(ProcessSymbol).Assembly, true);
+				foreach (string libName in libraryNames)
+					project.AddLibraryByName(libName, true);
 				project.RegisterEntityTypes();
 
 				// Create schema
@@ -274,10 +289,21 @@ namespace NShapeTest {
 
 
 		public static void SQLDropDatabase() {
+			SQLDropDatabase(DatabaseName);
+		}
+
+
+		public static void SQLDropDatabase(string databaseName) {
 			string connectionString = string.Empty;
-			using (SqlStore sqlStore = CreateSqlStore()) {
+			using (SqlStore sqlStore = CreateSqlStore(databaseName)) {
 				connectionString = string.Format("server={0};Integrated Security=True", sqlStore.ServerName);
-				sqlStore.DropDbSchema();
+				try {
+					sqlStore.DropDbSchema();
+				} finally {
+					// Drop all connections of the connection pool created by the store's connection
+					using (SqlConnection conn = new SqlConnection(sqlStore.ConnectionString))
+						SqlConnection.ClearPool(conn);
+				}
 			}
 
 			// Drop database
@@ -286,7 +312,7 @@ namespace NShapeTest {
 					conn.Open();
 					try {
 						using (SqlCommand command = conn.CreateCommand()) {
-							command.CommandText = string.Format("DROP DATABASE {0}", DatabaseName);
+							command.CommandText = string.Format("DROP DATABASE {0}", databaseName);
 							command.ExecuteNonQuery();
 						}
 					} catch (SqlException exc) {

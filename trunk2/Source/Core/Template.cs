@@ -304,8 +304,12 @@ namespace Dataweb.NShape {
 		/// </summary>
 		public static IEnumerable<EntityPropertyDefinition> GetPropertyDefinitions(int version) {
 			yield return new EntityFieldDefinition("Name", typeof(string));
-			if (version >= 3) yield return new EntityFieldDefinition("Title", typeof(string));
-			if (version >= 5) yield return new EntityFieldDefinition("Description", typeof(string));
+			// Program versions 1.0.0 through 1.0.3 store the template's title and description for repository version 2.
+			// Since program version 1.0.4, the template's title and description is no longer stored for repository version 2.
+			// In order to restore backwards compatibility, we go back to the roots and reactivate the original 
+			// behavior (program version 2.2.0+).
+			yield return new EntityFieldDefinition("Title", typeof(string));
+			yield return new EntityFieldDefinition("Description", typeof(string));
 			yield return new EntityInnerObjectsDefinition(connectionPtMappingName + "s", connectionPtMappingName, connectionPtMappingAttrNames, connectionPtMappingAttrTypes);
 		}
 
@@ -328,8 +332,9 @@ namespace Dataweb.NShape {
 		public void SaveFields(IRepositoryWriter writer, int version) {
 			if (writer == null) throw new ArgumentNullException("writer");
 			writer.WriteString(name);
-			if (version >= 3) writer.WriteString(title);
-			if (version >= 5) writer.WriteString(description);
+			// See comment in GetPropertyDefinitions()
+			writer.WriteString(title);
+			writer.WriteString(description);
 		}
 
 
@@ -337,8 +342,9 @@ namespace Dataweb.NShape {
 		public void LoadFields(IRepositoryReader reader, int version) {
 			if (reader == null) throw new ArgumentNullException("reader");
 			name = reader.ReadString();
-			if (version >= 3) title = reader.ReadString();
-			if (version >= 5) description = reader.ReadString();
+			// See comment in GetPropertyDefinitions()
+			title = reader.ReadString();
+			description = reader.ReadString();
 		}
 
 

@@ -7,9 +7,137 @@ Known issues:
 
 
 ====================================================================================================
+Changes in 2.2.0:
+====================================================================================================
+- Interface Change: IDisplayService.NotifyBoundsChanged is obsolete now. 
+  Use the Resized event of the diagram instead (see below).
+- Interface Change: Changed several event args classes:
+    * EventArgs class ShapeMouseEventArgs (unused) was deleted.
+	* EventArgs class ShapeEventArgs (unused) was renamed to ShapesEventArgs
+	* EventArgs class DiagramShapeEventArgs (unused) was renamed to DiagramShapesEventArgs
+	* EventArgs class ShapeEventArgs was added.
+	* EventArgs class DiagramPresenterShapeEventArgs was added
+- Extended Interface: IDiagramPresenter interface is now derived from ISynchronizeInvoke in order to 
+  enable thread synchronized timer events (when using System.Timers.Timer's property 
+  "SynchronizingObject").
+- Extended Interface: Added IDisplayPresenter.CloseCaptionEditor(bool applyChanges)
+- Extended Interface: Added three events to IDisplayPresenter:
+	event EventHandler<DiagramPresenterShapeEventArgs> ShapeMoved;
+	event EventHandler<DiagramPresenterShapeEventArgs> ShapeResized;
+	event EventHandler<DiagramPresenterShapeEventArgs> ShapeRotated;
+- Extended Interface: Added boolean property CanModifyVersion to the IRepository interface.
+  Specifies whether the current repository implementation supports upgrading the load/save version of 
+  the repository.
+- Extended Interface: Added Method UpgradeVersion to the IRepository interface which will upgrade the 
+  load/save version of a repository (or throw an exception if upgrading is not supported).
+- Extended Interface: Added boolean property CanModifyVersion to the Store base class.
+  The shipped XmlStore will support upgrading load/save version whereas the shipped AdoNetStore will 
+  not.
+- Extended Interface: Added the following members to the XmlStore class (see new features for details):
+	bool LazyLoading { get; set; }
+	ImageFileLocation ImageLocation { get; set; }
+- Extended interface: Added four events to the Diagram class:
+	event EventHandler<ShapeEventArgs> ShapeMoved;
+	event EventHandler<ShapeEventArgs> ShapeResized;
+	event EventHandler<ShapeEventArgs> ShapeRotated;
+	event EventHandler Resized;
+- Extended interface: Base class "Shape" was extended by the following protected members in order 
+  to enable custom collection implementations for the Shape.Children collection.
+	protected ShapeAggregation ChildrenCollection { get; }
+		Provides access to the collection that stores and manages the shape's child shapes. The 
+		collection is null by default and will be created when needed and deleted when not needed 
+		any more.
+	protected virtual ShapeAggregation CreateChildrenCollection(int capacity);
+		Creates an instance of the children collection with the given capacity. Override this method
+		if a custom implementation of the children collection is needed.
+- Extended interface: Added two methods to the ICaptionedShape interface:
+	bool GetCaptionIsVisible(int index)
+	void SetCaptionIsVisible(int index, bool isVisible)
+- Extended Interface: For implementing the new methods above, the Caption class got a new property
+	bool IsVisible { get; set; }
+- Extended Interface: Base class Tool has now a property DoubleClickTime that takes the interval (in ms)
+  used for interpreting two subsequent clicks as double click.
+- Extended Interface: Added three protected virtual methods to ReposioryWriter Base class: 
+    DoWriteModelObject
+    DoWriteStyle
+    DoWriteTemplate
+- Extended Interface: Added constructor overloads to the DelegateMenuItemDef class
+- Interface Change: Data type of Geometry.Signum changed from int to sbyte.
+- Interface Change: Moved the following (never implemented) methods from class CachedRepository to 
+  class Project and implemented them:
+	string GetXml() 
+	void WriteXml(Stream stream)
+	void OpenXml(Stream stream)
+- New Feature: XmlStore now supports partial loading for improved performance. Partial loading is 
+  disabled by default (for backwards compatibility) and can be enabled using the XmlStore.LazyLoading
+  property:
+  When loading diagrams, the diagram instance is loaded without contents. The diagram contents have 
+  to be loaded explicitly by calling the IRepository.GetDiagramShapes method.
+  Make sure that all GetDiagramShapes was called for all diagrams before saving.
+- New Feature: XmlStore provides a new property ImageLocation which specifies whether images are 
+  stored in a seperate directory (as it was until now) or whether images are embedded into the XML
+  file as base64 encoded string.
+  When loading an existing XML file, the ImageLocation setting of the file will be determined and used 
+  until it the XmlStore is closed or the ImageLocation is overridden by setting the ImageLocation 
+  property while the XmlStore is open.
+- New Feature: NShapeDesigner implements the new 'Upgrade Version' feature (see Interface extensions 
+  above).
+- New Feature: NShapeDesigner implements the new 'Use Embedded Images' feature (see above).
+- New Feature: NShapeDesigner implements Project.GetXml (see above) with menu item "Export Repository 
+  to Clipboard (XML)" located in the "File" menu.
+- New Feature: NShapeDesigner implements Project.OpenXml (see above) with menu item "Import Repository 
+  from Clipboard (XML)" located in the "File" menu.
+- Improvement: XmlStore has an additional constructor that takes a stream instead of a directory and 
+  a file extension. If the XmlStore was constructed using this constructor, the stream will be used 
+  for loading/saving for the lifetime of the XmlStore.
+- Improvement: Inserting diagrams with duplicate names in the repository will now raise an exception.
+- Improvement: You can now select "None" as color for line caps. In this case, the line cap will be 
+  filled with the color of the line.
+- Improvement: Updated all demo projects to version 5 (using embedded images).
+- Improvement: Updated documentation to reflect all interface changes of the last few versions and 
+  added several yet undocumentated classes.
+- Changed Behavior: The CachedRepository now allows the assignment of a store while repository is 
+  open in case that no store exists yet.
+- Changed behavior: NShapeDesigner no longer asks for a file name when creating a new XML project. 
+  Instead, no store is created in this case in the first place. It will be created when saving the 
+  project for the first time.
+- Changed Behavior: Holding down the control key while moving a shape means now 'Toggle snapping to
+  grid' instead of 'Do not snap to grid'.
+- Changed Behavior: When clicking on overlapping shapes (with OverlappingShapesAction != None), the 
+  selection of the next/topmost shape will be deferred until the double click detection time elapses. 
+- Changed Behavior: Tools never received MouseUp events with clicks > 1 because WinForms controls reset
+  the click count before raising the MouseUp event of the double click's second click. 
+  In Addition to that, multi-clicks are now supported (tripple-click, quadruple-click, etc) as the click
+  count will not be reset after a double click (as WinForms controls do).
+- Bugfix: Clicking the save button in NShapeDesigner while editing the caption of a shape will no 
+  longer cause an exception.
+- Bugfix: NShape components will now remove all registered event handlers propertly.
+- Bugfix: Undoing "ungroup" on a rotated group now reverts the rotation of the group members correctly
+- Bugfix: When creating linear shapes, the connection points near the mouse cursor are now drawn.
+- Bugfix: Constructor AggregatedCommand(IRepository repository, IEnumerable<ICommand> commands) no 
+  longer raises a NullRegerenceException.
+- Bugfix: XmlRepositoryReader.ReadDate() did not advance the underlying XmlReader to the next attribute.
+- Bugfix: NShape 1.0.0 to 1.0.3 "Repository Version 2" stored templates including their title.  
+  NShape 1.0.4 to NShape 2.1.1 neither store nor read the template's title for version 2 repositories, 
+  thus breaking compatibility with old repository files. 
+  As NShape 1.0.4 also introduced the "Repository Version 3" storage format (default for new projects), 
+  we repaired the compatibility issue so you can now open "Version 2" repositories created with 
+  NShape 1.0.0 - 1.0.3 but not "Version 2" repositories created with NShape 1.0.4 - 2.1.1.
+  If you need to open old version 2 files, please insert an attribute "title" between the "name" and 
+  the "description" attribute of all template tags:
+  <template id="xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx" name="xxxxxxxx" description="">
+  becomes
+  <template id="xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx" name="xxxxxxxx" title="" description="">
+- Bugfix: The project component no longer accepts version 1 as minimum repository version. Version 2 is
+  the correct minimum load/save version as NShape 1.0.0 was released creating version 2.
+- Bugfix: XmlStore did never call "SaveInnerObjects" method of model objects.
+- Bugfix: Added a workaround for an issue that causes an OutOfMemoryException in the underlying GDI+ 
+  Flat API functions when trying to draw lines with intersecting line caps.
+
+====================================================================================================
 Changes in 2.1.1:
 ====================================================================================================
-- Bug Fix: Saving repositories version 3 and 4 no longer causes an IndexOutOfRangeException.
+- Bugfix: Saving repositories version 3 and 4 no longer causes an IndexOutOfRangeException.
 - Improvement: Added descriptive comments to all demo programs and the tutorial projects.
 
 ====================================================================================================
@@ -17,8 +145,8 @@ Changes in 2.1:
 ====================================================================================================
 - Interface Change: Classes PropertyMappingIdAttribute and RequiredPermissionAttribute have been sealed
 - Interface Change: 
-    protected Point[] PlanarShapeBase.controlPoints is now private
-	protected void PlanarShapeBase.ResizeControlPoints(int length) has been added
+    protected Point[] PathBasedPlanarShape.controlPoints is now private
+	protected void PathBasedPlanarShape.ResizeControlPoints(int length) has been added
   You can resize the control points array using the new method and access its points using the 
   public property ControlPoints. This addresses the problem that controlPoints and ControlPoints did only 
   differ in casing, making it impossible for VB.NET programmers to implement their own PathBasedShapes 
@@ -46,7 +174,7 @@ Changes in 2.1:
   Derived shapes that change the number of available ControlPoints or their id's have to override this
   class.
 - Extended Interface: Display.EnsureVisible now has an overloaded version that accepts a margin
-- Extended Interface: IDiagramPresenter.AcitveTool gives access to the currently used Tool of the diagram 
+- Extended Interface: IDiagramPresenter.ActiveTool gives access to the currently used Tool of the diagram 
   presenter
 
 - Property Rename: Display.ShowGrid was renamed to Display.IsGridVisible (ShowGrid is still available but  
@@ -120,18 +248,18 @@ Changes in 2.1:
 - Bugfix: Corrected example in documentation "Programmer Tasks > Customizing Context Menus > Integrate 
   NShape Commands in your Own Context Menus": The code of the lambda expression now extracts the 
   MenuItemDef from the context menu item and executes it.
-- BugFix: SoftwareArchitecture.EntityShape now handles deleting items of string array property 
+- Bugfix: SoftwareArchitecture.EntityShape now handles deleting items of string array property 
   "ColumnNames" correctly when assigning an other string array to this property. Throws an exception if 
   connected control points should be removed.
-- BugFix: A PolyLine connected to the center point of a RegularPolygone did not calculate the preview
+- Bugfix: A PolyLine connected to the center point of a RegularPolygone did not calculate the preview
   shape's position correctly.
-- BugFix: XmlStore now deletes the existing (old) XML file (and its image directory) when setting
+- Bugfix: XmlStore now deletes the existing (old) XML file (and its image directory) when setting
   XmlStore.BackupGenerationMode to BackupFileGenerationMode.None.
-- BugFix: Moving connected lines that are grouped or selected together with their partner shapes will no 
+- Bugfix: Moving connected lines that are grouped or selected together with their partner shapes will no 
   longer move their vertices to strange positions (REQ 20411)
-- BugFix: When deleting a Shape without its attached model object (delete shape only), the model object
+- Bugfix: When deleting a Shape without its attached model object (delete shape only), the model object
   will now be correctly detached from the shape.
-- BugFix: When trying to save a new project over an existing one, there is no longer an "already exists"
+- Bugfix: When trying to save a new project over an existing one, there is no longer an "already exists"
   error message 
 
 

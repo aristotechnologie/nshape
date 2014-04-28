@@ -124,7 +124,7 @@ namespace Dataweb.NShape.WinFormsUI {
 		/// <summary>
 		/// Specifies the version of the assembly containing the component.
 		/// </summary>
-		[Category("NShape")]
+		[CategoryNShape()]
 		[Browsable(true)]
 		public new string ProductVersion {
 			get { return base.ProductVersion; }
@@ -134,7 +134,7 @@ namespace Dataweb.NShape.WinFormsUI {
 		/// <summary>
 		/// Provides access to a <see cref="T:Dataweb.NShape.Project" />.
 		/// </summary>
-		[Category("NShape")]
+		[CategoryNShape()]
 		public Project Project {
 			get { return (designController == null) ? null : designController.Project; }
 		}
@@ -143,7 +143,7 @@ namespace Dataweb.NShape.WinFormsUI {
 		/// <summary>
 		/// The design controller component
 		/// </summary>
-		[Category("NShape")]
+		[CategoryNShape()]
 		public DesignController DesignController {
 			get { return designController; }
 			set {

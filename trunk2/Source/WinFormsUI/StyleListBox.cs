@@ -110,7 +110,7 @@ namespace Dataweb.NShape.WinFormsUI {
 		/// <summary>
 		/// Specifies the version of the assembly containing the component.
 		/// </summary>
-		[Category("NShape")]
+		[CategoryNShape()]
 		[Browsable(true)]
 		public new string ProductVersion {
 			get { return base.ProductVersion; }
@@ -156,14 +156,14 @@ namespace Dataweb.NShape.WinFormsUI {
 		}
 
 
-		[Category("Behavior")]
+		[CategoryBehavior()]
 		public bool HighlightItems {
 			get { return highlightItems; }
 			set { highlightItems = value; }
 		}
 
 
-		[Category("Appearance")]
+		[CategoryAppearance()]
 		public Color ItemBackgroundColor {
 			get { return itemBackgroundColor; }
 			set {
@@ -176,7 +176,7 @@ namespace Dataweb.NShape.WinFormsUI {
 		}
 
 
-		[Category("Appearance")]
+		[CategoryAppearance()]
 		public Color ItemHighlightedColor {
 			get { return itemHighlightedColor; }
 			set {
@@ -189,7 +189,7 @@ namespace Dataweb.NShape.WinFormsUI {
 		}
 
 
-		[Category("Appearance")]
+		[CategoryAppearance()]
 		public Color ItemSelectedColor {
 			get { return itemSelectedColor; }
 			set {
@@ -202,7 +202,7 @@ namespace Dataweb.NShape.WinFormsUI {
 		}
 
 
-		[Category("Appearance")]
+		[CategoryAppearance()]
 		public Color ItemFocusedColor {
 			get { return itemFocusedColor; }
 			set {
@@ -215,7 +215,7 @@ namespace Dataweb.NShape.WinFormsUI {
 		}
 		
 		
-		[Category("Appearance")]
+		[CategoryAppearance()]
 		public Color FocusBorderColor {
 			get { return focusBorderColor; }
 			set {
@@ -228,7 +228,7 @@ namespace Dataweb.NShape.WinFormsUI {
 		}
 
 
-		[Category("Appearance")]
+		[CategoryAppearance()]
 		public Color ItemBorderColor {
 			get { return itemBorderColor; }
 			set {
@@ -241,7 +241,7 @@ namespace Dataweb.NShape.WinFormsUI {
 		}
 
 
-		[Category("Appearance")]
+		[CategoryAppearance()]
 		public Color TextColor {
 			get { return textColor; }
 			set {

@@ -23,6 +23,7 @@ using System.Drawing.Drawing2D;
 using System.Drawing.Imaging;
 
 using Dataweb.NShape.Advanced;
+using Dataweb.NShape.Controllers;
 
 
 namespace Dataweb.NShape {
@@ -66,6 +67,8 @@ namespace Dataweb.NShape {
 		/// <override></override>
 		public override void NotifyChildMoved(Shape shape) {
 			base.NotifyChildMoved(shape);
+			RaiseShapeMovedEvent(shape);
+
 			CheckOwnerboundsUpdateNeeded(shape);
 			--shapeCounter;
 			if (shapeCounter == 0) DoUpdateOwnerBounds();
@@ -83,6 +86,8 @@ namespace Dataweb.NShape {
 		/// <override></override>
 		public override void NotifyChildResized(Shape shape) {
 			base.NotifyChildResized(shape);
+			RaiseShapeResizedEvent(shape);
+
 			CheckOwnerboundsUpdateNeeded(shape);
 			--shapeCounter;
 			if (shapeCounter == 0) DoUpdateOwnerBounds();
@@ -100,6 +105,8 @@ namespace Dataweb.NShape {
 		/// <override></override>
 		public override void NotifyChildRotated(Shape shape) {
 			base.NotifyChildRotated(shape);
+			RaiseShapeRotatedEvent(shape);
+
 			CheckOwnerboundsUpdateNeeded(shape);
 			--shapeCounter;
 			if (shapeCounter == 0) DoUpdateOwnerBounds();
@@ -225,9 +232,27 @@ namespace Dataweb.NShape {
 		private void DoUpdateOwnerBounds() {
 			Debug.Assert(shapeCounter == 0);
 			if (ownerBoundsUpdateNeeded) {
-				if (owner != null) owner.NotifyBoundsChanged();
+				if (owner != null) owner.OnResized(EventArgs.Empty);
 				ownerBoundsUpdateNeeded = false;
 			}
+		}
+
+
+		private void RaiseShapeMovedEvent(Shape shape) {
+			shapeEventArgs.SetShape(shape);
+			owner.OnShapeMoved(shapeEventArgs);
+		}
+
+
+		private void RaiseShapeResizedEvent(Shape shape) {
+			shapeEventArgs.SetShape(shape);
+			owner.OnShapeResized(shapeEventArgs);
+		}
+
+
+		private void RaiseShapeRotatedEvent(Shape shape) {
+			shapeEventArgs.SetShape(shape);
+			owner.OnShapeRotated(shapeEventArgs);
 		}
 
 
@@ -235,6 +260,7 @@ namespace Dataweb.NShape {
 		private Diagram owner = null;
 		private int shapeCounter = 0;
 		private bool ownerBoundsUpdateNeeded;
+		private ShapeEventArgs shapeEventArgs = new ShapeEventArgs();
 		#endregion
 	}
 
@@ -262,13 +288,29 @@ namespace Dataweb.NShape {
 			}
 		}
 
+		#region [Public] Events
+
+		/// <summary>Raised when the diagram size changes.</summary>
+		public event EventHandler Resized;
+
+		/// <summary>Raised when a shape of the diagram has been moved.</summary>
+		public event EventHandler<ShapeEventArgs> ShapeMoved;
+
+		/// <summary>Raised when a shape of the diagram has been resized.</summary>
+		public event EventHandler<ShapeEventArgs> ShapeResized;
+
+		/// <summary>Raised when a shape of the diagram has been rotated.</summary>
+		public event EventHandler<ShapeEventArgs> ShapeRotated;
+
+		#endregion
+
 
 		#region [Public] Properties
 
 		/// <summary>
 		/// Culture invariant name.
 		/// </summary>
-		[Category("General")]
+		[CategoryGeneral()]
 		[Description("The name of the diagram.")]
 		[RequiredPermission(Permission.Data)]
 		public string Name {
@@ -280,7 +322,7 @@ namespace Dataweb.NShape {
 		/// <summary>
 		/// Culture depending title.
 		/// </summary>
-		[Category("General")]
+		[CategoryGeneral()]
 		[Description("The displayed text of the diagram.")]
 		[RequiredPermission(Permission.Present)]
 		public string Title {
@@ -296,21 +338,21 @@ namespace Dataweb.NShape {
 		/// <summary>
 		/// Width of diagram in pixels.
 		/// </summary>
-		[Category("Layout")]
+		[CategoryLayout()]
 		[Description("The width of the diagram.")]
 		[RequiredPermission(Permission.Layout)]
 		public int Width {
 			get { return size.Width; }
 			set {
-				if (Size.Width != value) {
+				if (size.Width != value) {
 					if (displayService != null)
 						displayService.Invalidate(0, 0, Width, Height);
-					if (value <= 0) size.Width = 1;
-					else size.Width = value;
-					if (displayService != null) {
-						displayService.NotifyBoundsChanged();
+
+					size.Width = (value <= 0) ? 1 : value;
+					OnResized(EventArgs.Empty);
+					
+					if (displayService != null) 
 						displayService.Invalidate(0, 0, Width, Height);
-					}
 				}
 			}
 		}
@@ -319,7 +361,7 @@ namespace Dataweb.NShape {
 		/// <summary>
 		/// Height of diagram in pixels.
 		/// </summary>
-		[Category("Layout")]
+		[CategoryLayout()]
 		[Description("The height of the diagram.")]
 		[RequiredPermission(Permission.Layout)]
 		public int Height {
@@ -328,12 +370,12 @@ namespace Dataweb.NShape {
 				if (size.Height != value) {
 					if (displayService != null)
 						displayService.Invalidate(0, 0, Width, Height);
-					if (value <= 0) size.Height = 1;
-					else size.Height = value;
-					if (displayService != null) {
-						displayService.NotifyBoundsChanged();
+
+					size.Height = (value <= 0) ? 1 : value;
+					OnResized(EventArgs.Empty);
+
+					if (displayService != null)
 						displayService.Invalidate(0, 0, Width, Height);
-					}
 				}
 			}
 		}
@@ -348,7 +390,11 @@ namespace Dataweb.NShape {
 			set {
 				if (displayService != null)
 					displayService.Invalidate(0, 0, Width, Height);
-				size = value;
+
+				size.Width = (value.Width <= 0) ? 1 : value.Width;
+				size.Height = (value.Height <= 0) ? 1 : value.Height;
+				OnResized(EventArgs.Empty);
+
 				if (displayService != null)
 					displayService.Invalidate(0, 0, Width, Height);
 			}
@@ -358,7 +404,7 @@ namespace Dataweb.NShape {
 		/// <summary>
 		/// Background color of the diagram.
 		/// </summary>
-		[Category("Appearance")]
+		[CategoryAppearance()]
 		[Description("The background color of the diagram.")]
 		[RequiredPermission(Permission.Present)]
 		public Color BackgroundColor {
@@ -378,7 +424,7 @@ namespace Dataweb.NShape {
 		/// <summary>
 		/// Second color of background gradient.
 		/// </summary>
-		[Category("Appearance")]
+		[CategoryAppearance()]
 		[Description("The second color of the diagram's color gradient.")]
 		[RequiredPermission(Permission.Present)]
 		public Color BackgroundGradientColor {
@@ -398,7 +444,7 @@ namespace Dataweb.NShape {
 		/// <summary>
 		/// Background image of diagram.
 		/// </summary>
-		[Category("Appearance")]
+		[CategoryAppearance()]
 		[Description("The background image of the diagram.")]
 		[Editor("Dataweb.NShape.WinFormsUI.NamedImageUITypeEditor, Dataweb.NShape.WinFormsUI", typeof(UITypeEditor))]
 		[RequiredPermission(Permission.Present)]
@@ -415,7 +461,7 @@ namespace Dataweb.NShape {
 		/// <summary>
 		/// Image layout of background image.
 		/// </summary>
-		[Category("Appearance")]
+		[CategoryAppearance()]
 		[Description("The display mode of the diagram's background image.")]
 		[RequiredPermission(Permission.Present)]
 		public ImageLayoutMode BackgroundImageLayout {
@@ -431,7 +477,7 @@ namespace Dataweb.NShape {
 		/// <summary>
 		/// Gamma correction factor for the background image.
 		/// </summary>
-		[Category("Appearance")]
+		[CategoryAppearance()]
 		[Description("Gamma correction for the diagram's background image.")]
 		[RequiredPermission(Permission.Present)]
 		public float BackgroundImageGamma {
@@ -448,7 +494,7 @@ namespace Dataweb.NShape {
 		/// <summary>
 		/// Specifies if the background image should be displayed as gray scale image.
 		/// </summary>
-		[Category("Appearance")]
+		[CategoryAppearance()]
 		[Description("Specifies if the diagram's background image is drawn as gray scale image instead.")]
 		[RequiredPermission(Permission.Present)]
 		public bool BackgroundImageGrayscale {
@@ -464,7 +510,7 @@ namespace Dataweb.NShape {
 		/// <summary>
 		/// Transparency of the background image in percentage.
 		/// </summary>
-		[Category("Appearance")]
+		[CategoryAppearance()]
 		[Description("Specifies the transparency in percentage for the diagram's background image.")]
 		[RequiredPermission(Permission.Present)]
 		public byte BackgroundImageTransparency {
@@ -481,7 +527,7 @@ namespace Dataweb.NShape {
 		/// <summary>
 		/// The specified color of the background image will be transparent.
 		/// </summary>
-		[Category("Appearance")]
+		[CategoryAppearance()]
 		[Description("Specifies a color that will be transparent in the diagram's background image.")]
 		[RequiredPermission(Permission.Present)]
 		public Color BackgroundImageTransparentColor {
@@ -531,7 +577,7 @@ namespace Dataweb.NShape {
 		/// <summary>
 		/// Indicates the name of the security domain this shape belongs to.
 		/// </summary>
-		[Category("General")]
+		[CategoryGeneral()]
 		[Description("Modify the security domain of the diagram.")]
 		[RequiredPermission(Permission.Security)]
 		public char SecurityDomainName {
@@ -922,11 +968,30 @@ namespace Dataweb.NShape {
 			return Title;
 		}
 
-		
-		internal void NotifyBoundsChanged() {
-			if (displayService != null) displayService.NotifyBoundsChanged();
+
+		/// <ToBeCompleted></ToBeCompleted>
+		internal void OnShapeMoved(ShapeEventArgs e) {
+			if (ShapeMoved != null) ShapeMoved(this, e);
 		}
-		
+
+
+		/// <ToBeCompleted></ToBeCompleted>
+		internal void OnShapeResized(ShapeEventArgs e) {
+			if (ShapeResized!= null) ShapeResized(this, e);
+		}
+
+
+		/// <ToBeCompleted></ToBeCompleted>
+		internal void OnShapeRotated(ShapeEventArgs e) {
+			if (ShapeRotated != null) ShapeRotated(this, e);
+		}
+
+
+		internal void OnResized(EventArgs e) {
+		    //if (displayService != null) displayService.NotifyBoundsChanged();
+			if (Resized != null) Resized(this, e);
+		}
+
 		
 		#region IEntity Members (Explicit implementation)
 
@@ -963,7 +1028,7 @@ namespace Dataweb.NShape {
 		}
 
 
-		[Category("General")]
+		[CategoryGeneral()]
 		object IEntity.Id {
 			get { return id; }
 		}
@@ -1146,4 +1211,5 @@ namespace Dataweb.NShape {
 
 		#endregion
 	}
+
 }

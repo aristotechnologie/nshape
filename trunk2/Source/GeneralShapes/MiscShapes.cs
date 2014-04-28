@@ -79,7 +79,7 @@ namespace Dataweb.NShape.GeneralShapes {
 		}
 
 
-		[Category("Layout")]
+		[CategoryLayout()]
 		[Description("The height of the arrow's body.")]
 		[PropertyMappingId(PropertyIdBodyHeight)]
 		[RequiredPermission(Permission.Layout)]
@@ -98,7 +98,7 @@ namespace Dataweb.NShape.GeneralShapes {
 		}
 
 
-		[Category("Layout")]
+		[CategoryLayout()]
 		[Description("The width of the arrow's tip.")]
 		[PropertyMappingId(PropertyIdHeadWidth)]
 		[RequiredPermission(Permission.Layout)]

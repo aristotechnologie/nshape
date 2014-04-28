@@ -744,7 +744,8 @@ namespace Dataweb.NShape {
 		/// <ToBeCompleted></ToBeCompleted>
 		public CapStyle CreatePreviewStyle(ICapStyle baseStyle) {
 			if (baseStyle == null) throw new ArgumentNullException("baseStyle");
-			CapStyle result = new CapStyle(baseStyle.Name + previewNameSuffix);
+			CapStyle result = new CapStyle(baseStyle.Name);
+			result.Title = baseStyle.Name + previewNameSuffix;
 			result.CapShape = baseStyle.CapShape;
 			result.CapSize = baseStyle.CapSize;
 			if (baseStyle.ColorStyle != null)
@@ -756,7 +757,8 @@ namespace Dataweb.NShape {
 		/// <ToBeCompleted></ToBeCompleted>
 		public ColorStyle CreatePreviewStyle(IColorStyle baseStyle) {
 			if (baseStyle == null) throw new ArgumentNullException("baseStyle");
-			ColorStyle result = new ColorStyle(baseStyle.Name + previewNameSuffix);
+			ColorStyle result = new ColorStyle(baseStyle.Name);
+			result.Title = baseStyle.Name + previewNameSuffix;
 			result.Color = baseStyle.Color;
 			result.Transparency = GetPreviewTransparency(baseStyle.Transparency);
 			result.ConvertToGray = previewAsGrayScale;
@@ -767,7 +769,8 @@ namespace Dataweb.NShape {
 		/// <ToBeCompleted></ToBeCompleted>
 		public FillStyle CreatePreviewStyle(IFillStyle baseStyle) {
 			if (baseStyle == null) throw new ArgumentNullException("baseStyle");
-			FillStyle result = new FillStyle(baseStyle.Name + previewNameSuffix, ColorStyle.Empty, ColorStyle.Empty);
+			FillStyle result = new FillStyle(baseStyle.Name, ColorStyle.Empty, ColorStyle.Empty);
+			result.Title = baseStyle.Name + previewNameSuffix;
 			if (baseStyle.AdditionalColorStyle != null)
 				result.AdditionalColorStyle = CreatePreviewStyle(baseStyle.AdditionalColorStyle);
 			if (baseStyle.BaseColorStyle != null)
@@ -801,7 +804,8 @@ namespace Dataweb.NShape {
 		/// <ToBeCompleted></ToBeCompleted>
 		public CharacterStyle CreatePreviewStyle(ICharacterStyle baseStyle) {
 			if (baseStyle == null) throw new ArgumentNullException("baseStyle");
-			CharacterStyle result = new CharacterStyle(baseStyle.Name + previewNameSuffix);
+			CharacterStyle result = new CharacterStyle(baseStyle.Name);
+			result.Title = baseStyle.Name + previewNameSuffix;
 			if (baseStyle.ColorStyle != null)
 				result.ColorStyle = CreatePreviewStyle(baseStyle.ColorStyle);
 			result.FontName = baseStyle.FontName;
@@ -814,7 +818,8 @@ namespace Dataweb.NShape {
 		/// <ToBeCompleted></ToBeCompleted>
 		public LineStyle CreatePreviewStyle(ILineStyle baseStyle) {
 			if (baseStyle == null) throw new ArgumentNullException("baseStyle");
-			LineStyle result = new LineStyle(baseStyle.Name + previewNameSuffix);
+			LineStyle result = new LineStyle(baseStyle.Name);
+			result.Title = baseStyle.Name + previewNameSuffix;
 			if (baseStyle.ColorStyle != null)
 				result.ColorStyle = CreatePreviewStyle(baseStyle.ColorStyle);
 			result.DashCap = baseStyle.DashCap;
@@ -828,7 +833,8 @@ namespace Dataweb.NShape {
 		/// <ToBeCompleted></ToBeCompleted>
 		public ParagraphStyle CreatePreviewStyle(IParagraphStyle baseStyle) {
 			if (baseStyle == null) throw new ArgumentNullException("baseStyle");
-			ParagraphStyle result = new ParagraphStyle(baseStyle.Name + previewNameSuffix);
+			ParagraphStyle result = new ParagraphStyle(baseStyle.Name);
+			result.Title = baseStyle.Name + previewNameSuffix;
 			result.Alignment = baseStyle.Alignment;
 			result.Padding = baseStyle.Padding;
 			result.Trimming = baseStyle.Trimming;
@@ -1360,7 +1366,7 @@ namespace Dataweb.NShape {
 		private FillStyleCollection fillStyles = new FillStyleCollection();
 		private LineStyleCollection lineStyles = new LineStyleCollection();
 		private ParagraphStyleCollection paragraphStyles = new ParagraphStyleCollection();
-		private const string previewNameSuffix = "";
+		private const string previewNameSuffix = " (Preview)";
 
 		#endregion
 	}

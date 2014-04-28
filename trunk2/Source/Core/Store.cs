@@ -206,6 +206,12 @@ namespace Dataweb.NShape.Advanced {
 
 
 		/// <summary>
+		/// Specifies whether the store can be upgraded to a newer repository Load/Save version.
+		/// </summary>
+		public abstract bool CanModifyVersion { get; }
+
+
+		/// <summary>
 		/// Reads the version of the project from the persistent store.
 		/// </summary>
 		public abstract void ReadVersion(IStoreCache cache);
@@ -284,7 +290,7 @@ namespace Dataweb.NShape.Advanced {
 		/// Loads all shapes of the given diagram into the given store cache.
 		/// </summary>
 		/// <remarks>
-		/// If the diagram's shapes have already been loaded, this method does nothing.
+		/// Must not be called, if the diagram shapes are already loaded.
 		/// </remarks>
 		public abstract void LoadDiagramShapes(IStoreCache cache, Diagram diagram);
 

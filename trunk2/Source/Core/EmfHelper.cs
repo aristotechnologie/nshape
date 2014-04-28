@@ -15,6 +15,7 @@
 using System;
 using System.Drawing.Imaging;
 using System.Runtime.InteropServices;
+using System.IO;
 
 
 namespace Dataweb.NShape.Advanced {
@@ -39,6 +40,12 @@ namespace Dataweb.NShape.Advanced {
 
 		[DllImport("gdi32.dll")]
 		static extern IntPtr CopyEnhMetaFile(IntPtr hemfSrc, string fileName);
+
+		[DllImport("gdi32.dll")]
+		public static extern uint GetEnhMetaFileBits(IntPtr hemfSrc, uint bufferSize, byte[] buffer);
+		
+		[DllImport("gdi32.dll")]
+		public static extern IntPtr SetEnhMetaFileBits(uint bufferSize, byte[] buffer);
 
 		[DllImport("gdi32.dll")]
 		static extern bool DeleteEnhMetaFile(IntPtr hemf);
@@ -106,5 +113,27 @@ namespace Dataweb.NShape.Advanced {
 			}
 			return result;
 		}
+
+
+		/// <summary>
+		/// Copies the given <see cref="T:System.Drawing.Imaging.MetaFile" /> to the specified stream.
+		/// The given <see cref="T:System.Drawing.Imaging.MetaFile" /> is set to an invalid state inside this function.
+		/// </summary>
+		static public bool SaveEnhMetaFile(Stream stream, Metafile metafile) {
+			if (metafile == null) throw new ArgumentNullException("metafile");
+			bool result = false;
+			IntPtr hEmf = metafile.GetHenhmetafile();
+			if (hEmf != IntPtr.Zero) {
+				// Get required buffer size
+				uint bufferSize = GetEnhMetaFileBits(hEmf, 0, null);
+				// Create and fill buffer 
+				byte[] buffer = new byte[bufferSize];
+				uint res = GetEnhMetaFileBits(hEmf, bufferSize, buffer);
+				if (res > 0) 
+					stream.Write(buffer, 0, (int)bufferSize);
+			}
+			return result;
+		}
+	
 	}
 }

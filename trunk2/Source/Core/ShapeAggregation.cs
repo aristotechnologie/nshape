@@ -551,17 +551,29 @@ namespace Dataweb.NShape.Advanced {
 
 
 		private void AddShapePosition(Shape shape) {
-			// get the shape's original center point (for restoring the unrotated position)
+			// Transform the shape to the coordinate system of the rotated aggregation
+			if (aggregationAngle != 0) shape.Rotate(-aggregationAngle, rotationCenter.X, rotationCenter.Y);
+
+			// Get the shape's original center point (for restoring the unrotated position)
 			Point shapeCenter = Point.Empty;
 			shapeCenter.X = shape.X;
 			shapeCenter.Y = shape.Y;
 			shapePositions.Add(shape, shapeCenter);
+
+			// Transform the shape back to the diagram's coordinate system
+			if (aggregationAngle != 0) shape.Rotate(aggregationAngle, rotationCenter.X, rotationCenter.Y);
 		}
 
 
 		private void AddRelativePosition(Shape shape) {
+			// Transform the shape to the coordinate system of the rotated aggregation
+			if (aggregationAngle != 0) shape.Rotate(-aggregationAngle, rotationCenter.X, rotationCenter.Y);
+
 			PointPositions ptPositions = new PointPositions(shape, Owner);
 			relativePointPositions.Add(shape, ptPositions);
+
+			// Transform the shape back to the diagram's coordinate system
+			if (aggregationAngle != 0) shape.Rotate(aggregationAngle, rotationCenter.X, rotationCenter.Y);
 		}
 	
 
@@ -743,7 +755,7 @@ namespace Dataweb.NShape.Advanced {
 		private Shape owner = null;
 		private int suspendCounter = 0;
 		// Fields for rotating shapes
-		private int aggregationAngle = 0;
+		private int aggregationAngle = 0;	// rotation angle in degrees
 		private Point rotationCenter = Point.Empty;
 		
 		#endregion
@@ -760,6 +772,14 @@ namespace Dataweb.NShape.Advanced {
 		/// <ToBeCompleted></ToBeCompleted>
 		public GroupShapeAggregation(Shape owner)
 			: base(owner) {
+			if (owner == null) throw new ArgumentNullException("owner");
+			if (!(owner is IShapeGroup)) throw new ArgumentException("owner");
+		}
+
+
+		/// <ToBeCompleted></ToBeCompleted>
+		public GroupShapeAggregation(Shape owner, int capacity)
+			: base(owner, capacity) {
 			if (owner == null) throw new ArgumentNullException("owner");
 			if (!(owner is IShapeGroup)) throw new ArgumentException("owner");
 		}

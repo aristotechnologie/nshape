@@ -154,6 +154,7 @@ namespace NShapeTest {
 			// -- Reload and check --
 			project.Open();
 			diagram = project.Repository.GetDiagram("All Shapes");
+			project.Repository.GetDiagramShapes(diagram);
 			int c = 0;
 			foreach (Shape s in diagram.Shapes) {
 				Assert.AreEqual(350, s.Y);
@@ -381,8 +382,10 @@ namespace NShapeTest {
 			//
 			// -- Reload and modify --
 			project.Open();
-			foreach (Diagram d in project.Repository.GetDiagrams())
+			foreach (Diagram d in project.Repository.GetDiagrams()) {
+				project.Repository.GetDiagramShapes(d);
 				diagram = d;
+			}
 			group = (ShapeGroup)diagram.Shapes.Bottom;
 			Shape shape = null;
 			foreach (Shape s in group.Children)
@@ -434,6 +437,7 @@ namespace NShapeTest {
 			project.Open();
 			template = project.Repository.GetTemplate("Template1");
 			diagram = project.Repository.GetDiagram("Diagram A");
+			project.Repository.GetDiagramShapes(diagram);
 			Assert.AreEqual(((IPlanarShape)diagram.Shapes.Bottom).FillStyle.BaseColorStyle, ((IPlanarShape)template.Shape).FillStyle.BaseColorStyle);
 			project.Close();
 		}
@@ -750,22 +754,22 @@ namespace NShapeTest {
 						string fileExt = (fileFormat == ImageFileFormat.EmfPlus) ? "Plus.emf" : fileFormat.ToString();
 
 						using (Image img = diagram.CreateImage(fileFormat))
-							GdiHelpers.SaveImageToFile(img, string.Format(filePathFmt, "Whole Diagram", fileExt), fileFormat);
+							GdiHelpers.SaveImage(img, string.Format(filePathFmt, "Whole Diagram", fileExt), fileFormat);
 
 						using (Image img = diagram.CreateImage(fileFormat, shapes))
-							GdiHelpers.SaveImageToFile(img, string.Format(filePathFmt, "Shapes", fileExt), fileFormat);
+							GdiHelpers.SaveImage(img, string.Format(filePathFmt, "Shapes", fileExt), fileFormat);
 
 						using (Image img = diagram.CreateImage(fileFormat, shapes, true))
-							GdiHelpers.SaveImageToFile(img, string.Format(filePathFmt, "Shapes with Background", fileExt), fileFormat);
+							GdiHelpers.SaveImage(img, string.Format(filePathFmt, "Shapes with Background", fileExt), fileFormat);
 						
 						using (Image img = diagram.CreateImage(fileFormat, shapes, 5))
-							GdiHelpers.SaveImageToFile(img, string.Format(filePathFmt, "Shapes with Margin", fileExt), fileFormat);
+							GdiHelpers.SaveImage(img, string.Format(filePathFmt, "Shapes with Margin", fileExt), fileFormat);
 						
 						using (Image img = diagram.CreateImage(fileFormat, shapes, 5, false, Color.AliceBlue))
-							GdiHelpers.SaveImageToFile(img, string.Format(filePathFmt, "Shapes with Background Color", fileExt), fileFormat);
+							GdiHelpers.SaveImage(img, string.Format(filePathFmt, "Shapes with Background Color", fileExt), fileFormat);
 						
 						using (Image img = diagram.CreateImage(fileFormat, shapes, 5, false, Color.AliceBlue, dpi))
-							GdiHelpers.SaveImageToFile(img, string.Format(filePathFmt, string.Format("Shapes with Background Color {0} Dpi", dpi), fileExt), fileFormat);
+							GdiHelpers.SaveImage(img, string.Format(filePathFmt, string.Format("Shapes with Background Color {0} Dpi", dpi), fileExt), fileFormat);
 					} catch (NotImplementedException) {
 						// Do nothing
 					}

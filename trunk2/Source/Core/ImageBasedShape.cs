@@ -56,7 +56,7 @@ namespace Dataweb.NShape.Advanced {
 		#region [Public] Properties
 
 		/// <ToBeCompleted></ToBeCompleted>
-		[Category("Appearance")]
+		[CategoryAppearance()]
 		[Description("The shape's image.")]
 		[RequiredPermission(Permission.Present)]
 		[Editor("Dataweb.NShape.WinFormsUI.NamedImageUITypeEditor, Dataweb.NShape.WinFormsUI", typeof(UITypeEditor))]
@@ -74,7 +74,7 @@ namespace Dataweb.NShape.Advanced {
 
 
 		/// <ToBeCompleted></ToBeCompleted>
-		[Category("Appearance")]
+		[CategoryAppearance()]
 		[Description("Defines the layout of the displayed image.")]
 		[PropertyMappingId(PropertyIdImageLayout)]
 		[RequiredPermission(Permission.Present)]
@@ -89,7 +89,7 @@ namespace Dataweb.NShape.Advanced {
 
 
 		/// <ToBeCompleted></ToBeCompleted>
-		[Category("Appearance")]
+		[CategoryAppearance()]
 		[Description("Displays the image as grayscale image.")]
 		[PropertyMappingId(PropertyIdImageGrayScale)]
 		[RequiredPermission(Permission.Present)]
@@ -104,7 +104,7 @@ namespace Dataweb.NShape.Advanced {
 
 
 		/// <ToBeCompleted></ToBeCompleted>
-		[Category("Appearance")]
+		[CategoryAppearance()]
 		[Description("Gamma correction value for the image.")]
 		[PropertyMappingId(PropertyIdImageGamma)]
 		[RequiredPermission(Permission.Present)]
@@ -120,7 +120,7 @@ namespace Dataweb.NShape.Advanced {
 
 
 		/// <ToBeCompleted></ToBeCompleted>
-		[Category("Appearance")]
+		[CategoryAppearance()]
 		[Description("Transparency of the image in percentage.")]
 		[PropertyMappingId(PropertyIdImageTransparency)]
 		[RequiredPermission(Permission.Present)]
@@ -136,7 +136,7 @@ namespace Dataweb.NShape.Advanced {
 
 
 		/// <ToBeCompleted></ToBeCompleted>
-		[Category("Appearance")]
+		[CategoryAppearance()]
 		[Description("Transparency of the image in percentage.")]
 		[PropertyMappingId(PropertyIdImageTransparentColor)]
 		[RequiredPermission(Permission.Present)]
@@ -502,7 +502,6 @@ namespace Dataweb.NShape.Advanced {
 	/// Abstract base class for shapes that draw themselves using a bitmap or
 	/// meta file.
 	/// </summary>
-	/// <remarks>RequiredPermissions set</remarks>
 	public class ImageBasedShape : ShapeBase, IPlanarShape, ICaptionedShape {
 
 		/// <summary>
@@ -591,7 +590,7 @@ namespace Dataweb.NShape.Advanced {
 
 
 		/// <ToBeCompleted></ToBeCompleted>
-		[Category("Data")]
+		[CategoryData()]
 		[Description("Text displayed inside the shape")]
 		[PropertyMappingId(PropertyIdText)]
 		[RequiredPermission(Permission.Data)]
@@ -603,7 +602,7 @@ namespace Dataweb.NShape.Advanced {
 
 
 		/// <ToBeCompleted></ToBeCompleted>
-		[Category("Appearance")]
+		[CategoryAppearance()]
 		[Description("Determines the style of the shape's text.\nUse the template editor to modify all shapes of a template.\nUse the design editor to modify and create styles.")]
 		[PropertyMappingId(PropertyIdCharacterStyle)]
 		[RequiredPermission(Permission.Present)]
@@ -618,7 +617,7 @@ namespace Dataweb.NShape.Advanced {
 
 
 		/// <ToBeCompleted></ToBeCompleted>
-		[Category("Appearance")]
+		[CategoryAppearance()]
 		[Description("Determines the layout of the shape's text.\nUse the template editor to modify all shapes of a template.\nUse the design editor to modify and create styles.")]
 		[RequiredPermission(Permission.Present)]
 		[PropertyMappingId(PropertyIdParagraphStyle)]
@@ -819,9 +818,11 @@ namespace Dataweb.NShape.Advanced {
 			UpdateDrawCache();
 			if (h >= ch + minH) {
 				graphics.DrawImage(image, x - w / 2, Y - w / 2, w, h - ch);
-				caption.Draw(graphics, CharacterStyle, ParagraphStyle);
-			} else
+				if (caption.IsVisible)
+					caption.Draw(graphics, CharacterStyle, ParagraphStyle);
+			} else {
 				graphics.DrawImage(image, x - w / 2, Y - w / 2, w, h);
+			}
 			base.Draw(graphics);
 		}
 
@@ -847,7 +848,7 @@ namespace Dataweb.NShape.Advanced {
 		#region IPlanarShape Members
 
 		/// <ToBeCompleted></ToBeCompleted>
-		[Category("Layout")]
+		[CategoryLayout()]
 		[Description("Rotation angle of the Shape in tenths of degree.")]
 		[PropertyMappingId(PropertyIdAngle)]
 		[RequiredPermission(Permission.Layout)]
@@ -858,7 +859,7 @@ namespace Dataweb.NShape.Advanced {
 
 
 		/// <ToBeCompleted></ToBeCompleted>
-		[Category("Appearance")]
+		[CategoryAppearance()]
 		[Description("Defines the appearence of the shape's interior.\nUse the template editor to modify all shapes of a template.\nUse the design editor to modify and create styles.")]
 		[PropertyMappingId(PropertyIdFillStyle)]
 		[RequiredPermission(Permission.Present)]
@@ -866,7 +867,6 @@ namespace Dataweb.NShape.Advanced {
 			get { return fillStyle ?? ((IPlanarShape)Template.Shape).FillStyle; }
 			set {
 				fillStyle = (Template != null && value == ((IPlanarShape)Template.Shape).FillStyle) ? null : value;
-				//caption.InvalidatePath();
 				Invalidate();
 			}
 		}
@@ -876,13 +876,13 @@ namespace Dataweb.NShape.Advanced {
 
 		#region ICaptionedShape Members
 
-		/// <ToBeCompleted></ToBeCompleted>
+		/// <override></override>
 		public int CaptionCount {
 			get { return 1; }
 		}
 
 
-		/// <ToBeCompleted></ToBeCompleted>
+		/// <override></override>
 		public bool GetCaptionTextBounds(int index, out Point topLeft, out Point topRight, out Point bottomRight, out Point bottomLeft) {
 			if (index != 0) throw new ArgumentOutOfRangeException("index");
 			Point location = Point.Empty;
@@ -898,7 +898,7 @@ namespace Dataweb.NShape.Advanced {
 		}
 
 
-		/// <ToBeCompleted></ToBeCompleted>
+		/// <override></override>
 		public bool GetCaptionBounds(int index, out Point topLeft, out Point topRight, out Point bottomRight, out Point bottomLeft) {
 			if (index != 0) throw new ArgumentOutOfRangeException("index");
 			Point location = Point.Empty;
@@ -913,7 +913,7 @@ namespace Dataweb.NShape.Advanced {
 		}
 
 
-		/// <ToBeCompleted></ToBeCompleted>
+		/// <override></override>
 		public Rectangle GetCaptionTextBounds(int index) {
 			if (index != 0) throw new ArgumentOutOfRangeException("index");
 			Rectangle captionBounds = Rectangle.Empty;
@@ -925,7 +925,7 @@ namespace Dataweb.NShape.Advanced {
 		}
 
 
-		/// <ToBeCompleted></ToBeCompleted>
+		/// <override></override>
 		public Rectangle GetCaptionBounds(int index) {
 			Rectangle result = Rectangle.Empty;
 			result.X = -w / 2;
@@ -936,47 +936,62 @@ namespace Dataweb.NShape.Advanced {
 		}
 
 
-		/// <ToBeCompleted></ToBeCompleted>
+		/// <override></override>
 		public string GetCaptionText(int index) {
 			return caption.Text;
 		}
 
 
-		/// <ToBeCompleted></ToBeCompleted>
+		/// <override></override>
 		public ICharacterStyle GetCaptionCharacterStyle(int index) {
 			return CharacterStyle;
 		}
 
 
-		/// <ToBeCompleted></ToBeCompleted>
+		/// <override></override>
 		public IParagraphStyle GetCaptionParagraphStyle(int index) {
 			return ParagraphStyle;
 		}
 
 
-		/// <ToBeCompleted></ToBeCompleted>
+		/// <override></override>
 		public void SetCaptionText(int index, string text) {
 			caption.Text = text;
 			this.captionUpdated = false;
 		}
 
 
-		/// <ToBeCompleted></ToBeCompleted>
+		/// <override></override>
 		public void SetCaptionCharacterStyle(int index, ICharacterStyle characterStyle) {
 			CharacterStyle = characterStyle;
 		}
 
 
-		/// <ToBeCompleted></ToBeCompleted>
+		/// <override></override>
 		public void SetCaptionParagraphStyle(int index, IParagraphStyle paragraphStyle) {
 			ParagraphStyle = paragraphStyle;
 		}
 
 
-		/// <ToBeCompleted></ToBeCompleted>
+		/// <override></override>
 		public int FindCaptionFromPoint(int x, int y) {
 			return Geometry.RectangleContainsPoint(this.x - this.w / 2, this.y - this.h / 2 + this.h - this.ch, this.w, this.ch, x, y) ? 0 : -1;
 		}
+
+
+		/// <override></override>
+		public void ShowCaptionText(int index) {
+			caption.IsVisible = true;
+			Invalidate();
+		}
+
+
+		/// <override></override>
+		public void HideCaptionText(int index) {
+			caption.IsVisible = false;
+			Invalidate();
+		}
+
 
 		#endregion
 
@@ -1074,26 +1089,23 @@ namespace Dataweb.NShape.Advanced {
 		/// <override></override>
 		protected override bool MovePointByCore(ControlPointId pointId, int deltaX, int deltaY, ResizeModifiers modifiers) {
 			bool result;
-			if (pointId == ControlPointId.Reference || pointId == 2) result = MoveByCore(deltaX, deltaY);
+			if (pointId == ControlPointId.Reference || pointId == ControlPointIds.MiddleCenterControlPoint) 
+				result = MoveByCore(deltaX, deltaY);
 			else {
 				int oldX = x, oldY = y, oldW = w, oldH = h;
 				int newX, newY, newW, newH;
 				switch (pointId) {
-					case 1:
+					case ControlPointIds.TopLeftControlPoint:
 						newX = x;
 						newY = y;
 						newW = oldW - deltaX;
 						newH = oldH - deltaY;
-						if (newW <= newH) newH = int.MaxValue;
-						else newW = int.MaxValue;
-
-						if (newW < minW) { newW = minW; newH = int.MaxValue; } else if (newH < minH) { newH = minH; newW = int.MaxValue; }
-						if (newW == int.MaxValue) newW = newH * image.Width / image.Height;
-						if (newH == int.MaxValue) newH = newW * image.Height / image.Width + ch;
-
-						result = false;
+						result = (deltaX == deltaY);
+						int dx, dy;
+						if (!Geometry.MoveRectangleTopLeft(w, h, deltaX, deltaY, 1, 0, modifiers | ResizeModifiers.MaintainAspect, out dx, out dy, out newW, out newH))
+							result = false;
 						break;
-					case 8:
+					case ControlPointIds.BottomCenterControlPoint:
 						newH = oldH + deltaY;
 						if (newH < minH) newH = minH;
 						newW = (newH - ch) * image.Width / image.Height;
@@ -1209,7 +1221,7 @@ namespace Dataweb.NShape.Advanced {
 		/// <ToBeCompleted></ToBeCompleted>
 		protected int ch; // Height of the caption
 		/// <ToBeCompleted></ToBeCompleted>
-		protected Caption caption = new Caption("Test");
+		protected Caption caption = new Caption("");
 
 		private ICharacterStyle charStyle;
 		private IParagraphStyle paragraphStyle;
@@ -1221,7 +1233,6 @@ namespace Dataweb.NShape.Advanced {
 	/// <summary>
 	/// Provides a metafile whose color and line color can be customized.
 	/// </summary>
-	/// <remarks>RequiredPermissions set</remarks>
 	public class CustomizableMetaFile : ImageBasedShape {
 
 		/// <override></override>

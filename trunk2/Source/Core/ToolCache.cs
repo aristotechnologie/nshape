@@ -210,8 +210,7 @@ namespace Dataweb.NShape.Advanced {
 			penKey.EndCapStyle = endCapStyle;
 
 			Pen pen = null;
-			penCache.TryGetValue(penKey, out pen);
-			if (pen == null) {
+			if (!penCache.TryGetValue(penKey, out pen)) {
 				// If the corresponding pen was not found, create a new pen based on the given LineStyle
 				pen = new Pen(GetColor(lineStyle.ColorStyle, lineStyle.ColorStyle.ConvertToGray), lineStyle.LineWidth);
 				// "PenAlignment.Inset" does not draw exactly along the outline of the shape and
@@ -243,8 +242,7 @@ namespace Dataweb.NShape.Advanced {
 			if (colorStyle == null) throw new ArgumentNullException("colorStyle");
 			
 			SolidBrush brush = null;
-			solidBrushCache.TryGetValue(colorStyle, out brush);
-			if (brush == null) {
+			if (!solidBrushCache.TryGetValue(colorStyle, out brush)) {
 				brush = new SolidBrush(GetColor(colorStyle, colorStyle.ConvertToGray));
 				// Add created brush to the BrushCache
 				solidBrushCache.Add(colorStyle, brush);
@@ -279,8 +277,7 @@ namespace Dataweb.NShape.Advanced {
 			brushKey.Image = null;
 
 			Brush brush = null;
-			brushCache.TryGetValue(brushKey, out brush);
-			if (brush == null) {
+			if (!brushCache.TryGetValue(brushKey, out brush)) {
 				switch (fillStyle.FillMode) {
 					case FillMode.Solid:
 						brush = new SolidBrush(GetColor(fillStyle.BaseColorStyle, fillStyle.ConvertToGrayScale));
@@ -299,15 +296,13 @@ namespace Dataweb.NShape.Advanced {
 						if (NamedImage.IsNullOrEmpty(fillStyle.Image))
 							brush = new SolidBrush(Color.Transparent);
 						else {
-							// First, get ImageAttributes
+							// Get ImageAttributes
 							ImageAttributes imgAttribs = null;
-							imageAttribsCache.TryGetValue(brushKey, out imgAttribs);
-							if (imgAttribs == null) {
+							if (!imageAttribsCache.TryGetValue(brushKey, out imgAttribs)) {
 								imgAttribs = GdiHelpers.GetImageAttributes(fillStyle.ImageLayout, fillStyle.ImageGammaCorrection,
 									fillStyle.ImageTransparency, fillStyle.ConvertToGrayScale);
 								imageAttribsCache.Add(brushKey, imgAttribs);
 							}
-
 							// Create Brush
 							rectBuffer.X = 0;
 							rectBuffer.Y = 0;
@@ -320,9 +315,7 @@ namespace Dataweb.NShape.Advanced {
 				}
 
 				// Add created brush to the BrushCache
-				if (brushCache.ContainsKey(brushKey))
-					brushCache[brushKey] = brush;
-				else brushCache.Add(brushKey, brush);
+				brushCache.Add(brushKey, brush);
 			}
 			return brush;
 		}
@@ -337,8 +330,7 @@ namespace Dataweb.NShape.Advanced {
 			if (characterStyle == null) throw new ArgumentNullException("characterStyle");
 
 			Font font = null;
-			fontCache.TryGetValue(characterStyle, out font);
-			if (font == null) {
+			if (!fontCache.TryGetValue(characterStyle, out font)) {
 				FontFamily fontFamily = characterStyle.FontFamily;
 				FontStyle style = characterStyle.Style;
 				// Check if the desired FontStyle is available for this particular FontFamily
@@ -382,8 +374,7 @@ namespace Dataweb.NShape.Advanced {
 			if (paragraphStyle == null) throw new ArgumentNullException("paragraphStyle");
 			
 			StringFormat stringFormat = null;
-			stringFormatCache.TryGetValue(paragraphStyle, out stringFormat);
-			if (stringFormat == null) {
+			if (!stringFormatCache.TryGetValue(paragraphStyle, out stringFormat)) {
 				stringFormat = new StringFormat();
 				switch (paragraphStyle.Alignment) {
 					case ContentAlignment.BottomLeft:
@@ -569,6 +560,7 @@ namespace Dataweb.NShape.Advanced {
 		/// </summary>
 		private static void NotifyFillStyleChanged(IFillStyle fillStyle) {
 			Debug.Assert(fillStyle != null);
+
 			BrushKey brushKey;
 			brushKey.FillStyle = fillStyle;
 			brushKey.Image = null;
@@ -643,12 +635,10 @@ namespace Dataweb.NShape.Advanced {
 			brushKey.Image = image;
 
 			Brush brush = null;
-			brushCache.TryGetValue(brushKey, out brush);
-			if (!(brush is TextureBrush)) {
+			if (!brushCache.TryGetValue(brushKey, out brush)) {
 				// First, get ImageAttributes
 				ImageAttributes imgAttribs = null;
-				imageAttribsCache.TryGetValue(brushKey, out imgAttribs);
-				if (imgAttribs == null) {
+				if (!imageAttribsCache.TryGetValue(brushKey, out imgAttribs)) {
 					imgAttribs = GdiHelpers.GetImageAttributes(imageLayout, gamma, transparency, grayScale);
 					imageAttribsCache.Add(brushKey, imgAttribs);
 				}
@@ -661,9 +651,7 @@ namespace Dataweb.NShape.Advanced {
 				brush = new TextureBrush(image, rectBuffer, imgAttribs);
 
 				// Add created brush to the BrushCache
-				if (brushCache.ContainsKey(brushKey))
-					brushCache[brushKey] = brush;
-				else brushCache.Add(brushKey, brush);
+				brushCache.Add(brushKey, brush);
 			}
 			return (TextureBrush)brush;
 		}
@@ -695,12 +683,13 @@ namespace Dataweb.NShape.Advanced {
 			CapKey capKey;
 			capKey.CapStyle = capStyle;
 			capKey.LineStyle = lineStyle;
-			// Get GraphicsPath for the CustomLineCap
-			GraphicsPath capPath = GetCapPath(capStyle, lineStyle);
 			// Find/create CustomLineCap
 			CustomLineCap customCap = null;
-			capCache.TryGetValue(capKey, out customCap);
-			if (customCap == null) {
+			if (!capCache.TryGetValue(capKey, out customCap)) {
+				// Get GraphicsPath for the CustomLineCap
+				GraphicsPath capPath = GetCapPath(capStyle, lineStyle);
+				
+				// Create custom cap using the cap path
 				customCap = new CustomLineCap(null, capPath);
 				customCap.StrokeJoin = lineStyle.LineJoin;
 				// ToDo: Use WidthScale property and remove the manual scaling
@@ -711,30 +700,32 @@ namespace Dataweb.NShape.Advanced {
 				if (capStyle.CapShape == CapShape.OpenArrow)
 					customCap.BaseInset = rectFBuffer.Height / 4f;
 				else customCap.BaseInset = (float)(rectFBuffer.Height - (rectFBuffer.Height + rectFBuffer.Y));
+				
+				// Add cap to the cache
 				capCache.Add(capKey, customCap);
 			}
 			return customCap;
 		}
 
 
-		private static GraphicsPath GetCapPath(ICapStyle capStyle, ILineStyle lineStyle) {
+		internal static GraphicsPath GetCapPath(ICapStyle capStyle, ILineStyle lineStyle) {
 			if (capStyle == null) throw new ArgumentNullException("capStyle");
 			if (lineStyle == null) throw new ArgumentNullException("lineStyle");
 
-			// build CapKey
+			// Build CapKey
 			CapKey capKey;
 			capKey.CapStyle = capStyle;
 			capKey.LineStyle = lineStyle;
-			// find/create CapPath
+			// Find/create CapPath
 			GraphicsPath capPath;
-			capPathCache.TryGetValue(capKey, out capPath);
-			if (capPath == null) {
+			if (!capPathCache.TryGetValue(capKey, out capPath)) {
 				CalcCapShape(ref capPath, capStyle.CapShape, capStyle.CapSize);
 				// Scale GraphicsPath down for correcting the automatic scaling that is applied to
 				// LineCaps by GDI+ when altering the LineWidth of the pen
 				matrix.Reset();
 				matrix.Scale(1f / lineStyle.LineWidth, 1f / lineStyle.LineWidth);
 				capPath.Transform(matrix);
+
 				capPathCache.Add(capKey, capPath);
 			}
 			return capPath;
@@ -974,7 +965,7 @@ namespace Dataweb.NShape.Advanced {
 					//hashCode ^= FillStyle.ImageTransparency.GetHashCode();
 					//hashCode ^= FillStyle.Name.GetHashCode();
 				}
-				if (Image != null) 
+				if (Image != null)
 					hashCode ^= Image.GetHashCode();
 				return hashCode;
 			}

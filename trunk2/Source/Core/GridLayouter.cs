@@ -26,9 +26,10 @@ namespace Dataweb.NShape.Layouters {
 	/// <summary>
 	/// Positions all shapes on the nodes of a rectangular grid.
 	/// </summary>
-	/// <remarks>Grid layouter looks for the most natural grid distances for the given
-	/// shapes. These distances must be small enough to provide a different node for
-	/// each shape and large enough to look tidy.</remarks>
+	/// <remarks>
+	/// Grid layouter looks for the most natural grid distances for the givenshapes. 
+	/// These distances must be small enough to provide a different node for each shape and large enough to look tidy.
+	/// </remarks>
 	public class GridLayouter : LayouterBase, ILayouter {
 
 		/// <summary>

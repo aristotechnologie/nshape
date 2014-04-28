@@ -112,12 +112,12 @@
     <value>2.0</value>
   </resheader>
   <resheader name="reader">
-    <value>System.Resources.ResXResourceReader, System.Windows.Forms, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+    <value>System.Resources.ResXResourceReader, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
   </resheader>
   <resheader name="writer">
-    <value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+    <value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
   </resheader>
-  <assembly alias="System.Windows.Forms" name="System.Windows.Forms, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089" />
+  <assembly alias="System.Windows.Forms" name="System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089" />
   <data name="Actor" type="System.Resources.ResXFileRef, System.Windows.Forms">
     <value>..\Resources\Actor.emf;System.Byte[], mscorlib, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
   </data>
@@ -135,5 +135,23 @@
   </data>
   <data name="Tower" type="System.Resources.ResXFileRef, System.Windows.Forms">
     <value>..\Resources\Tower.emf;System.Byte[], mscorlib, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </data>
+  <data name="CaptionTxt__AppendColumn" xml:space="preserve">
+    <value>Append Column</value>
+  </data>
+  <data name="MessageTxt_NoCaptionClicked" xml:space="preserve">
+    <value>No caption clicked.</value>
+  </data>
+  <data name="MessageFmt_InsertNewColumnBeforeColumn0" xml:space="preserve">
+    <value>Insert new column before column '{0}'</value>
+  </data>
+  <data name="CaptionTxt_InsertColumn" xml:space="preserve">
+    <value>Insert Column</value>
+  </data>
+  <data name="MessageFmt_RemoveColumn0" xml:space="preserve">
+    <value>Remove column '{0}'</value>
+  </data>
+  <data name="CaptionTxt_RemoveColumn" xml:space="preserve">
+    <value>Remove Column</value>
   </data>
 </root>

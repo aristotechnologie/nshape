@@ -29,7 +29,7 @@ namespace Dataweb.NShape.Layouters {
 	/// </summary>
 	/// <remarks>
 	/// All lines that have non-identical caps count as arrows from their first to their last vertex.
-	/// Lines with idential caps count as arrows in both directions. Lines without caps do not count at all.
+	/// Lines with identical caps count as arrows in both directions. Lines without caps do not count at all.
 	/// We only regard point-to-shape connections. Point-to-point connections would required rotating 
 	/// the shapes what we should/want/must not do in a layouter.
 	///
@@ -53,6 +53,7 @@ namespace Dataweb.NShape.Layouters {
 			RightToLeft
 		};
 
+
 		/// <ToBeCompleted></ToBeCompleted>
 		public FlowLayouter(Project project)
 			: base(project) {
@@ -73,7 +74,7 @@ namespace Dataweb.NShape.Layouters {
 			get { return layerDistance; }
 			set {
 				if (value <= 0) throw new ArgumentException("Layer distance must be greater than zero");
-				layerDistance = value; 
+				layerDistance = value;
 			}
 		}
 
@@ -141,6 +142,8 @@ namespace Dataweb.NShape.Layouters {
 			return result;
 		}
 
+
+		#region [Private] Methods
 
 		// Calculates the fields firstLayerPos, layerDistance, layerCount and initially assigns shapes 
 		// to layers.
@@ -225,7 +228,7 @@ namespace Dataweb.NShape.Layouters {
 		/// </summary>
 		private bool PerformRandomMove() {
 			bool result;
-			if (disturbanceLevel > 0) { 
+			if (disturbanceLevel > 0) {
 				// Determine the number of layers (+1..+maximumLayerDelta)
 				int layerDelta = random.Next(disturbanceLevel) + 1;
 				// Determine the sign of the move
@@ -392,7 +395,7 @@ namespace Dataweb.NShape.Layouters {
 				foreach (Shape s in GetConnectedShapes(shapeList[si], Orientation.None)) {
 					if (((LayerInfo)s.InternalTag).layer != currentLayer + layerDelta) continue;
 					// Make sure to perform integer division in the positive numbers, otherwise it is rounded towards 0.
-					m += (GetFlowX(s) - firstRowPos)/rowDistance - (GetFlowX(shapeList[si]) - firstRowPos)/rowDistance;
+					m += (GetFlowX(s) - firstRowPos) / rowDistance - (GetFlowX(shapeList[si]) - firstRowPos) / rowDistance;
 					++n;
 				}
 				// Move the shape if there is a free row.
@@ -482,17 +485,6 @@ namespace Dataweb.NShape.Layouters {
 
 
 		/// <summary>
-		/// Used to attach layer information to a shape (via InternalTag)
-		/// </summary>
-		private class LayerInfo {
-			// Index of the layer (starting at 0)
-			public int layer;
-			// Current value. When sorting Bary center.
-			public float value;
-		}
-
-
-		/// <summary>
 		/// Returns all shapes that have an arrow from or to this shape.
 		/// </summary>
 		private IEnumerable<Shape> GetConnectedShapes(Shape shape, Orientation orientation) {
@@ -557,38 +549,6 @@ namespace Dataweb.NShape.Layouters {
 		}
 
 
-		private class ShapeByXComparer : IComparer<Shape> {
-
-			public ShapeByXComparer(FlowLayouter flowLayouter) {
-				this.flowLayouter = flowLayouter;
-			}
-
-
-			public int Compare(Shape s1, Shape s2) {
-				int x1 = flowLayouter.GetFlowX(s1);
-				int x2 = flowLayouter.GetFlowX(s2);
-				return x1 > x2 ? +1 : x2 > x1 ? -1 : 0;
-			}
-
-
-			private FlowLayouter flowLayouter;
-		}
-
-
-		private class ShapeByValueComparer : IComparer<Shape> {
-
-			public int Compare(Shape s1, Shape s2) {
-				float v1 = ((LayerInfo)s1.InternalTag).value;
-				float v2 = ((LayerInfo)s2.InternalTag).value;
-				return v1 > v2 ? +1 : v2 > v1 ? -1 : 0;
-			}
-
-		}
-
-
-		private enum Phase { OptimizeLevels, Ordering, Positioning };
-
-
 		/// <summary>
 		/// Calculates the optimizing value for the given shape assumed to be moved by layerDelta layers downwards.
 		/// </summary>
@@ -640,9 +600,60 @@ namespace Dataweb.NShape.Layouters {
 			return result;
 		}
 
+		#endregion
+
+
+		#region [Private] Types
+
+		private enum Phase { OptimizeLevels, Ordering, Positioning };
+
 
 		private enum Orientation { None, Incoming, Outgoing, Both };
 
+
+		/// <summary>
+		/// Used to attach layer information to a shape (via InternalTag)
+		/// </summary>
+		private class LayerInfo {
+			// Index of the layer (starting at 0)
+			public int layer;
+			// Current value. When sorting Bary center.
+			public float value;
+		}
+
+
+		private class ShapeByXComparer : IComparer<Shape> {
+
+			public ShapeByXComparer(FlowLayouter flowLayouter) {
+				this.flowLayouter = flowLayouter;
+			}
+
+
+			public int Compare(Shape s1, Shape s2) {
+				int x1 = flowLayouter.GetFlowX(s1);
+				int x2 = flowLayouter.GetFlowX(s2);
+				return x1 > x2 ? +1 : x2 > x1 ? -1 : 0;
+			}
+
+
+			private FlowLayouter flowLayouter;
+		}
+
+
+		private class ShapeByValueComparer : IComparer<Shape> {
+
+			public int Compare(Shape s1, Shape s2) {
+				float v1 = ((LayerInfo)s1.InternalTag).value;
+				float v2 = ((LayerInfo)s2.InternalTag).value;
+				return v1 > v2 ? +1 : v2 > v1 ? -1 : 0;
+			}
+
+		}
+
+		#endregion
+
+
+		#region [Private] Fields
 		private ShapeByXComparer shapeByXComparer;
 		private ShapeByValueComparer shapeByValueComparer;
 
@@ -689,6 +700,9 @@ namespace Dataweb.NShape.Layouters {
 
 		List<List<Shape>> layers = new List<List<Shape>>();
 		List<Shape> layerShapes = new List<Shape>();
+
+		#endregion
+
 	}
 
 }

@@ -19,12 +19,12 @@ using System.Drawing;
 
 using Dataweb.NShape.Commands;
 
+
 namespace Dataweb.NShape.Advanced {
 
 	/// <summary>
 	/// Abstract base class for circular arcs.
 	/// </summary>
-	/// <remarks>RequiredPermissions set</remarks>
 	public abstract class CircularArcBase : LineShapeBase {
 
 		#region Shape Members
@@ -250,15 +250,15 @@ namespace Dataweb.NShape.Advanced {
 			string description;
 
 			isFeasible = (clickedPointId == ControlPointId.None || clickedPointId == ControlPointId.Reference) && ContainsPoint(mouseX, mouseY) && VertexCount < 3;
-			description = "You have to click on the line in order to insert new points";
-			yield return new CommandMenuItemDef("Insert Point", null, description, isFeasible,
+			description = Properties.Resources.MessageTxt_YouHaveToClickOnTheLineInOrderToInsertNewPoints;
+			yield return new CommandMenuItemDef(Properties.Resources.CaptionTxt_InsertConnectionPoint, null, description, isFeasible,
 				new AddVertexCommand(this, mouseX, mouseY));
 
 			isFeasible = (clickedPointId != ControlPointId.None && !HasControlPointCapability(clickedPointId, ControlPointCapabilities.Glue) && VertexCount > 2);
 			if (clickedPointId == ControlPointId.None || clickedPointId == ControlPointId.Reference)
-				description = "No control point was clicked";
-			else description = "Glue control points may not be removed.";
-			yield return new CommandMenuItemDef("Remove Point", null, description, isFeasible,
+				description = Properties.Resources.MessageTxt_NoControlPointWasClicked;
+			else description = Properties.Resources.MessageTxt_GlueControlPointsMayNotBeRemoved;
+			yield return new CommandMenuItemDef(Properties.Resources.CaptionTxt_RemovePoint, null, description, isFeasible,
 				new RemoveVertexCommand(this, clickedPointId));
 		}
 
@@ -467,14 +467,37 @@ namespace Dataweb.NShape.Advanced {
 			if (graphics == null) throw new ArgumentNullException("graphics");
 			UpdateDrawCache();
 			if (VertexCount > 1) {
-				// Draw caps interior
-				DrawStartCapBackground(graphics, shapePoints[0].X, shapePoints[0].Y);
-				int endPtIdx = shapePoints.Length - 1;
-				DrawEndCapBackground(graphics, shapePoints[endPtIdx].X, shapePoints[endPtIdx].Y);
-
-				// Draw line
+				// GDI+ behaviour:
+				// If the two end caps of a line intersect within the range of the insets and the whole 
+				// line is covered by caps, GDI+ seems to have trouble finding the intersection point 
+				// and throws an out of memory exception.
+				// Workaround:
+				// We detect that condition and move the end points of the line farther away from each other such that 
+				// the caps do not intersect anymore.
+				int lastIdx = shapePoints.Length - 1;
+				Point startPoint = shapePoints[0];
+				Point endPoint = shapePoints[lastIdx];
 				Pen pen = ToolCache.GetPen(LineStyle, StartCapStyleInternal, EndCapStyleInternal);
-				DrawOutline(graphics, pen);
+				try {
+					Point safeStartPoint, safeEndPoint;
+					bool hasInvalidCapIntersection = ShapeUtils.LineHasInvalidCapIntersection(shapePoints, pen, out safeStartPoint, out safeEndPoint);
+					if (hasInvalidCapIntersection) {
+						shapePoints[0] = safeStartPoint;
+						shapePoints[lastIdx] = safeEndPoint;
+						RecalculateArc(safeStartPoint, RadiusPoint, safeEndPoint);
+					}
+					// Draw interior of line caps
+					DrawStartCapBackground(graphics, safeStartPoint.X, safeStartPoint.Y);
+					DrawEndCapBackground(graphics, safeEndPoint.X, safeEndPoint.Y);
+					// Draw line
+					DrawOutline(graphics, pen);
+
+					if (hasInvalidCapIntersection) 
+						arcIsInvalid = false;
+				} finally {
+					shapePoints[0] = startPoint;
+					shapePoints[lastIdx] = endPoint;
+				}
 
 #if DEBUG_DIAGNOSTICS
 
@@ -734,29 +757,17 @@ namespace Dataweb.NShape.Advanced {
 		/// <override></override>
 		public override void DrawOutline(Graphics graphics, Pen pen) {
 			if (IsLine) {
-				// Workaround for a very strange problem:
-				// If a 1-segment line with custom line caps is drawn and the line has exactly the same 
-				// length as the sum of both cap's BaseInset, an OutOfMemoryException is thrown sometimes 
-				// (not always). The exception is thrown in DrawLines and all efforts to trace down the 
-				// cause of this issue came to nothing.
-				if (IsLine && IsShapedLineCap(StartCapStyleInternal) && IsShapedLineCap(EndCapStyleInternal)
-					&& (pen.Width * pen.CustomStartCap.BaseInset + pen.Width * pen.CustomEndCap.BaseInset) == Geometry.DistancePointPoint(StartPoint, EndPoint)) {
-					// Draw line a little bit longer in order to avoid the issue described above
-					const float delta = 0.001f;
-					PointF p1 = StartPoint;
-					PointF p2 = EndPoint;
-					if (p1.X == p2.X) p2.Y += delta;
-					else p2.X += delta;
-					graphics.DrawLine(pen, p1, p2);
-				} else {
-					// Draw line
-					graphics.DrawLine(pen, StartPoint, EndPoint);
-				}
+				ShapeUtils.DrawLinesSafe(graphics, pen, shapePoints);
 			} else {
 				Debug.Assert(Geometry.IsValid(arcBounds));
 				Debug.Assert(!float.IsNaN(StartAngle));
 				Debug.Assert(!float.IsNaN(SweepAngle));
-				graphics.DrawArc(pen, arcBounds, StartAngle, SweepAngle);
+				try {
+					graphics.DrawArc(pen, arcBounds, StartAngle, SweepAngle);
+				} catch (OutOfMemoryException) {
+					Pen penWithoutCaps = ToolCache.GetPen(LineStyle, null, null);
+					graphics.DrawArc(pen, arcBounds, StartAngle, SweepAngle);
+				}
 			}
 			base.DrawOutline(graphics, pen);
 		}
@@ -1209,10 +1220,12 @@ namespace Dataweb.NShape.Advanced {
 
 
 		private void RecalculateArc() {
+			RecalculateArc(StartPoint, RadiusPoint, EndPoint);
+		}
+
+
+		private void RecalculateArc(Point startPt, Point radiusPt, Point endPt) {
 			if (!IsLine) {
-				Point startPt = StartPoint;
-				Point radiusPt = RadiusPoint;
-				Point endPt = EndPoint;
 				Geometry.CalcCircumCircle(startPt.X, startPt.Y, radiusPt.X, radiusPt.Y, endPt.X, endPt.Y, out center, out radius);
 				if (Geometry.IsValid(center)) {
 					// Calculate center point and radius

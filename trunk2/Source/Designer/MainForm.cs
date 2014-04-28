@@ -42,7 +42,7 @@ namespace Dataweb.NShape.Designer {
 			Icon = Icon.ExtractAssociatedIcon(Application.ExecutablePath);
 			runtimeModeComboBox.SelectedIndex = 0;
 			Visible = false;
-			
+
 			// Set texts for status bar tool tips
 			SetToolTipTexts();
 
@@ -50,6 +50,16 @@ namespace Dataweb.NShape.Designer {
 			historyTrackBar.Visible = false;
 			toolStripContainer.TopToolStripPanel.Controls.Remove(debugToolStrip);
 #endif
+			// Find out the latest repository version
+			maxRepositoryVersion = 0;
+			try {
+				using (Project p = new Project()) {
+					p.Name = "Test";
+					p.Create();
+					maxRepositoryVersion = p.Repository.Version;
+					p.Close();
+				}
+			} catch (Exception) { }
 		}
 
 
@@ -178,8 +188,10 @@ namespace Dataweb.NShape.Designer {
 		public Display CurrentDisplay {
 			get { return currentDisplay; }
 			set {
-				if (currentDisplay != null)
+				if (currentDisplay != null) {
 					UnregisterDisplayEvents(currentDisplay);
+					((IDiagramPresenter)currentDisplay).CloseCaptionEditor(true);
+				}
 				currentDisplay = value;
 				if (currentDisplay != null) {
 					RegisterDisplayEvents(currentDisplay);
@@ -597,7 +609,6 @@ namespace Dataweb.NShape.Designer {
 		//}
 
 
-
 		private void ReplaceStore(string projectName, Store store) {
 			UnregisterRepositoryEvents();
 			project.Name = projectName;
@@ -702,6 +713,12 @@ namespace Dataweb.NShape.Designer {
 			// Adjust menu items
 			saveMenuItem.Enabled = true;
 			saveAsMenuItem.Enabled = true;
+			upgradeVersionMenuItem.Enabled = false;
+			if (store is XmlStore || store == null) {
+				useEmbeddedImagesToolStripMenuItem.Enabled = true;
+				if (store != null)
+					useEmbeddedImagesToolStripMenuItem.Checked = (((XmlStore)store).ImageLocation == XmlStore.ImageFileLocation.Embedded);
+			} else useEmbeddedImagesToolStripMenuItem.Enabled = false;
 		}
 
 
@@ -729,6 +746,7 @@ namespace Dataweb.NShape.Designer {
 				ReplaceStore(projectName, repository);
 				project.Open();
 				DisplayDiagrams();
+
 				projectSaved = true;
 				// Move project on top of the recent projects list 
 				RepositoryInfo repositoryInfo = GetReposistoryInfo(project);
@@ -750,13 +768,106 @@ namespace Dataweb.NShape.Designer {
 		}
 
 
-		// Returns false, if the save should be retried with another project name.
 		private bool SaveProject() {
+			bool result = false;
+			if (!projectSaved || !project.Repository.Exists())
+				result = SaveProjectAs();
+			else result = DoSaveProject();
+			return result;
+		}
+		
+
+		private bool SaveProjectAs() {
+			bool result = false;
+			CachedRepository cachedRepository = (CachedRepository)project.Repository;
+			bool isNewstore = false;
+			
+			// If there is no store, create an XmlStore
+			if (cachedRepository.Store == null) {
+				// Get default storage location
+				if (!Directory.Exists(xmlStoreDirectory)) {
+					StringBuilder path = new StringBuilder(512);
+					const int COMMON_DOCUMENTS = 0x002e;
+					if (SHGetSpecialFolderPath(IntPtr.Zero, path, COMMON_DOCUMENTS, 0) != 0)
+						xmlStoreDirectory = Path.Combine(Path.Combine(path.ToString(), "NShape"), "Demo Projects");
+					else xmlStoreDirectory = Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments);
+				}
+
+				XmlStore xmlStore = new XmlStore() {
+					DirectoryName = xmlStoreDirectory,
+					FileExtension = ProjectFileExtension,
+					LazyLoading = true
+				};
+				ReplaceStore(cachedRepository.ProjectName, xmlStore);
+				isNewstore = true;
+			}
+
+			// Save store as...
+			if (cachedRepository.Store is XmlStore) {
+				XmlStore xmlStore = (XmlStore)cachedRepository.Store;
+
+				// Select a file name
+				saveFileDialog.CreatePrompt = false;		// Do not ask whether to create the file
+				saveFileDialog.CheckFileExists = false;		// Do not check whether the file does NOT exist
+				saveFileDialog.CheckPathExists = true;		// Ask whether to overwrite existing file
+				saveFileDialog.Filter = FileFilterXmlRepository;
+				if (Directory.Exists(xmlStore.DirectoryName))
+					saveFileDialog.InitialDirectory = xmlStore.DirectoryName;
+				else
+					saveFileDialog.InitialDirectory = Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments);
+				saveFileDialog.FileName = Path.GetFileName(xmlStore.ProjectFilePath);
+
+				// Try to save repository to file...
+				if (saveFileDialog.ShowDialog() == DialogResult.OK) {
+					if (xmlStore.ProjectFilePath != saveFileDialog.FileName) {
+						project.Name = Path.GetFileNameWithoutExtension(saveFileDialog.FileName);
+						xmlStore.DirectoryName = Path.GetDirectoryName(saveFileDialog.FileName);
+						Text = string.Format("{0} - {1}", AppTitle, project.Name);
+					}
+					// Delete file if it exists, because the user was prompted whether to overwrite it before (SaveFileDialog.CheckPathExists).
+					if (project.Repository.Exists()) 
+						project.Repository.Erase();
+					// If the XmlStore was freshly created, call create in order to create the store media and (internally) open the store
+					if (isNewstore) 
+						xmlStore.Create(cachedRepository);
+					xmlStore.ImageLocation = XmlImageFileLocation;
+
+					saveMenuItem.Enabled = true;
+					result = DoSaveProject();
+				}
+			} else if (cachedRepository.Store is AdoNetStore) {
+				// Save repository to database because the database and the project name are 
+				// selected before creating the project when using AdoNet stores
+				saveMenuItem.Enabled = true;
+				result = DoSaveProject();
+			} else {
+				if (cachedRepository.Store == null)
+					MessageBox.Show(this, "There is no store component attached to the repository.", "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+				else {
+					string msg = string.Format("Unsupported store type: '{0}'.", cachedRepository.Store.GetType().Name);
+					MessageBox.Show(this, msg, "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+				}
+			} 
+			return result;
+		}
+
+
+		private bool DoSaveProject() {
 			bool result = false;
 			this.Cursor = Cursors.WaitCursor;
 			Application.DoEvents();
 			try {
-				// Save changes to xml file
+				if (cachedRepository.Store is XmlStore) {
+					// Ensure that all diagrams are loaded completely for XmlStores with LazyLoading enabled
+					foreach (Diagram d in project.Repository.GetDiagrams())
+						project.Repository.GetDiagramShapes(d);
+				}
+
+				// Close open caption editor before saving
+				if (CurrentDisplay != null)
+					((IDiagramPresenter)CurrentDisplay).CloseCaptionEditor(true);
+
+				// Save changes to file / database
 				project.Repository.SaveChanges();
 				projectSaved = true;
 
@@ -777,53 +888,6 @@ namespace Dataweb.NShape.Designer {
 		}
 
 
-		// Returns false, if the save should be retried with another project name.
-		private bool SaveProjectAs() {
-			bool result = false;
-			if (((CachedRepository)project.Repository).Store is XmlStore) {
-				XmlStore xmlStore = (XmlStore)((CachedRepository)project.Repository).Store;
-
-				// Select a file name
-				saveFileDialog.CreatePrompt = false;		// Do not ask whether to create the file
-				saveFileDialog.CheckFileExists = false;		// Do not check whether the file does NOT exist
-				saveFileDialog.CheckPathExists = true;		// Ask whether to overwrite existing file
-				saveFileDialog.Filter = FileFilterXmlRepository;
-				if (Directory.Exists(xmlStore.DirectoryName))
-					saveFileDialog.InitialDirectory = xmlStore.DirectoryName;
-				else
-					saveFileDialog.InitialDirectory = Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments);
-				saveFileDialog.FileName = Path.GetFileName(xmlStore.ProjectFilePath);
-
-				// Try to save repository to file...
-				if (saveFileDialog.ShowDialog() == DialogResult.OK) {
-					if (xmlStore.ProjectFilePath != saveFileDialog.FileName) {
-						xmlStore.DirectoryName = Path.GetDirectoryName(saveFileDialog.FileName);
-						project.Name = Path.GetFileNameWithoutExtension(saveFileDialog.FileName);
-						Text = string.Format("{0} - {1}", AppTitle, project.Name);
-					}
-					// Delete file if it exists, because the user was prompted whether to overwrite it before (SaveFileDialog.CheckPathExists).
-					if (project.Repository.Exists()) project.Repository.Erase();
-
-					saveMenuItem.Enabled = true;
-					result = SaveProject();
-				}
-			} else if (((CachedRepository)project.Repository).Store is AdoNetStore) {
-				// Save repository to database because the database and the project name are 
-				// selected before creating the project when using AdoNet stores
-				saveMenuItem.Enabled = true;
-				result = SaveProject();
-			} else {
-				if (((CachedRepository)project.Repository).Store == null)
-					MessageBox.Show(this, "There is no store component attached to the repository.", "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
-				else {
-					string msg = string.Format("Unsupported store type: '{0}'.", ((CachedRepository)project.Repository).Store.GetType().Name);
-					MessageBox.Show(this, msg, "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
-				}
-			} 
-			return result;
-		}
-
-
 		private bool CloseProject() {
 			bool result = true;
 			// We check not only the Repository's IsModified property but also the projectIsModified field
@@ -835,7 +899,7 @@ namespace Dataweb.NShape.Designer {
 				switch (dlgResult) {
 					case DialogResult.Yes:
 						if (project.Repository.Exists())
-							SaveProject();
+							DoSaveProject();
 						else SaveProjectAs();
 						break;
 					case DialogResult.No:
@@ -852,21 +916,73 @@ namespace Dataweb.NShape.Designer {
 				projectSaved = false;
 				// Clear all displays and diagramControllers
 				for (int i = displayTabControl.TabPages.Count - 1; i >= 0; --i) {
-					TabPage tabPage = displayTabControl.TabPages[i];
-					if (tabPage.Controls.Count > 0) {
-						Display display = (Display)tabPage.Controls[0];
-						if (display != null) {
-							UnregisterDisplayEvents(display);
-							display.Clear();
-							display.Dispose();
-							display = null;
-						}
-					}
+					DisplayTabPage displayTabPage = displayTabControl.TabPages[i] as DisplayTabPage;
 					displayTabControl.TabPages.RemoveAt(i);
+					if (displayTabPage != null) {
+						UnregisterDisplayEvents(displayTabPage.Display);
+						displayTabPage.Dispose();
+					}
 				}
 			}
 
 			return result;
+		}
+
+
+		private XmlStore.ImageFileLocation XmlImageFileLocation {
+			get {
+				return useEmbeddedImagesToolStripMenuItem.Checked ? XmlStore.ImageFileLocation.Embedded : XmlStore.ImageFileLocation.Directory;
+			}
+		}
+
+
+		private void ImportRepositoryFromClipboard() {
+			try {
+				const StringComparison comparison = StringComparison.InvariantCultureIgnoreCase;
+				string xmlString = Clipboard.GetText();
+				// We insist on UTF-8 encoding because of the conversion into a byte array which must use a defined encoding
+				if (!xmlString.StartsWith("<?xml", comparison) || xmlString.IndexOf("encoding=\"utf-8\"?>", comparison) < 0)
+					MessageBox.Show(this, "Clipboard does not contain valid UTF-8 encoded XML text.", "Invalid Data", MessageBoxButtons.OK, MessageBoxIcon.Error);
+				else if (xmlString.IndexOf("<dataweb_nshape version=", comparison) < 0)
+					MessageBox.Show(this, "Clipboard does not contain valid XML repository data.", "Invalid Data", MessageBoxButtons.OK, MessageBoxIcon.Error);
+				else {
+					if (project.IsOpen) {
+						DialogResult res = MessageBox.Show("Importing XML from Clipboard requires the project to be closed. Do you want to close the current project now?",
+							"Close Project?", MessageBoxButtons.YesNo, MessageBoxIcon.Question);
+						if (res == DialogResult.No)
+							return;
+						if (!CloseProject())
+							return;
+					}
+
+					// Delete current repository
+					CachedRepository currRepository = (CachedRepository)project.Repository;
+					project.Repository = null;
+					project.Name = NewProjectName;
+
+					using (MemoryStream memStream = new MemoryStream(Encoding.UTF8.GetBytes(xmlString)))
+						project.ReadXml(memStream);
+					// Assign the new Repository to the main form's cachedRepository component
+					cachedRepository = (CachedRepository)project.Repository;
+					
+					// Display the result
+					DisplayDiagrams();
+				}
+			} catch (Exception exc) {
+				MessageBox.Show(this, exc.Message, "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+			}
+		}
+
+
+		private void ExportRepositoryToClipboard() {
+			try {
+				if (project.Repository is CachedRepository && project.Repository.IsOpen) {
+					string xmlString = project.GetXml();
+					Clipboard.SetText(xmlString);
+				}
+			} catch (Exception exc) {
+				MessageBox.Show(this, exc.Message, "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+			}
 		}
 
 		#endregion
@@ -901,6 +1017,30 @@ namespace Dataweb.NShape.Designer {
 
 
 		private void UpdateAllMenuItems() {
+			upgradeVersionMenuItem.Enabled = false;
+			if (!project.IsOpen) 
+				upgradeVersionMenuItem.ToolTipText = "No project opened.";
+			else if (!project.Repository.CanModifyVersion)
+				upgradeVersionMenuItem.ToolTipText = "The current repository does not support upgrading storage version.";
+			else if (project.Repository.Version >= maxRepositoryVersion)
+				upgradeVersionMenuItem.ToolTipText = "The repository storage version is up to date.";
+			else {
+				upgradeVersionMenuItem.Enabled = true;
+				upgradeVersionMenuItem.ToolTipText = string.Format("Upgrade repository storage version from {0} to {1}.", 
+					project.Repository.Version, maxRepositoryVersion);
+			}
+
+			if (cachedRepository.Store is XmlStore || cachedRepository.Store == null) {
+				useEmbeddedImagesToolStripMenuItem.Enabled = true;
+				if (cachedRepository.Store != null)
+					useEmbeddedImagesToolStripMenuItem.Checked = (((XmlStore)cachedRepository.Store).ImageLocation == XmlStore.ImageFileLocation.Embedded);
+				useEmbeddedImagesToolStripMenuItem.ToolTipText = "Embed images into the storage file instead of saving them to a seperate image directory.";
+			} else {
+				useEmbeddedImagesToolStripMenuItem.Enabled = false;
+				useEmbeddedImagesToolStripMenuItem.Checked = false;
+				useEmbeddedImagesToolStripMenuItem.ToolTipText = "The current repository does not support embedding images.";
+			}
+
 			UpdateEditMenuItems();
 			UpdateUndoMenuItems();
 		}
@@ -1014,14 +1154,14 @@ namespace Dataweb.NShape.Designer {
 		#region [Private] Methods: Manage Display Controls
 
 		/// <summary>
-		/// Creates a ownerDisplay for each diagram in the project and a default one if there isn'db any.
+		/// Creates a ownerDisplay for each diagram in the project and a default one if there isn't any.
 		/// </summary>
 		private void DisplayDiagrams() {
 			// Display all diagramControllers of the project
 			bool diagramAdded = false;
 			foreach (Diagram diagram in project.Repository.GetDiagrams()) {
-				TabPage tabPage = CreateDiagramTabPage(diagram, !diagramAdded);
-				displayTabControl.TabPages.Add(tabPage);
+				DisplayTabPage displayTabPage = CreateDiagramTabPage(diagram, !diagramAdded);
+				displayTabControl.TabPages.Add(displayTabPage);
 				if (!diagramAdded) diagramAdded = true;
 			}
 			// If the project has no diagram, create the a new one.
@@ -1072,40 +1212,30 @@ namespace Dataweb.NShape.Designer {
 		}
 
 
-		private TabPage CreateDiagramTabPage(Diagram diagram, bool createDisplay) {
-			TabPage tabPage = new TabPage(diagram.Title);
+		private DisplayTabPage CreateDiagramTabPage(Diagram diagram, bool createDisplay) {
+			DisplayTabPage tabPage = new DisplayTabPage(diagram.Title);
 			tabPage.Tag = diagram;
-			if (createDisplay) {
-				// Create and add a new tabPage for the display
-				Display display = CreateDiagramDisplay(diagram);
-				tabPage.Controls.Add(display);
-			}
+			if (createDisplay)
+				tabPage.Display = CreateDiagramDisplay(diagram);
 			return tabPage;
 		}
 
 
 		private void RemoveDisplayOfDiagram(Diagram diagram) {
-			TabPage tabPage = FindDisplayTabPage(diagram);
+			DisplayTabPage tabPage = FindDisplayTabPage(diagram);
 			if (tabPage != null) {
-				foreach (Control ctrl in tabPage.Controls) {
-					if (ctrl is Display) {
-						Display d = (Display)ctrl;
-
-						displayTabControl.TabPages.Remove(tabPage);
-						d.Clear();
-
-						d.Dispose();
-						tabPage.Dispose();
-					}
-				}
+				displayTabControl.TabPages.Remove(tabPage);
+				tabPage.Dispose();
 			}
 			UpdateAllMenuItems();
 		}
 
 
-		private TabPage FindDisplayTabPage(Diagram diagram) {
-			foreach (TabPage tabPage in displayTabControl.TabPages) 
-				if (tabPage.Tag == diagram) return tabPage;
+		private DisplayTabPage FindDisplayTabPage(Diagram diagram) {
+			foreach (TabPage tabPage in displayTabControl.TabPages) {
+				if (tabPage is DisplayTabPage && tabPage.Tag == diagram)
+					return (DisplayTabPage)tabPage;
+			}
 			return null;
 		}
 
@@ -1164,29 +1294,29 @@ namespace Dataweb.NShape.Designer {
 				project.Repository.ModelObjectsDeleted -= repository_ModelObjectsInsertedOrDeleted;
 				
 				// Event handlers used for detecting changes
-				project.Repository.ConnectionDeleted += Repository_ConnectionModified;
-				project.Repository.ConnectionInserted += Repository_ConnectionModified;
-				project.Repository.DesignDeleted += Repository_DesignModified;
-				project.Repository.DesignInserted += Repository_DesignModified;
-				project.Repository.DesignUpdated += Repository_DesignModified;
-				project.Repository.ModelDeleted += Repository_ModelModified;
-				project.Repository.ModelInserted += Repository_ModelModified;
-				project.Repository.ModelUpdated += Repository_ModelModified;
-				project.Repository.ModelMappingsDeleted += Repository_ModelMappingsModified;
-				project.Repository.ModelMappingsInserted += Repository_ModelMappingsModified;
-				project.Repository.ModelMappingsUpdated += Repository_ModelMappingsModified;
-				project.Repository.ModelObjectsUpdated += Repository_ModelObjectsModified;
-				project.Repository.ProjectUpdated += Repository_ProjectModified;
-				project.Repository.ShapesDeleted += Repository_ShapesModified;
-				project.Repository.ShapesInserted += Repository_ShapesModified;
-				project.Repository.ShapesUpdated += Repository_ShapesModified;
-				project.Repository.StyleDeleted += Repository_StyleModified;
-				project.Repository.StyleInserted += Repository_StyleModified;
-				project.Repository.StyleUpdated += Repository_StyleModified;
-				project.Repository.TemplateDeleted += Repository_TemplateModified;
-				project.Repository.TemplateInserted += Repository_TemplateModified;
-				project.Repository.TemplateShapeReplaced += Repository_TemplateModified;
-				project.Repository.TemplateUpdated += Repository_TemplateModified;
+				project.Repository.ConnectionDeleted -= Repository_ConnectionModified;
+				project.Repository.ConnectionInserted -= Repository_ConnectionModified;
+				project.Repository.DesignDeleted -= Repository_DesignModified;
+				project.Repository.DesignInserted -= Repository_DesignModified;
+				project.Repository.DesignUpdated -= Repository_DesignModified;
+				project.Repository.ModelDeleted -= Repository_ModelModified;
+				project.Repository.ModelInserted -= Repository_ModelModified;
+				project.Repository.ModelUpdated -= Repository_ModelModified;
+				project.Repository.ModelMappingsDeleted -= Repository_ModelMappingsModified;
+				project.Repository.ModelMappingsInserted -= Repository_ModelMappingsModified;
+				project.Repository.ModelMappingsUpdated -= Repository_ModelMappingsModified;
+				project.Repository.ModelObjectsUpdated -= Repository_ModelObjectsModified;
+				project.Repository.ProjectUpdated -= Repository_ProjectModified;
+				project.Repository.ShapesDeleted -= Repository_ShapesModified;
+				project.Repository.ShapesInserted -= Repository_ShapesModified;
+				project.Repository.ShapesUpdated -= Repository_ShapesModified;
+				project.Repository.StyleDeleted -= Repository_StyleModified;
+				project.Repository.StyleInserted -= Repository_StyleModified;
+				project.Repository.StyleUpdated -= Repository_StyleModified;
+				project.Repository.TemplateDeleted -= Repository_TemplateModified;
+				project.Repository.TemplateInserted -= Repository_TemplateModified;
+				project.Repository.TemplateShapeReplaced -= Repository_TemplateModified;
+				project.Repository.TemplateUpdated -= Repository_TemplateModified;
 			}
 		}
 
@@ -1300,7 +1430,7 @@ namespace Dataweb.NShape.Designer {
 
 
 		private void repository_DiagramUpdated(object sender, RepositoryDiagramEventArgs e) {
-			TabPage tabPage = FindDisplayTabPage(e.Diagram);
+			DisplayTabPage tabPage = FindDisplayTabPage(e.Diagram);
 			if (tabPage != null) tabPage.Text = e.Diagram.Title;
 			UpdateStatusInfo();
 			projectIsModified = true;
@@ -1308,7 +1438,7 @@ namespace Dataweb.NShape.Designer {
 
 
 		private void repository_DiagramInserted(object sender, RepositoryDiagramEventArgs e) {
-			TabPage tabPage = FindDisplayTabPage(e.Diagram);
+			DisplayTabPage tabPage = FindDisplayTabPage(e.Diagram);
 			if (tabPage == null)
 				displayTabControl.TabPages.Add(CreateDiagramTabPage(e.Diagram, false));
 			UpdateAllMenuItems();
@@ -1556,7 +1686,11 @@ namespace Dataweb.NShape.Designer {
 
 				XmlStore store;
 				if (repositoryInfo != RepositoryInfo.Empty) {
-					store = new XmlStore(Path.GetDirectoryName(repositoryInfo.location), Path.GetExtension(repositoryInfo.location));
+					store = new XmlStore() {
+						DirectoryName = Path.GetDirectoryName(repositoryInfo.location),
+						FileExtension = Path.GetExtension(repositoryInfo.location),
+						LazyLoading = true
+					};
 					OpenProject(repositoryInfo.projectName, store);
 				} else {
 					NewXmlRepositoryProject(false);
@@ -1600,14 +1734,14 @@ namespace Dataweb.NShape.Designer {
 		private void displaysTabControl_SelectedIndexChanged(object sender, EventArgs e) {
 			try {
 				Cursor = Cursors.WaitCursor;
-				TabPage tab = displayTabControl.SelectedTab;
+				DisplayTabPage tab = displayTabControl.SelectedTab as DisplayTabPage;
 				if (tab != null) {
-					// Create a displa and display (load) diagram if not done yet
-					if (tab.Controls.Count == 0) {
+					// Create a display and load diagram if not done yet
+					if (tab.Display == null) {
 						Diagram diagram = (Diagram)tab.Tag;
-						tab.Controls.Add(CreateDiagramDisplay(diagram));
+						tab.Display = CreateDiagramDisplay(diagram);
 					}
-					CurrentDisplay = (Display)tab.Controls[0];
+					CurrentDisplay = tab.Display;
 					UpdateAllMenuItems();
 				}
 			} finally {
@@ -1774,16 +1908,17 @@ namespace Dataweb.NShape.Designer {
 
 		private void NewXmlRepositoryProject(bool askUserLoadLibraries) {
 			if (CloseProject()) {
-				if (!Directory.Exists(xmlStoreDirectory)) {
-					StringBuilder path = new StringBuilder(512);
-					const int COMMON_DOCUMENTS = 0x002e;
-					if (SHGetSpecialFolderPath(IntPtr.Zero, path, COMMON_DOCUMENTS, 0) != 0)
-						xmlStoreDirectory = Path.Combine(Path.Combine(path.ToString(), "NShape"), "Demo Projects");
-					else xmlStoreDirectory = Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments);
-				}
+				//if (!Directory.Exists(xmlStoreDirectory)) {
+				//    StringBuilder path = new StringBuilder(512);
+				//    const int COMMON_DOCUMENTS = 0x002e;
+				//    if (SHGetSpecialFolderPath(IntPtr.Zero, path, COMMON_DOCUMENTS, 0) != 0)
+				//        xmlStoreDirectory = Path.Combine(Path.Combine(path.ToString(), "NShape"), "Demo Projects");
+				//    else xmlStoreDirectory = Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments);
+				//}
+				//XmlStore store = new XmlStore(xmlStoreDirectory, ProjectFileExtension);
 
-				XmlStore store = new XmlStore(xmlStoreDirectory, ProjectFileExtension);
-				CreateProject(NewProjectName, store, askUserLoadLibraries);
+				// Do not create a new XmlStore yet. This will be done when saving for the first time.
+				CreateProject(NewProjectName, null, askUserLoadLibraries);
 			}
 		}
 
@@ -1826,7 +1961,11 @@ namespace Dataweb.NShape.Designer {
 				openFileDialog.InitialDirectory = xmlStoreDirectory;
 			if (openFileDialog.ShowDialog() == DialogResult.OK && CloseProject()) {
 				xmlStoreDirectory = Path.GetDirectoryName(openFileDialog.FileName);
-				XmlStore store = new XmlStore(xmlStoreDirectory, Path.GetExtension(openFileDialog.FileName));
+				XmlStore store = new XmlStore() {
+					DirectoryName = xmlStoreDirectory,
+					FileExtension = Path.GetExtension(openFileDialog.FileName),
+					LazyLoading = true
+				};
 				OpenProject(Path.GetFileNameWithoutExtension(openFileDialog.FileName), store);
 			}
 		}
@@ -1856,9 +1995,32 @@ namespace Dataweb.NShape.Designer {
 
 
 		private void saveToolStripMenuItem_Click(object sender, EventArgs e) {
-			if (!projectSaved || !project.Repository.Exists())
-				SaveProjectAs();
-			else SaveProject();
+			SaveProject();
+		}
+
+
+		private void upgradeVersionMenuItem_Click(object sender, EventArgs e) {
+			try {
+				string msg = string.Format("Project '{0}' will be upgraded from file version {1} to {2}. " 
+					+ "{3}After upgrading, the project will be saved automatically.{3}Do you want to continue upgrading and saving the project?",
+					project.Name, project.Repository.Version, maxRepositoryVersion, Environment.NewLine);
+				DialogResult res = MessageBox.Show(msg, "Upgrade and Save Project?", MessageBoxButtons.YesNo, MessageBoxIcon.Question);
+				if (res == DialogResult.Yes) {
+					// Upgrade repository version
+					project.UpgradeVersion();
+				}
+			} catch (Exception exc) {
+				MessageBox.Show(this, exc.Message, "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+			}
+		}
+
+
+		private void useEmbeddedImagesToolStripMenuItem_CheckedChanged(object sender, EventArgs e) {
+			XmlStore xmlStore = cachedRepository.Store as XmlStore;
+			if (xmlStore != null) {
+				if (xmlStore.ImageLocation != XmlImageFileLocation)
+					xmlStore.ImageLocation = XmlImageFileLocation;
+			}
 		}
 
 
@@ -1872,6 +2034,16 @@ namespace Dataweb.NShape.Designer {
 				dlg.StartPosition = FormStartPosition.CenterParent;
 				dlg.ShowDialog(this);
 			}
+		}
+
+
+		private void importRepositoryMenuItem_Click(object sender, System.EventArgs e) {
+			ImportRepositoryFromClipboard();
+		}
+
+
+		private void exportRepositoryMenuItem_Click(object sender, System.EventArgs e) {
+			ExportRepositoryToClipboard();
 		}
 
 
@@ -2474,7 +2646,11 @@ namespace Dataweb.NShape.Designer {
 			public static Store CreateStore(RepositoryInfo repositoryInfo) {
 				Store store = null;
 				if (repositoryInfo.typeName == RepositoryInfo.XmlStoreTypeName) {
-					store = new XmlStore(Path.GetDirectoryName(repositoryInfo.location), Path.GetExtension(repositoryInfo.location));
+					store = new XmlStore() {
+						DirectoryName = Path.GetDirectoryName(repositoryInfo.location),
+						FileExtension = Path.GetExtension(repositoryInfo.location),
+						LazyLoading = true
+					};
 				} else if (repositoryInfo.typeName == RepositoryInfo.SqlServerStoreTypeName) {
 					store = new SqlStore();
 					((SqlStore)store).DatabaseName = repositoryInfo.location;
@@ -2590,12 +2766,13 @@ namespace Dataweb.NShape.Designer {
 		private string nShapeConfigDirectory = Path.Combine(Path.Combine("dataweb", "NShape"), Application.ProductName);
 		private string xmlStoreDirectory;
 		private bool projectSaved = false;
+		private int maxRepositoryVersion;
 
 		private Point p;
 		private int currHistoryPos;
 		private Display currentDisplay;
 
-		// ownerDisplay config
+		// display config
 		private bool showGrid = true;
 		private bool snapToGrid = true;
 		private int gridSize = 20;
@@ -2617,6 +2794,9 @@ namespace Dataweb.NShape.Designer {
 
 		private List<RepositoryInfo> recentProjects = new List<RepositoryInfo>(recentProjectsItemCount);
 		private bool loadToolStripLayoutOnStartup = true;
+		
+		// Specifies whether the project is regarded as changed from the user's perspective 
+		// (loading libraries in an empty repository created at startup will set the repository's IsModified state to "True")
 		private bool projectIsModified = false;
 
 #if TdbRepository
@@ -2626,5 +2806,45 @@ namespace Dataweb.NShape.Designer {
 		#endregion
 
 	}
+
+
+	public class DisplayTabPage : TabPage {
+		
+		public DisplayTabPage()
+			: base() {
+		}
+
+
+		public DisplayTabPage(string text)
+			: base(text) {
+		}
+
+
+		protected override void Dispose(bool disposing) {
+			if (disposing)
+				Display = null;	// Clears and disposes the display
+			base.Dispose(disposing);
+		}
+
+
+		public Display Display {
+			get { return tabDisplay; }
+			set {
+				if (tabDisplay != null && tabDisplay != value) {
+					Controls.Remove(tabDisplay);
+					tabDisplay.Clear();
+					tabDisplay.Dispose();
+					tabDisplay = null;
+				}
+				tabDisplay = value;
+				if (tabDisplay != null)
+					Controls.Add(tabDisplay);
+			}
+		}
+
+
+		private Display tabDisplay;
+	}
+
 
 }

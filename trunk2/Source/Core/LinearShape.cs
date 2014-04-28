@@ -28,7 +28,6 @@ namespace Dataweb.NShape.Advanced {
 	/// <summary>
 	/// One-dimensional shape with optional caps on both ends defined by a sequence of vertices
 	/// </summary>
-	/// <remarks>RequiredPermissions set</remarks>
 	public abstract class LineShapeBase : ShapeBase, ILinearShape {
 
 		#region [Public] Shape Members
@@ -195,17 +194,17 @@ namespace Dataweb.NShape.Advanced {
 			ControlPointId clickedPointId = HitTest(mouseX, mouseY, ControlPointCapabilities.All, range);
 
 			isFeasible = ContainsPoint(mouseX, mouseY) && (clickedPointId == ControlPointId.None || clickedPointId == ControlPointId.Reference);
-			description = "You have to click on the line in order to insert new points";
+			description = Properties.Resources.MessageTxt_YouHaveToClickOnTheLineInOrderToInsertNewPoints;
 			if (VertexCount >= MaxVertexCount) {
 				isFeasible = false;
-				description = "The line already has the maximum number of vertices";
+				description = Properties.Resources.MessageTxt_TheLineAlreadyHasTheMaximumNumberOfVertices;
 			}
-			yield return new CommandMenuItemDef("Insert Vertex", null, description, isFeasible,
+			yield return new CommandMenuItemDef(Properties.Resources.CaptionTxt_InsertVertex, null, description, isFeasible,
 				new AddVertexCommand(this, mouseX, mouseY));
 
 			isFeasible = ContainsPoint(mouseX, mouseY) && (clickedPointId == ControlPointId.None || clickedPointId == ControlPointId.Reference);
-			description = "You have to click on the line in order to insert new points";
-			yield return new CommandMenuItemDef("Insert Connection Point", null, description, isFeasible,
+			description = Properties.Resources.MessageTxt_YouHaveToClickOnTheLineInOrderToInsertNewPoints;
+			yield return new CommandMenuItemDef(Properties.Resources.CaptionTxt_InsertConnectionPoint, null, description, isFeasible,
 				new AddConnectionPointCommand(this, mouseX, mouseY));
 
 			isFeasible = false;
@@ -214,11 +213,11 @@ namespace Dataweb.NShape.Advanced {
 					if ((clickedPointId != ControlPointId.None && IsConnected(clickedPointId, null) == ControlPointId.None)) {
 						if (VertexCount > MinVertexCount)
 							isFeasible = true;
-						else description = "Minimum vertex count reached";
-					} else description = "Control point is connected";
-				} else description = "Glue control points may not be removed";
-			} else description = "No resize point was clicked";
-			yield return new CommandMenuItemDef("Remove Vertex", null, description, isFeasible,
+						else description = Properties.Resources.MessageTxt_MinimumVertexCountReached;
+					} else description = Properties.Resources.MessageTxt_ControlPointIsConnected;
+				} else description = Properties.Resources.MessageTxt_GlueControlPointsMayNotBeRemoved;
+			} else description = Properties.Resources.MessageTxt_NoResizePointWasClicked;
+			yield return new CommandMenuItemDef(Properties.Resources.CaptionTxt_RemoveVertex, null, description, isFeasible,
 				new RemoveVertexCommand(this, clickedPointId));
 
 			isFeasible = false;
@@ -226,9 +225,9 @@ namespace Dataweb.NShape.Advanced {
 				&& !HasControlPointCapability(clickedPointId, ControlPointCapabilities.Glue | ControlPointCapabilities.Resize | ControlPointCapabilities.Reference)) {
 				if ((clickedPointId != ControlPointId.None && IsConnected(clickedPointId, null) == ControlPointId.None))
 					isFeasible = true;
-				else description = "Connection point is connected";
-			} else description = "No connection point was clicked";
-			yield return new CommandMenuItemDef("Remove Connection Point", null, description, isFeasible,
+				else description = Properties.Resources.MessageTxt_ConnectionPointIsConnected;
+			} else description = Properties.Resources.MessageTxt_NoConnectionPointWasClicked;
+			yield return new CommandMenuItemDef(Properties.Resources.CaptionTxt_RemoveConnectionPoint, null, description, isFeasible,
 				new RemoveConnectionPointCommand(this, clickedPointId));
 
 		}
@@ -367,7 +366,10 @@ namespace Dataweb.NShape.Advanced {
 		/// <summary>
 		/// Inserts a new vertex accessible before the specified vertex at the given position x, y. The new vertex will have the specified control point id.
 		/// </summary>
-		/// <remarks>This method is not part of the ILinearShape interface. It applies only for linear shapes derived from LineShapeBase.</remarks>
+		/// <remarks>
+		/// This method is not part of the ILinearShape interface. 
+		/// It applies only for linear shapes derived from LineShapeBase.
+		/// </remarks>
 		public abstract ControlPointId InsertVertex(ControlPointId beforePointId, ControlPointId newVertexId, int x, int y);
 
 
@@ -965,9 +967,22 @@ namespace Dataweb.NShape.Advanced {
 		protected void DrawStartCapBackground(Graphics graphics, int pointX, int pointY) {
 			if (IsShapedLineCap(StartCapStyleInternal)) {
 				Brush capBrush = ToolCache.GetBrush(StartCapStyleInternal.ColorStyle, LineStyle);
-				// ToDo: Find a solution for round caps - perhaps transform the GraphicsPath itself?
-				if (startCapPointBuffer != null && startCapPointBuffer.Length > 0)
-					graphics.FillPolygon(capBrush, startCapPointBuffer, System.Drawing.Drawing2D.FillMode.Alternate);
+
+				GraphicsPath capPath = ToolCache.GetCapPath(StartCapStyleInternal, LineStyle);
+				Point startPoint = shapePoints[0];
+				Matrix.Reset();
+				Matrix.Rotate(90 + StartCapAngle, MatrixOrder.Append);
+				Matrix.Translate(startPoint.X, startPoint.Y, MatrixOrder.Append);
+				try {
+					capPath.Transform(Matrix);
+					graphics.FillPath(capBrush, capPath);
+				} finally {
+					Matrix.Invert();
+					capPath.Transform(Matrix);
+				}
+				//// ToDo: Find a solution for round caps - perhaps transform the GraphicsPath itself?
+				//if (startCapPointBuffer != null && startCapPointBuffer.Length > 0)
+				//    graphics.FillPolygon(capBrush, startCapPointBuffer, System.Drawing.Drawing2D.FillMode.Alternate);
 			}
 		}
 
@@ -978,9 +993,23 @@ namespace Dataweb.NShape.Advanced {
 		protected void DrawEndCapBackground(Graphics graphics, int pointX, int pointY) {
 			if (IsShapedLineCap(EndCapStyleInternal)) {
 				Brush capBrush = ToolCache.GetBrush(EndCapStyleInternal.ColorStyle, LineStyle);
-				// ToDo: Find a solution for round caps - perhaps transform the GraphicsPath itself?
-				if (endCapPointBuffer != null && endCapPointBuffer.Length > 0)
-					graphics.FillPolygon(capBrush, endCapPointBuffer, System.Drawing.Drawing2D.FillMode.Alternate);
+
+				GraphicsPath capPath = ToolCache.GetCapPath(EndCapStyleInternal, LineStyle);
+				Point endPoint = shapePoints[shapePoints.Length - 1];
+				Matrix.Reset();
+				Matrix.Rotate(90 + EndCapAngle, MatrixOrder.Append);
+				Matrix.Translate(endPoint.X, endPoint.Y, MatrixOrder.Append);
+				try {
+					capPath.Transform(Matrix);
+					graphics.FillPath(capBrush, capPath);
+				} finally {
+					Matrix.Invert();
+					capPath.Transform(Matrix);
+				}
+
+				//// ToDo: Find a solution for round caps - perhaps transform the GraphicsPath itself?
+				//if (endCapPointBuffer != null && endCapPointBuffer.Length > 0)
+				//    graphics.FillPolygon(capBrush, endCapPointBuffer, System.Drawing.Drawing2D.FillMode.Alternate);
 			}
 		}
 

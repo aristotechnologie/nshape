@@ -762,7 +762,7 @@ namespace Dataweb.NShape.Advanced {
 		/// <summary>
 		/// Indicates the name of the security domain this shape belongs to.
 		/// </summary>
-		[Category("General")]
+		[CategoryGeneral()]
 		[Description("Modify the security domain of the shape.")]
 		[RequiredPermission(Permission.Security)]
 		public abstract char SecurityDomainName { get; set; }

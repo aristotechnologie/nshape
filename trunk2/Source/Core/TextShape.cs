@@ -25,7 +25,6 @@ namespace Dataweb.NShape.Advanced {
 	/// <summary>
 	/// Title shape.
 	/// </summary>
-	/// <remarks>RequiredPermissions set</remarks>
 	public abstract class TextBase : RectangleBase {
 
 		/// <summary>ControlPointId of the top left control point.</summary>
@@ -61,7 +60,7 @@ namespace Dataweb.NShape.Advanced {
 
 
 		/// <ToBeCompleted></ToBeCompleted>
-		[Category("Layout")]
+		[CategoryLayout()]
 		[Description("Enables automatic resizing based on the text's size. If enabled, the WordWrap property of ParagraphStyles has no effect.")]
 		[RequiredPermission(Permission.Layout)]
 		public bool AutoSize {
@@ -374,7 +373,7 @@ namespace Dataweb.NShape.Advanced {
 		#region [Public] Properties
 
 		/// <ToBeCompleted></ToBeCompleted>
-		[Category("Layout")]
+		[CategoryLayout()]
 		[Description("If false, the label maintains its angle if it is attached to an other shape (in case the attached shape is beeing rotated).")]
 		[RequiredPermission(Permission.Layout)]
 		public bool MaintainOrientation {
@@ -388,7 +387,7 @@ namespace Dataweb.NShape.Advanced {
 		}
 
 		///// <ToBeCompleted></ToBeCompleted>
-		//[Category("Layout")]
+		//[LayoutCategoryAttribute()]
 		//[Description("If true, the label draws a line between the label's text bounds and the point it sticks to.")]
 		//[RequiredPermission(Permission.Layout)]
 		//public bool ShowGluePointLine {

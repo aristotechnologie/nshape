@@ -20,7 +20,7 @@ using System.Drawing;
 
 namespace Dataweb.NShape.Advanced {
 
-	/// <remarks>RequiredPermissions set</remarks>
+	/// <ToBeCompleted></ToBeCompleted>
 	public abstract class DiameterShapeBase : CaptionedShapeBase {
 
 		/// <summary>
@@ -378,11 +378,11 @@ namespace Dataweb.NShape.Advanced {
 	}
 
 
-	/// <remarks>RequiredPermissions set</remarks>
+	/// <ToBeCompleted></ToBeCompleted>
 	public abstract class SquareBase : DiameterShapeBase {
 
 		/// <ToBeCompleted></ToBeCompleted>
-		[Category("Layout")]
+		[CategoryLayout()]
 		[Description("Size of the sqare.")]
 		[PropertyMappingId(PropertyIdDiameter)]
 		[RequiredPermission(Permission.Layout)]
@@ -524,7 +524,7 @@ namespace Dataweb.NShape.Advanced {
 	}
 
 
-	/// <remarks>RequiredPermissions set</remarks>
+	/// <ToBeCompleted></ToBeCompleted>
 	public abstract class CircleBase : DiameterShapeBase {
 
 		/// <summary>
@@ -561,7 +561,7 @@ namespace Dataweb.NShape.Advanced {
 
 
 		/// <ToBeCompleted></ToBeCompleted>
-		[Category("Layout")]
+		[CategoryLayout()]
 		[Description("Diameter of the circle.")]
 		[PropertyMappingId(PropertyIdDiameter)]
 		[RequiredPermission(Permission.Layout)]

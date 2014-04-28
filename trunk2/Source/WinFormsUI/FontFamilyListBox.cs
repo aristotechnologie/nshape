@@ -55,7 +55,7 @@ namespace Dataweb.NShape.WinFormsUI {
 		/// <summary>
 		/// Specifies the version of the assembly containing the component.
 		/// </summary>
-		[Category("NShape")]
+		[CategoryNShape()]
 		[Browsable(true)]
 		public new string ProductVersion {
 			get { return base.ProductVersion; }
@@ -65,7 +65,7 @@ namespace Dataweb.NShape.WinFormsUI {
 		/// <summary>
 		/// Specifies if 
 		/// </summary>
-		[Category("Behavior")]
+		[CategoryBehavior()]
 		public bool HighlightItems {
 			get { return highlightItems; }
 			set { highlightItems = value; }

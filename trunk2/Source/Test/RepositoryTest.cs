@@ -77,6 +77,132 @@ namespace NShapeTest {
 		#region Test methods
 
 		[TestMethod]
+		public void XmlRepository_VersionCompatibility_Extended_Test() {
+			string repositoriesDir = GetTestRepositoriesDirectory();
+			string libDir = Path.GetDirectoryName(typeof(Shape).Assembly.Location);
+
+			Func<XmlStore, string, Project> createProject = new Func<XmlStore, string, Project>((store, path) => {
+				CachedRepository repository = new CachedRepository();
+				repository.Store = store;
+				Project result = new Project();
+				result.Repository = repository;
+				result.LibrarySearchPaths.Add(libDir);
+				result.AutoLoadLibraries = true;
+				store.ProjectFilePath = path;
+				store.BackupGenerationMode = XmlStore.BackupFileGenerationMode.None;
+				result.Name = Path.GetFileNameWithoutExtension(path);
+				return result;
+			});
+
+
+			int cnt = 0;
+			List<string> errors = new List<string>();
+			foreach (string dirPath in Directory.GetDirectories(repositoriesDir)) {
+				foreach (string filePath in Directory.GetFiles(dirPath)) {
+					// Skip file types other than *.xml and *.nspj
+					if (!(filePath.EndsWith(".xml", StringComparison.InvariantCultureIgnoreCase) 
+						|| filePath.EndsWith(".nspj", StringComparison.InvariantCultureIgnoreCase))) 
+						continue;
+
+					XmlStore xmlStore = new XmlStore();
+					Project project = createProject(xmlStore, filePath);
+					try {
+						try {
+							project.Open();
+							foreach (Diagram d in project.Repository.GetDiagrams())
+								project.Repository.GetDiagramShapes(d);
+						} catch (Exception exc) {
+							Assert.Fail("Opening project file '{0}' failed:{1}{2}", filePath, Environment.NewLine, exc.Message);
+						}
+
+						// Ensure that there are no duplicate template names. Remove later!
+						Dictionary<string, Template> dic = new Dictionary<string,Template>();
+						foreach (Template t in project.Repository.GetTemplates())
+							dic.Add(t.Name, t);
+
+						// Prepare saving to an other location
+						string saveDir = Path.Combine(Environment.ExpandEnvironmentVariables("%TEMP%"), Path.GetFileName(dirPath));
+						if (!Directory.Exists(saveDir)) Directory.CreateDirectory(saveDir);
+						string saveFilePath = Path.Combine(saveDir, Path.GetFileName(xmlStore.ProjectFilePath));
+						// Prepare opening the saved project file
+						XmlStore xmlStore2 = new XmlStore();
+						Project project2 = createProject(xmlStore2, saveFilePath);
+						try {
+							// Save and re-open the original file
+							xmlStore.DirectoryName = saveDir;
+							try {
+								project.Repository.SaveChanges();
+							} catch (Exception exc) {
+								Assert.Fail("Saving project file '{0}' failed:{1}{2}", xmlStore.ProjectFilePath, Environment.NewLine, exc.Message);
+							}
+							project.Close();
+							xmlStore.DirectoryName = dirPath;
+							project.Open();
+
+							project2.Open();
+							// Compare contents
+							try {
+								RepositoryComparer.Compare(project, project2);
+							} catch (Exception exc) {
+								Assert.Fail("Comparing project file '{0}' failed:{1}{2}", filePath, Environment.NewLine, exc.Message);
+							}
+							project2.Close();
+							xmlStore2.Erase();
+						} finally {
+							project2.Close();
+						}
+					} catch (Exception exc) {
+						errors.Add(exc.Message);
+					} finally {
+						project.Close();
+					}
+					++cnt;
+				}
+			}
+
+			if (errors.Count > 0) {
+				string msg = string.Empty;
+				foreach (string err in errors)
+					msg += string.Format("{0}{1}", err, Environment.NewLine);
+				Assert.Fail(msg);
+			}
+		}
+
+
+		[TestMethod]
+		public void XmlRepository_VersionCompatibility_Test() {
+			for (int version = Project.FirstSupportedSaveVersion; version <= Project.LastSupportedSaveVersion; ++version) {
+				// Test inserting, modifying and deleting objects from repository
+				string timerName = "XML Repository Version Compatibility Test Timer";
+				TestContext.BeginTimer(timerName);
+				RepositoryCompatibilityTestCore(RepositoryHelper.CreateXmlStore(), version);
+				TestContext.EndTimer(timerName);
+			}
+		}
+
+
+		[TestMethod]
+		public void SQLRepository_VersionCompatibility_Test() {
+			// Create empty databases for all repository save versions
+			RepositoryCompatibilityTest_CleanupDatabases();
+			RepositoryCompatibilityTest_ImportDatabases();
+
+			for (int version = Project.FirstSupportedSaveVersion; version <= Project.LastSupportedSaveVersion; ++version) {
+				string databaseName = string.Format("NShape_Repository_v{0}", version);
+
+				// Test inserting, modifying and deleting objects from repository
+				string timerName = "SQL Repository Version Compatibility Test Timer";
+				TestContext.BeginTimer(timerName);
+				RepositoryCompatibilityTestCore(RepositoryHelper.CreateSqlStore(databaseName), version);
+				TestContext.EndTimer(timerName);
+			}
+
+			// Clean up the created databases
+			RepositoryCompatibilityTest_CleanupDatabases();
+		}
+
+
+		[TestMethod]
 		public void XMLRepository_EditWithContents_Test() {
 			// Test inserting, modifying and deleting objects from repository
 			string timerName = "RepositoryTest XMLStore Timer (edit with contents)";
@@ -357,6 +483,162 @@ namespace NShapeTest {
 			} finally {
 				project.Close();
 			}
+		}
+
+
+		private void RepositoryCompatibilityTestCore(Store store, int version) {
+			Project project = null;
+			try {
+				CachedRepository cachedRepository = new CachedRepository();
+				cachedRepository.Version = version;
+				cachedRepository.Store = store;
+
+				project = new Project();
+				project.Name = string.Format("Shape Libraries (Version {0})", version);
+				project.Repository = cachedRepository;
+				project.AutoLoadLibraries = false;
+
+				// Add all shape libraries
+				project.AddLibraryByName("Dataweb.NShape.GeneralShapes", false);
+				project.AddLibraryByName("Dataweb.NShape.ElectricalShapes", false);
+				project.AddLibraryByName("Dataweb.NShape.FlowChartShapes", false);
+				if (store is XmlStore || version >= 3) {
+					// SqlStore does not support saving the inner objects (columns) of the "Entity" shape in version 2
+					project.AddLibraryByName("Dataweb.NShape.SoftwareArchitectureShapes", false);
+				}
+
+				// Erase existing repository and create a new one
+				if (store is XmlStore) {
+					// Delete the file, create a new file and adjust the version
+					project.Repository.Erase();
+					project.Create();
+					project.ChangeVersion(version);
+				} else {
+					// SQL stores neither support changing the version nor creating projects on levels other 
+					// than MaxSupportedSaveVersion, so we have to open an empty project.
+					project.Open();
+				}
+
+				//// Sort shape types
+				//SortedList<string, ShapeType> shapeTypes = new SortedList<string,ShapeType>();
+				//foreach (ShapeType shapeType in project.ShapeTypes)
+				//    shapeTypes.Add(shapeType.FullName, shapeType);
+
+				// Create a diagram containing a shape of each shape type
+				Diagram diagram = new Diagram("Shape Libraries");
+
+				//int margin = 20;
+				//int currentLeft = 0, currentTop = 0;
+				//string currentLibName = null;
+				//foreach (KeyValuePair<string, ShapeType> shapeTypeItem in shapeTypes) {
+				//    if (currentLibName != shapeTypeItem.Value.LibraryName) {
+				//        TextBase textShape = (TextBase)project.Repository.GetTemplate("Text").CreateShape();
+				//        textShape.CharacterStyle = project.Design.CharacterStyles.Heading1;
+				//        textShape.Text = shapeTypeItem.Value.LibraryName;
+				//        textShape.X = currentLeft + textShape.Width / 2;
+				//        textShape.Y = currentTop + textShape.Height / 2;
+				//        diagram.Shapes.Add(textShape, project.Repository.ObtainNewTopZOrder(diagram));
+
+				//    }
+				//}
+
+				project.Repository.InsertAll(diagram);
+				project.Repository.SaveChanges();
+				Trace.WriteLine("Saved!");
+			} finally {
+				project.Close();
+			}
+		}
+
+
+		private void RepositoryCompatibilityTest_ImportDatabases() {
+			// Restore SQL databases for each repository level
+			string repositoriesDir = GetTestRepositoriesDirectory();
+			string commonTempDir = GetCommonTempDir();
+			foreach (string srcDirPath in Directory.GetDirectories(repositoriesDir)) {
+				foreach (string srcFilePath in Directory.GetFiles(srcDirPath)) {
+					// Skip all files that are not SQL server database files.
+					if (!srcFilePath.EndsWith(".mdf", StringComparison.InvariantCultureIgnoreCase))
+						continue;
+
+					// Copy SQL server database file
+					//string workDir = Path.Combine(Environment.ExpandEnvironmentVariables("%TEMP%"), Path.GetFileName(srcDirPath));
+					string workDir = Path.Combine(commonTempDir, Path.GetFileName(srcDirPath));
+					string workFilePath = Path.Combine(workDir, Path.GetFileName(srcFilePath));
+					string databaseName = Path.GetFileNameWithoutExtension(srcFilePath);
+					if (!Directory.Exists(workDir))
+						Directory.CreateDirectory(workDir);
+					File.Copy(srcFilePath, workFilePath);
+
+					// Attach SQL server database file to SQL server
+					string serverName = Environment.MachineName + RepositoryHelper.SqlServerName;
+					string connectionString = string.Format("server={0};Integrated Security=True", serverName);
+					using (System.Data.SqlClient.SqlConnection conn = new System.Data.SqlClient.SqlConnection(connectionString)) {
+						conn.Open();
+						using (System.Data.SqlClient.SqlCommand cmd = conn.CreateCommand()) {
+							cmd.CommandText = string.Format("CREATE DATABASE [{0}] ON ( FILENAME = N'{1}' ) FOR ATTACH", databaseName, workFilePath);
+							cmd.ExecuteNonQuery();
+						}
+					}
+				}
+			}
+		}
+
+
+		private void RepositoryCompatibilityTest_CleanupDatabases() {
+			string repositoriesDir = GetTestRepositoriesDirectory();
+			string commonTempDir = GetCommonTempDir();
+			foreach (string srcDirPath in Directory.GetDirectories(repositoriesDir)) {
+				foreach (string srcFilePath in Directory.GetFiles(srcDirPath)) {
+					// Skip all files that are not SQL server database files.
+					if (!srcFilePath.EndsWith(".mdf", StringComparison.InvariantCultureIgnoreCase))
+						continue;
+
+					// Copy SQL server database file
+					//string workDir = Path.Combine(Environment.ExpandEnvironmentVariables("%TEMP%"), Path.GetFileName(srcDirPath));
+					string workDir = Path.Combine(commonTempDir, Path.GetFileName(srcDirPath));
+					string workFilePath = Path.Combine(workDir, Path.GetFileName(srcFilePath));
+					string databaseName = Path.GetFileNameWithoutExtension(srcFilePath);
+
+					// Drop database
+					try {
+						RepositoryHelper.SQLDropDatabase(databaseName);
+					} catch (Exception) {
+						try {
+							string serverName = Environment.MachineName + RepositoryHelper.SqlServerName;
+							string connectionString = string.Format("server={0};Integrated Security=True", serverName);
+							using (System.Data.SqlClient.SqlConnection conn = new System.Data.SqlClient.SqlConnection(connectionString)) {
+								conn.Open();
+								using (System.Data.SqlClient.SqlCommand cmd = conn.CreateCommand()) {
+									cmd.CommandText = string.Format("DROP DATABASE [{0}]", databaseName);
+									cmd.ExecuteNonQuery();
+								}
+							}
+
+						} catch (System.Data.SqlClient.SqlException) { }
+					}
+					// Delete database file and directory
+					if (File.Exists(workFilePath))
+						File.Delete(workFilePath);
+				}
+			}
+			if (Directory.Exists(commonTempDir)) 
+				Directory.Delete(commonTempDir, true);
+		}
+
+
+		private string GetSourceDirectory() {
+			return Path.GetDirectoryName(Path.GetDirectoryName(TestContext.TestDir));
+		}
+
+
+		private string GetTestRepositoriesDirectory() {
+			return Path.Combine(new string[] { GetSourceDirectory(), "Test", "Properties", "Repositories" });
+		}
+
+		
+		private string GetCommonTempDir() {
+			return Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.CommonApplicationData), "Temp");
 		}
 
 		#endregion

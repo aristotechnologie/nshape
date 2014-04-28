@@ -49,11 +49,17 @@ namespace Dataweb.NShape.Designer {
 			this.openSQLServerRepositoryToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
 			this.recentProjectsMenuItem = new System.Windows.Forms.ToolStripMenuItem();
 			this.toolStripMenuItem7 = new System.Windows.Forms.ToolStripSeparator();
+			this.upgradeVersionMenuItem = new System.Windows.Forms.ToolStripMenuItem();
+			this.useEmbeddedImagesToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
+			this.toolStripMenuItem14 = new System.Windows.Forms.ToolStripSeparator();
 			this.saveMenuItem = new System.Windows.Forms.ToolStripMenuItem();
 			this.saveAsMenuItem = new System.Windows.Forms.ToolStripMenuItem();
 			this.closeProjectToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
 			this.toolStripMenuItem5 = new System.Windows.Forms.ToolStripSeparator();
 			this.ManageShapeAndModelLibrariesMenuItem = new System.Windows.Forms.ToolStripMenuItem();
+			this.toolStripMenuItem13 = new System.Windows.Forms.ToolStripSeparator();
+			this.exportRepositoryMenuItem = new System.Windows.Forms.ToolStripMenuItem();
+			this.importRepositoryMenuItem = new System.Windows.Forms.ToolStripMenuItem();
 			this.exportDiagramAsMenuItem = new System.Windows.Forms.ToolStripMenuItem();
 			this.exportDialogToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
 			this.emfExportMenuItem = new System.Windows.Forms.ToolStripMenuItem();
@@ -154,13 +160,13 @@ namespace Dataweb.NShape.Designer {
 			this.displaySettingsToolStripButton = new System.Windows.Forms.ToolStripButton();
 			this.refreshToolbarButton = new System.Windows.Forms.ToolStripButton();
 			this.showGridToolbarButton = new System.Windows.Forms.ToolStripButton();
-			this.debugToolStrip = new System.Windows.Forms.ToolStrip();
-			this.debugDrawOccupationToolbarButton = new System.Windows.Forms.ToolStripButton();
-			this.debugDrawInvalidatedAreaToolbarButton = new System.Windows.Forms.ToolStripButton();
 			this.displayToolStrip = new System.Windows.Forms.ToolStrip();
 			this.toolStripButton2 = new System.Windows.Forms.ToolStripButton();
 			this.designEditorToolStripButton = new System.Windows.Forms.ToolStripButton();
 			this.runtimeModeComboBox = new System.Windows.Forms.ToolStripComboBox();
+			this.debugToolStrip = new System.Windows.Forms.ToolStrip();
+			this.debugDrawOccupationToolbarButton = new System.Windows.Forms.ToolStripButton();
+			this.debugDrawInvalidatedAreaToolbarButton = new System.Windows.Forms.ToolStripButton();
 			this.openFileDialog = new System.Windows.Forms.OpenFileDialog();
 			this.saveFileDialog = new System.Windows.Forms.SaveFileDialog();
 			this.diagramSetController = new Dataweb.NShape.Controllers.DiagramSetController();
@@ -193,8 +199,8 @@ namespace Dataweb.NShape.Designer {
 			((System.ComponentModel.ISupportInitialize)(this.historyTrackBar)).BeginInit();
 			this.editToolStrip.SuspendLayout();
 			this.settingsToolStrip.SuspendLayout();
-			this.debugToolStrip.SuspendLayout();
 			this.displayToolStrip.SuspendLayout();
+			this.debugToolStrip.SuspendLayout();
 			this.SuspendLayout();
 			// 
 			// BottomToolStripPanel
@@ -344,11 +350,17 @@ namespace Dataweb.NShape.Designer {
             this.openProjectMenuItem,
             this.recentProjectsMenuItem,
             this.toolStripMenuItem7,
+            this.upgradeVersionMenuItem,
+            this.useEmbeddedImagesToolStripMenuItem,
+            this.toolStripMenuItem14,
             this.saveMenuItem,
             this.saveAsMenuItem,
             this.closeProjectToolStripMenuItem,
             this.toolStripMenuItem5,
             this.ManageShapeAndModelLibrariesMenuItem,
+            this.toolStripMenuItem13,
+            this.exportRepositoryMenuItem,
+            this.importRepositoryMenuItem,
             this.exportDiagramAsMenuItem,
             this.toolStripMenuItem1,
             this.quitMenuItem});
@@ -364,7 +376,7 @@ namespace Dataweb.NShape.Designer {
 			this.newProjectToolStripMenuItem.Image = ((System.Drawing.Image)(resources.GetObject("newProjectToolStripMenuItem.Image")));
 			this.newProjectToolStripMenuItem.ImageTransparentColor = System.Drawing.Color.Fuchsia;
 			this.newProjectToolStripMenuItem.Name = "newProjectToolStripMenuItem";
-			this.newProjectToolStripMenuItem.Size = new System.Drawing.Size(268, 22);
+			this.newProjectToolStripMenuItem.Size = new System.Drawing.Size(288, 22);
 			this.newProjectToolStripMenuItem.Text = "New Project";
 			// 
 			// newProjectInXMLStoreToolStripMenuItem
@@ -389,7 +401,7 @@ namespace Dataweb.NShape.Designer {
 			this.openProjectMenuItem.Image = ((System.Drawing.Image)(resources.GetObject("openProjectMenuItem.Image")));
 			this.openProjectMenuItem.ImageTransparentColor = System.Drawing.Color.Fuchsia;
 			this.openProjectMenuItem.Name = "openProjectMenuItem";
-			this.openProjectMenuItem.Size = new System.Drawing.Size(268, 22);
+			this.openProjectMenuItem.Size = new System.Drawing.Size(288, 22);
 			this.openProjectMenuItem.Text = "Open Project";
 			// 
 			// openXMLRepositoryToolStripMenuItem
@@ -409,13 +421,38 @@ namespace Dataweb.NShape.Designer {
 			// recentProjectsMenuItem
 			// 
 			this.recentProjectsMenuItem.Name = "recentProjectsMenuItem";
-			this.recentProjectsMenuItem.Size = new System.Drawing.Size(268, 22);
+			this.recentProjectsMenuItem.Size = new System.Drawing.Size(288, 22);
 			this.recentProjectsMenuItem.Text = "Recent Projects";
 			// 
 			// toolStripMenuItem7
 			// 
 			this.toolStripMenuItem7.Name = "toolStripMenuItem7";
-			this.toolStripMenuItem7.Size = new System.Drawing.Size(265, 6);
+			this.toolStripMenuItem7.Size = new System.Drawing.Size(285, 6);
+			// 
+			// upgradeVersionMenuItem
+			// 
+			this.upgradeVersionMenuItem.Enabled = false;
+			this.upgradeVersionMenuItem.Image = global::Dataweb.NShape.Designer.Properties.Resources.UpgradeFileVersion;
+			this.upgradeVersionMenuItem.ImageTransparentColor = System.Drawing.Color.Magenta;
+			this.upgradeVersionMenuItem.Name = "upgradeVersionMenuItem";
+			this.upgradeVersionMenuItem.Size = new System.Drawing.Size(288, 22);
+			this.upgradeVersionMenuItem.Text = "Upgrade File Version";
+			this.upgradeVersionMenuItem.Click += new System.EventHandler(this.upgradeVersionMenuItem_Click);
+			// 
+			// useEmbeddedImagesToolStripMenuItem
+			// 
+			this.useEmbeddedImagesToolStripMenuItem.Checked = true;
+			this.useEmbeddedImagesToolStripMenuItem.CheckOnClick = true;
+			this.useEmbeddedImagesToolStripMenuItem.CheckState = System.Windows.Forms.CheckState.Checked;
+			this.useEmbeddedImagesToolStripMenuItem.Name = "useEmbeddedImagesToolStripMenuItem";
+			this.useEmbeddedImagesToolStripMenuItem.Size = new System.Drawing.Size(288, 22);
+			this.useEmbeddedImagesToolStripMenuItem.Text = "Use Embedded Images";
+			this.useEmbeddedImagesToolStripMenuItem.CheckedChanged += new System.EventHandler(this.useEmbeddedImagesToolStripMenuItem_CheckedChanged);
+			// 
+			// toolStripMenuItem14
+			// 
+			this.toolStripMenuItem14.Name = "toolStripMenuItem14";
+			this.toolStripMenuItem14.Size = new System.Drawing.Size(285, 6);
 			// 
 			// saveMenuItem
 			// 
@@ -423,36 +460,58 @@ namespace Dataweb.NShape.Designer {
 			this.saveMenuItem.Image = ((System.Drawing.Image)(resources.GetObject("saveMenuItem.Image")));
 			this.saveMenuItem.ImageTransparentColor = System.Drawing.Color.Fuchsia;
 			this.saveMenuItem.Name = "saveMenuItem";
-			this.saveMenuItem.Size = new System.Drawing.Size(268, 22);
+			this.saveMenuItem.Size = new System.Drawing.Size(288, 22);
 			this.saveMenuItem.Text = "Save";
 			this.saveMenuItem.Click += new System.EventHandler(this.saveToolStripMenuItem_Click);
 			// 
 			// saveAsMenuItem
 			// 
+			this.saveAsMenuItem.Image = global::Dataweb.NShape.Designer.Properties.Resources.SaveAsBtn;
 			this.saveAsMenuItem.ImageTransparentColor = System.Drawing.Color.Fuchsia;
 			this.saveAsMenuItem.Name = "saveAsMenuItem";
-			this.saveAsMenuItem.Size = new System.Drawing.Size(268, 22);
+			this.saveAsMenuItem.Size = new System.Drawing.Size(288, 22);
 			this.saveAsMenuItem.Text = "Save as...";
 			this.saveAsMenuItem.Click += new System.EventHandler(this.saveAsToolStripMenuItem_Click);
 			// 
 			// closeProjectToolStripMenuItem
 			// 
+			this.closeProjectToolStripMenuItem.Image = global::Dataweb.NShape.Designer.Properties.Resources.CloseBtn;
+			this.closeProjectToolStripMenuItem.ImageTransparentColor = System.Drawing.Color.Magenta;
 			this.closeProjectToolStripMenuItem.Name = "closeProjectToolStripMenuItem";
-			this.closeProjectToolStripMenuItem.Size = new System.Drawing.Size(268, 22);
+			this.closeProjectToolStripMenuItem.Size = new System.Drawing.Size(288, 22);
 			this.closeProjectToolStripMenuItem.Text = "Close Project";
 			this.closeProjectToolStripMenuItem.Click += new System.EventHandler(this.closeProjectToolStripMenuItem_Click);
 			// 
 			// toolStripMenuItem5
 			// 
 			this.toolStripMenuItem5.Name = "toolStripMenuItem5";
-			this.toolStripMenuItem5.Size = new System.Drawing.Size(265, 6);
+			this.toolStripMenuItem5.Size = new System.Drawing.Size(285, 6);
 			// 
 			// ManageShapeAndModelLibrariesMenuItem
 			// 
 			this.ManageShapeAndModelLibrariesMenuItem.Name = "ManageShapeAndModelLibrariesMenuItem";
-			this.ManageShapeAndModelLibrariesMenuItem.Size = new System.Drawing.Size(268, 22);
+			this.ManageShapeAndModelLibrariesMenuItem.Size = new System.Drawing.Size(288, 22);
 			this.ManageShapeAndModelLibrariesMenuItem.Text = "Manage Shape and Model Libraries...";
 			this.ManageShapeAndModelLibrariesMenuItem.Click += new System.EventHandler(this.ManageShapeAndModelLibrariesMenuItem_Click);
+			// 
+			// toolStripMenuItem13
+			// 
+			this.toolStripMenuItem13.Name = "toolStripMenuItem13";
+			this.toolStripMenuItem13.Size = new System.Drawing.Size(285, 6);
+			// 
+			// exportRepositoryMenuItem
+			// 
+			this.exportRepositoryMenuItem.Name = "exportRepositoryMenuItem";
+			this.exportRepositoryMenuItem.Size = new System.Drawing.Size(288, 22);
+			this.exportRepositoryMenuItem.Text = "Export Repository to Clipboard (XML)";
+			this.exportRepositoryMenuItem.Click += new System.EventHandler(this.exportRepositoryMenuItem_Click);
+			// 
+			// importRepositoryMenuItem
+			// 
+			this.importRepositoryMenuItem.Name = "importRepositoryMenuItem";
+			this.importRepositoryMenuItem.Size = new System.Drawing.Size(288, 22);
+			this.importRepositoryMenuItem.Text = "Import Repository from Clipboard (XML)";
+			this.importRepositoryMenuItem.Click += new System.EventHandler(this.importRepositoryMenuItem_Click);
 			// 
 			// exportDiagramAsMenuItem
 			// 
@@ -464,8 +523,8 @@ namespace Dataweb.NShape.Designer {
             this.jpgExportMenuItem,
             this.bmpExportMenuItem});
 			this.exportDiagramAsMenuItem.Name = "exportDiagramAsMenuItem";
-			this.exportDiagramAsMenuItem.Size = new System.Drawing.Size(268, 22);
-			this.exportDiagramAsMenuItem.Text = "Export diagram";
+			this.exportDiagramAsMenuItem.Size = new System.Drawing.Size(288, 22);
+			this.exportDiagramAsMenuItem.Text = "Export Diagram as Image";
 			// 
 			// exportDialogToolStripMenuItem
 			// 
@@ -512,13 +571,13 @@ namespace Dataweb.NShape.Designer {
 			// toolStripMenuItem1
 			// 
 			this.toolStripMenuItem1.Name = "toolStripMenuItem1";
-			this.toolStripMenuItem1.Size = new System.Drawing.Size(265, 6);
+			this.toolStripMenuItem1.Size = new System.Drawing.Size(285, 6);
 			// 
 			// quitMenuItem
 			// 
 			this.quitMenuItem.ImageTransparentColor = System.Drawing.Color.Fuchsia;
 			this.quitMenuItem.Name = "quitMenuItem";
-			this.quitMenuItem.Size = new System.Drawing.Size(268, 22);
+			this.quitMenuItem.Size = new System.Drawing.Size(288, 22);
 			this.quitMenuItem.Text = "Quit";
 			this.quitMenuItem.Click += new System.EventHandler(this.quitToolStripMenuItem_Click);
 			// 
@@ -944,7 +1003,7 @@ namespace Dataweb.NShape.Designer {
 			// 
 			this.splitContainer1.Panel2.Controls.Add(this.propertyWindowTabControl);
 			this.splitContainer1.Size = new System.Drawing.Size(228, 489);
-			this.splitContainer1.SplitterDistance = 183;
+			this.splitContainer1.SplitterDistance = 180;
 			this.splitContainer1.TabIndex = 0;
 			// 
 			// toolboxListView
@@ -958,7 +1017,7 @@ namespace Dataweb.NShape.Designer {
 			this.toolboxListView.MultiSelect = false;
 			this.toolboxListView.Name = "toolboxListView";
 			this.toolboxListView.ShowItemToolTips = true;
-			this.toolboxListView.Size = new System.Drawing.Size(228, 183);
+			this.toolboxListView.Size = new System.Drawing.Size(228, 180);
 			this.toolboxListView.TabIndex = 0;
 			this.toolboxListView.UseCompatibleStateImageBehavior = false;
 			this.toolboxListView.View = System.Windows.Forms.View.Details;
@@ -968,7 +1027,7 @@ namespace Dataweb.NShape.Designer {
 			this.toolboxContextMenuStrip.Items.AddRange(new System.Windows.Forms.ToolStripItem[] {
             this.viewToolStripMenuItem1});
 			this.toolboxContextMenuStrip.Name = "toolboxContextMenuStrip";
-			this.toolboxContextMenuStrip.Size = new System.Drawing.Size(153, 48);
+			this.toolboxContextMenuStrip.Size = new System.Drawing.Size(100, 26);
 			// 
 			// viewToolStripMenuItem1
 			// 
@@ -978,7 +1037,7 @@ namespace Dataweb.NShape.Designer {
             this.smallIconsToolStripMenuItem,
             this.largeIconsToolStripMenuItem});
 			this.viewToolStripMenuItem1.Name = "viewToolStripMenuItem1";
-			this.viewToolStripMenuItem1.Size = new System.Drawing.Size(152, 22);
+			this.viewToolStripMenuItem1.Size = new System.Drawing.Size(99, 22);
 			this.viewToolStripMenuItem1.Text = "View";
 			// 
 			// detailsToolStripMenuItem
@@ -1018,7 +1077,7 @@ namespace Dataweb.NShape.Designer {
 			this.propertyWindowTabControl.Location = new System.Drawing.Point(0, 0);
 			this.propertyWindowTabControl.Name = "propertyWindowTabControl";
 			this.propertyWindowTabControl.SelectedIndex = 0;
-			this.propertyWindowTabControl.Size = new System.Drawing.Size(228, 302);
+			this.propertyWindowTabControl.Size = new System.Drawing.Size(228, 305);
 			this.propertyWindowTabControl.TabIndex = 0;
 			// 
 			// propertyWindowShapeTab
@@ -1027,7 +1086,7 @@ namespace Dataweb.NShape.Designer {
 			this.propertyWindowShapeTab.Location = new System.Drawing.Point(4, 22);
 			this.propertyWindowShapeTab.Name = "propertyWindowShapeTab";
 			this.propertyWindowShapeTab.Padding = new System.Windows.Forms.Padding(3);
-			this.propertyWindowShapeTab.Size = new System.Drawing.Size(220, 276);
+			this.propertyWindowShapeTab.Size = new System.Drawing.Size(220, 279);
 			this.propertyWindowShapeTab.TabIndex = 0;
 			this.propertyWindowShapeTab.Text = "Shape";
 			this.propertyWindowShapeTab.UseVisualStyleBackColor = true;
@@ -1037,7 +1096,7 @@ namespace Dataweb.NShape.Designer {
 			this.primaryPropertyGrid.Dock = System.Windows.Forms.DockStyle.Fill;
 			this.primaryPropertyGrid.Location = new System.Drawing.Point(3, 3);
 			this.primaryPropertyGrid.Name = "primaryPropertyGrid";
-			this.primaryPropertyGrid.Size = new System.Drawing.Size(214, 270);
+			this.primaryPropertyGrid.Size = new System.Drawing.Size(214, 273);
 			this.primaryPropertyGrid.TabIndex = 1;
 			// 
 			// propertyWindowModelTab
@@ -1046,7 +1105,7 @@ namespace Dataweb.NShape.Designer {
 			this.propertyWindowModelTab.Location = new System.Drawing.Point(4, 22);
 			this.propertyWindowModelTab.Name = "propertyWindowModelTab";
 			this.propertyWindowModelTab.Padding = new System.Windows.Forms.Padding(3);
-			this.propertyWindowModelTab.Size = new System.Drawing.Size(220, 244);
+			this.propertyWindowModelTab.Size = new System.Drawing.Size(220, 232);
 			this.propertyWindowModelTab.TabIndex = 1;
 			this.propertyWindowModelTab.Text = "Model";
 			this.propertyWindowModelTab.UseVisualStyleBackColor = true;
@@ -1056,7 +1115,7 @@ namespace Dataweb.NShape.Designer {
 			this.secondaryPropertyGrid.Dock = System.Windows.Forms.DockStyle.Fill;
 			this.secondaryPropertyGrid.Location = new System.Drawing.Point(3, 3);
 			this.secondaryPropertyGrid.Name = "secondaryPropertyGrid";
-			this.secondaryPropertyGrid.Size = new System.Drawing.Size(214, 238);
+			this.secondaryPropertyGrid.Size = new System.Drawing.Size(214, 226);
 			this.secondaryPropertyGrid.TabIndex = 0;
 			// 
 			// layersTab
@@ -1065,7 +1124,7 @@ namespace Dataweb.NShape.Designer {
 			this.layersTab.Location = new System.Drawing.Point(4, 22);
 			this.layersTab.Name = "layersTab";
 			this.layersTab.Padding = new System.Windows.Forms.Padding(3);
-			this.layersTab.Size = new System.Drawing.Size(220, 244);
+			this.layersTab.Size = new System.Drawing.Size(220, 232);
 			this.layersTab.TabIndex = 2;
 			this.layersTab.Text = "Layers";
 			this.layersTab.UseVisualStyleBackColor = true;
@@ -1085,7 +1144,7 @@ namespace Dataweb.NShape.Designer {
 			this.layerEditorListView.OwnerDraw = true;
 			this.layerEditorListView.ShowDefaultContextMenu = true;
 			this.layerEditorListView.ShowGroups = false;
-			this.layerEditorListView.Size = new System.Drawing.Size(214, 326);
+			this.layerEditorListView.Size = new System.Drawing.Size(214, 226);
 			this.layerEditorListView.TabIndex = 0;
 			this.layerEditorListView.UseCompatibleStateImageBehavior = false;
 			this.layerEditorListView.View = System.Windows.Forms.View.Details;
@@ -1128,8 +1187,8 @@ namespace Dataweb.NShape.Designer {
 			this.toolStripContainer.TopToolStripPanel.Controls.Add(this.mainMenuStrip);
 			this.toolStripContainer.TopToolStripPanel.Controls.Add(this.editToolStrip);
 			this.toolStripContainer.TopToolStripPanel.Controls.Add(this.settingsToolStrip);
-			this.toolStripContainer.TopToolStripPanel.Controls.Add(this.debugToolStrip);
 			this.toolStripContainer.TopToolStripPanel.Controls.Add(this.displayToolStrip);
+			this.toolStripContainer.TopToolStripPanel.Controls.Add(this.debugToolStrip);
 			// 
 			// displayTabControl
 			// 
@@ -1424,39 +1483,6 @@ namespace Dataweb.NShape.Designer {
 			this.showGridToolbarButton.Text = "Show/Hide Gridlines";
 			this.showGridToolbarButton.Click += new System.EventHandler(this.showGridToolStripMenuItem_Click);
 			// 
-			// debugToolStrip
-			// 
-			this.debugToolStrip.Dock = System.Windows.Forms.DockStyle.None;
-			this.debugToolStrip.Items.AddRange(new System.Windows.Forms.ToolStripItem[] {
-            this.debugDrawOccupationToolbarButton,
-            this.debugDrawInvalidatedAreaToolbarButton});
-			this.debugToolStrip.Location = new System.Drawing.Point(619, 24);
-			this.debugToolStrip.Name = "debugToolStrip";
-			this.debugToolStrip.Size = new System.Drawing.Size(89, 25);
-			this.debugToolStrip.TabIndex = 14;
-			// 
-			// debugDrawOccupationToolbarButton
-			// 
-			this.debugDrawOccupationToolbarButton.CheckOnClick = true;
-			this.debugDrawOccupationToolbarButton.DisplayStyle = System.Windows.Forms.ToolStripItemDisplayStyle.Image;
-			this.debugDrawOccupationToolbarButton.Image = ((System.Drawing.Image)(resources.GetObject("debugDrawOccupationToolbarButton.Image")));
-			this.debugDrawOccupationToolbarButton.ImageTransparentColor = System.Drawing.Color.Fuchsia;
-			this.debugDrawOccupationToolbarButton.Name = "debugDrawOccupationToolbarButton";
-			this.debugDrawOccupationToolbarButton.Size = new System.Drawing.Size(23, 22);
-			this.debugDrawOccupationToolbarButton.Text = "Visualize occupied cells of the diagram\'s spacial index.";
-			this.debugDrawOccupationToolbarButton.Click += new System.EventHandler(this.debugDrawOccupationToolbarButton_Click);
-			// 
-			// debugDrawInvalidatedAreaToolbarButton
-			// 
-			this.debugDrawInvalidatedAreaToolbarButton.CheckOnClick = true;
-			this.debugDrawInvalidatedAreaToolbarButton.DisplayStyle = System.Windows.Forms.ToolStripItemDisplayStyle.Image;
-			this.debugDrawInvalidatedAreaToolbarButton.Image = ((System.Drawing.Image)(resources.GetObject("debugDrawInvalidatedAreaToolbarButton.Image")));
-			this.debugDrawInvalidatedAreaToolbarButton.ImageTransparentColor = System.Drawing.Color.Fuchsia;
-			this.debugDrawInvalidatedAreaToolbarButton.Name = "debugDrawInvalidatedAreaToolbarButton";
-			this.debugDrawInvalidatedAreaToolbarButton.Size = new System.Drawing.Size(23, 22);
-			this.debugDrawInvalidatedAreaToolbarButton.Text = "Visualize invalidated areas";
-			this.debugDrawInvalidatedAreaToolbarButton.Click += new System.EventHandler(this.debugDrawInvalidatedAreaToolbarButton_Click);
-			// 
 			// displayToolStrip
 			// 
 			this.displayToolStrip.Dock = System.Windows.Forms.DockStyle.None;
@@ -1504,6 +1530,39 @@ namespace Dataweb.NShape.Designer {
 			this.runtimeModeComboBox.ToolTipText = "Select User Role";
 			this.runtimeModeComboBox.SelectedIndexChanged += new System.EventHandler(this.runtimeModeButton_SelectedIndexChanged);
 			// 
+			// debugToolStrip
+			// 
+			this.debugToolStrip.Dock = System.Windows.Forms.DockStyle.None;
+			this.debugToolStrip.Items.AddRange(new System.Windows.Forms.ToolStripItem[] {
+            this.debugDrawOccupationToolbarButton,
+            this.debugDrawInvalidatedAreaToolbarButton});
+			this.debugToolStrip.Location = new System.Drawing.Point(619, 24);
+			this.debugToolStrip.Name = "debugToolStrip";
+			this.debugToolStrip.Size = new System.Drawing.Size(89, 25);
+			this.debugToolStrip.TabIndex = 14;
+			// 
+			// debugDrawOccupationToolbarButton
+			// 
+			this.debugDrawOccupationToolbarButton.CheckOnClick = true;
+			this.debugDrawOccupationToolbarButton.DisplayStyle = System.Windows.Forms.ToolStripItemDisplayStyle.Image;
+			this.debugDrawOccupationToolbarButton.Image = ((System.Drawing.Image)(resources.GetObject("debugDrawOccupationToolbarButton.Image")));
+			this.debugDrawOccupationToolbarButton.ImageTransparentColor = System.Drawing.Color.Fuchsia;
+			this.debugDrawOccupationToolbarButton.Name = "debugDrawOccupationToolbarButton";
+			this.debugDrawOccupationToolbarButton.Size = new System.Drawing.Size(23, 22);
+			this.debugDrawOccupationToolbarButton.Text = "Visualize occupied cells of the diagram\'s spacial index.";
+			this.debugDrawOccupationToolbarButton.Click += new System.EventHandler(this.debugDrawOccupationToolbarButton_Click);
+			// 
+			// debugDrawInvalidatedAreaToolbarButton
+			// 
+			this.debugDrawInvalidatedAreaToolbarButton.CheckOnClick = true;
+			this.debugDrawInvalidatedAreaToolbarButton.DisplayStyle = System.Windows.Forms.ToolStripItemDisplayStyle.Image;
+			this.debugDrawInvalidatedAreaToolbarButton.Image = ((System.Drawing.Image)(resources.GetObject("debugDrawInvalidatedAreaToolbarButton.Image")));
+			this.debugDrawInvalidatedAreaToolbarButton.ImageTransparentColor = System.Drawing.Color.Fuchsia;
+			this.debugDrawInvalidatedAreaToolbarButton.Name = "debugDrawInvalidatedAreaToolbarButton";
+			this.debugDrawInvalidatedAreaToolbarButton.Size = new System.Drawing.Size(23, 22);
+			this.debugDrawInvalidatedAreaToolbarButton.Text = "Visualize invalidated areas";
+			this.debugDrawInvalidatedAreaToolbarButton.Click += new System.EventHandler(this.debugDrawInvalidatedAreaToolbarButton_Click);
+			// 
 			// saveFileDialog
 			// 
 			this.saveFileDialog.Filter = "XML Repository Files|*.xml|All Files|*.*";
@@ -1515,6 +1574,7 @@ namespace Dataweb.NShape.Designer {
 			// 
 			// project
 			// 
+			this.project.Description = null;
 			this.project.LibrarySearchPaths = ((System.Collections.Generic.IList<string>)(resources.GetObject("project.LibrarySearchPaths")));
 			this.project.Name = "";
 			this.project.Repository = this.cachedRepository;
@@ -1617,10 +1677,10 @@ namespace Dataweb.NShape.Designer {
 			this.editToolStrip.PerformLayout();
 			this.settingsToolStrip.ResumeLayout(false);
 			this.settingsToolStrip.PerformLayout();
-			this.debugToolStrip.ResumeLayout(false);
-			this.debugToolStrip.PerformLayout();
 			this.displayToolStrip.ResumeLayout(false);
 			this.displayToolStrip.PerformLayout();
+			this.debugToolStrip.ResumeLayout(false);
+			this.debugToolStrip.PerformLayout();
 			this.ResumeLayout(false);
 
 		}
@@ -1682,6 +1742,8 @@ namespace Dataweb.NShape.Designer {
 		private System.Windows.Forms.TabControl displayTabControl;
 		private System.Windows.Forms.ToolStripMenuItem highQualityRenderingMenuItem;
 		private System.Windows.Forms.ToolStripSeparator toolStripMenuItem1;
+		private System.Windows.Forms.ToolStripMenuItem exportRepositoryMenuItem;
+		private System.Windows.Forms.ToolStripMenuItem importRepositoryMenuItem;
 		private System.Windows.Forms.ToolStripMenuItem exportDiagramAsMenuItem;
 		private System.Windows.Forms.ToolStripMenuItem pngExportMenuItem;
 		private System.Windows.Forms.ToolStripMenuItem emfExportMenuItem;
@@ -1689,6 +1751,7 @@ namespace Dataweb.NShape.Designer {
 		private System.Windows.Forms.ToolStripMenuItem bmpExportMenuItem;
 		private System.Windows.Forms.ToolStripMenuItem wmfExportMenuItem;
 		private System.Windows.Forms.ToolStripMenuItem ManageShapeAndModelLibrariesMenuItem;
+		private System.Windows.Forms.ToolStripSeparator toolStripMenuItem13;
 		private System.Windows.Forms.ToolStripSeparator toolStripMenuItem6;
 		private System.Windows.Forms.ToolStripMenuItem toForegroundMenuItem;
 		private System.Windows.Forms.ToolStripMenuItem toBackgroundMenuItem;
@@ -1779,6 +1842,9 @@ namespace Dataweb.NShape.Designer {
 		private System.Windows.Forms.ToolStripMenuItem resetToolbarsToolStripMenuItem;
 		private System.Windows.Forms.ToolStripSeparator toolStripMenuItem12;
 		private System.Windows.Forms.ToolTip toolTip;
+		private System.Windows.Forms.ToolStripMenuItem upgradeVersionMenuItem;
+		private System.Windows.Forms.ToolStripMenuItem useEmbeddedImagesToolStripMenuItem;
+		private System.Windows.Forms.ToolStripSeparator toolStripMenuItem14;
 	}
 }
 

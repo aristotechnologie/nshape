@@ -62,7 +62,7 @@ namespace Dataweb.NShape.WinFormsUI {
 		/// <summary>
 		/// Specifies the version of the assembly containing the component.
 		/// </summary>
-		[Category("NShape")]
+		[CategoryNShape()]
 		[Browsable(true)]
 		public new string ProductVersion {
 			get { return base.ProductVersion; }
@@ -272,7 +272,6 @@ namespace Dataweb.NShape.WinFormsUI {
 			// Set Styles here because the ParagraphStyle is needed for resizing
 			characterStyle = shape.GetCaptionCharacterStyle(captionIndex);
 			paragraphStyle = shape.GetCaptionParagraphStyle(captionIndex);
-
 
 			// Set base' members
 			SuspendLayout();

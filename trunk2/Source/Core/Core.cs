@@ -15,6 +15,7 @@
 using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.ComponentModel;
 using System.Drawing;
 
 
@@ -23,8 +24,9 @@ namespace Dataweb.NShape.Advanced {
 	/// <summary>
 	/// Simulates a string coming from a resource.
 	/// </summary>
-	/// <remarks>Later versions will hold a reference to a ResourceManager and read
-	/// the string from there.</remarks>
+	/// <remarks>
+	/// Later versions will hold a reference to a ResourceManager and read the string from there.
+	/// </remarks>
 	public class ResourceString {
 
 		/// <ToBeCompleted></ToBeCompleted>
@@ -50,6 +52,118 @@ namespace Dataweb.NShape.Advanced {
 	}
 
 
+	#region Category Attributes
+
+	/// <summary>
+	/// Specifies the name of the category in which to group the property or event when displayed 
+	/// in a System.Windows.Forms.PropertyGrid control set to Categorized mode.
+	/// </summary>
+	public class CategoryNShape : CategoryAttribute {
+
+		/// <summary>
+		/// Initializes a new instance of the <see cref="System.ComponentModel.CategoryAttribute" /> class using the category name 'NShape'.
+		/// </summary>
+		public CategoryNShape()
+			: base(categoryName) {
+		}
+
+
+		private const string categoryName = "NShape";
+
+	}
+
+
+	/// <summary>
+	/// Specifies the name of the category in which to group the property or event when displayed 
+	/// in a System.Windows.Forms.PropertyGrid control set to Categorized mode.
+	/// </summary>
+	public class CategoryGeneral : CategoryAttribute {
+
+		/// <summary>
+		/// Initializes a new instance of the <see cref="System.ComponentModel.CategoryAttribute" /> class using the category name 'General'.
+		/// </summary>
+		public CategoryGeneral()
+			: base(categoryName) {
+		}
+
+
+		/// <override></override>
+		protected override string GetLocalizedString(string value) {
+			return Properties.Resources.Text_CategoryGeneral;
+		}
+
+		
+		private const string categoryName = "General";
+
+	}
+
+
+	/// <summary>
+	/// Specifies the name of the category in which to group the property or event when displayed 
+	/// in a System.Windows.Forms.PropertyGrid control set to Categorized mode.
+	/// </summary>
+	public class CategoryAppearance : CategoryAttribute {
+
+		/// <summary>
+		/// Initializes a new instance of the <see cref="System.ComponentModel.CategoryAttribute" /> class using the category name 'Appearance'.
+		/// </summary>
+		public CategoryAppearance()
+			: base(CategoryAttribute.Appearance.Category) {
+		}
+	
+	}
+
+
+	/// <summary>
+	/// Specifies the name of the category in which to group the property or event when displayed 
+	/// in a System.Windows.Forms.PropertyGrid control set to Categorized mode.
+	/// </summary>
+	public class CategoryBehavior : CategoryAttribute {
+
+		/// <summary>
+		/// Initializes a new instance of the <see cref="System.ComponentModel.CategoryAttribute" /> class using the category name 'Behavior'.
+		/// </summary>
+		public CategoryBehavior()
+			: base(CategoryAttribute.Behavior.Category) {
+		}
+
+	}
+
+
+	/// <summary>
+	/// Specifies the name of the category in which to group the property or event when displayed 
+	/// in a System.Windows.Forms.PropertyGrid control set to Categorized mode.
+	/// </summary>
+	public class CategoryLayout : CategoryAttribute {
+
+		/// <summary>
+		/// Initializes a new instance of the <see cref="System.ComponentModel.CategoryAttribute" /> class using the category name 'Layout'.
+		/// </summary>
+		public CategoryLayout()
+			: base(CategoryAttribute.Layout.Category) {
+		}
+
+	}
+
+
+	/// <summary>
+	/// Specifies the name of the category in which to group the property or event when displayed 
+	/// in a System.Windows.Forms.PropertyGrid control set to Categorized mode.
+	/// </summary>
+	public class CategoryData : CategoryAttribute {
+
+		/// <summary>
+		/// Initializes a new instance of the <see cref="System.ComponentModel.CategoryAttribute" /> class using the category name 'Data'.
+		/// </summary>
+		public CategoryData()
+			: base(CategoryAttribute.Data.Category) {
+		}
+
+	}
+
+	#endregion
+
+
 	/// <summary>
 	/// Provides services to shapes
 	/// </summary>
@@ -73,7 +187,8 @@ namespace Dataweb.NShape.Advanced {
 		/// <summary>
 		/// Update layout according to the changed bounds.
 		/// </summary>
-		void NotifyBoundsChanged();	// ToDo: Find a better name...
+		[Obsolete("Use the Diagram class' Resized event for getting notified about changed bounds.")]
+		void NotifyBoundsChanged();
 
 		/// <summary>
 		/// Info graphics for mearusing text, etc. Do not dispose!
@@ -89,6 +204,7 @@ namespace Dataweb.NShape.Advanced {
 		/// Line style for drawing hints.
 		/// </summary>
 		ILineStyle HintForegroundStyle { get; }
+
 	}
 
 
@@ -101,7 +217,12 @@ namespace Dataweb.NShape.Advanced {
 		/// <summary>
 		/// Registers a library for shape or model objects.
 		/// </summary>
-		void RegisterLibrary(string name, int defaultRepositoryVersion);
+		/// <param name="name">The name of the library.</param>
+		/// <param name="preferredRepositoryVersion">
+		/// Defines the preferred repository version for shapes. 
+		/// Will be used when shapes from this library are stored for the first time.
+		/// </param>
+		void RegisterLibrary(string name, int preferredRepositoryVersion);
 
 		/// <summary>
 		/// Registers a shape type implemented in the library.
@@ -173,20 +294,32 @@ namespace Dataweb.NShape.Advanced {
 		/// <summary>
 		/// Adds a dynamic library to the project.
 		/// </summary>
-		public void AddLibrary(string name, string assemblyName, int repositoryVersion) {
+		public void AddLibrary(string name, string assemblyName, int libraryVersion) {
 			if (name == null) throw new ArgumentNullException("name");
 			if (assemblyName == null) throw new ArgumentNullException("assemblyName");
-			libraries.Add(new LibraryData(name, assemblyName, repositoryVersion));
+			libraries.Add(new LibraryData(name, assemblyName, libraryVersion));
 		}
 
 
 		/// <summary>
-		/// Retrieves the cache version of the given library.
+		/// Retrieves the repository version of the given library.
 		/// </summary>
 		public int GetRepositoryVersion(string libraryName) {
 			if (libraryName == null) throw new ArgumentNullException("libraryName");
 			LibraryData ld = FindLibraryData(libraryName, true);
 			return ld.RepositoryVersion;
+		}
+
+
+		/// <summary>
+		/// Sets the repository version used for loading/saving the library's shapes/model objects.
+		/// </summary>
+		public void SetRepositoryVersion(string libraryName, int version) {
+			// The core library will not be enlisted in the project settings
+			if (string.Compare(libraryName, Project.CoreLibraryName) == 0)
+				return;
+			LibraryData ld = FindLibraryData(libraryName, true);
+			ld.RepositoryVersion = version;
 		}
 
 

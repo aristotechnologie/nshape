@@ -50,6 +50,15 @@ namespace Dataweb.NShape {
 		}
 
 
+		/// <summary>Defines how images are stored.</summary>
+		public enum ImageFileLocation {
+			/// <summary>Images will be saved to files in a seperate directory.</summary>
+			Directory,
+			/// <summary>Images will be embedded into the XML code as Base64 string.</summary>
+			Embedded
+		}
+
+
 		/// <summary>
 		/// Initializes a new instance of <see cref="T:Dataweb.NShape.XmlStore" />.
 		/// </summary>
@@ -62,11 +71,29 @@ namespace Dataweb.NShape {
 		/// <summary>
 		/// Initializes a new instance of <see cref="T:Dataweb.NShape.XmlStore" />.
 		/// </summary>
-		public XmlStore(string directoryName, string fileExtension) {
+		public XmlStore(string directoryName, string fileExtension)
+			: this(directoryName, fileExtension, false) {
+		}
+
+
+		/// <summary>
+		/// Initializes a new instance of <see cref="T:Dataweb.NShape.XmlStore" />.
+		/// </summary>
+		public XmlStore(string directoryName, string fileExtension, bool lazyLoading) {
 			if (directoryName == null) throw new ArgumentNullException("directoryName");
 			if (fileExtension == null) throw new ArgumentNullException("fileExtension");
-			this.directoryName = directoryName;
-			this.fileExtension = fileExtension;
+			this.DirectoryName = directoryName;
+			this.FileExtension = fileExtension;
+			this.LazyLoading = lazyLoading;
+		}
+
+
+		/// <summary>
+		/// Initializes a new instance of <see cref="T:Dataweb.NShape.XmlStore" />.
+		/// </summary>
+		public XmlStore(Stream stream) {
+			if (stream == null) throw new ArgumentNullException("stream");
+			this.Stream = stream;
 		}
 
 
@@ -75,16 +102,38 @@ namespace Dataweb.NShape {
 		/// <summary>
 		/// Specifies the version of the assembly containing the component.
 		/// </summary>
-		[Category("NShape")]
+		[CategoryNShape()]
 		public string ProductVersion {
 			get { return this.GetType().Assembly.GetName().Version.ToString(); }
+		}
+
+
+		/// <override></override>
+		[Browsable(false)]
+		public override bool CanModifyVersion {
+			get { return true; }
+		}
+
+
+		/// <summary>
+		/// Gets or sets whether diagrams should be loaded without content (lazy loading).
+		/// </summary>
+		/// <remarks>
+		/// When using lazy loading, the shapes must be loaded explicitly by calling Repository.GetDiagramShapes.
+		/// Stream based XmlStores do not support lazy loading.
+		/// </remarks>
+		[CategoryBehavior]
+		[DefaultValue(false)]
+		public bool LazyLoading {
+			get { return usePartialLoading; }
+			set { usePartialLoading = value; }
 		}
 
 
 		/// <summary>
 		/// Defines the directory, where the NShape project is stored.
 		/// </summary>
-		[Category("NShape")]
+		[CategoryNShape()]
 		[Editor("Dataweb.NShape.WinFormsUI.DirectoryUITypeEditor, Dataweb.NShape.WinFormsUI", typeof(UITypeEditor))]
 		public string DirectoryName {
 			get { return directoryName; }
@@ -98,7 +147,7 @@ namespace Dataweb.NShape {
 		/// <summary>
 		/// Specifies the desired extension for the project file.
 		/// </summary>
-		[Category("NShape")]
+		[CategoryNShape()]
 		public string FileExtension {
 			get { return fileExtension; }
 			set {
@@ -114,7 +163,7 @@ namespace Dataweb.NShape {
 		/// <summary>
 		/// Defines the file name without extension, where the NShape designs are stored.
 		/// </summary>
-		[Category("NShape")]
+		[CategoryNShape()]
 		public string DesignFileName {
 			get { return designFileName; }
 			set { designFileName = value; }
@@ -124,7 +173,7 @@ namespace Dataweb.NShape {
 		/// <summary>
 		/// Specifies whether a backup for the current contents should be created when saving changes to file.
 		/// </summary>
-		[Category("NShape")]
+		[CategoryNShape()]
 		[DefaultValue(BackupFileGenerationMode.BakFile)]
 		public BackupFileGenerationMode BackupGenerationMode {
 			get { return backupGenerationMode; }
@@ -133,9 +182,10 @@ namespace Dataweb.NShape {
 
 
 		/// <summary>
-		/// Specifies whether a backup for the current contents should be created when saving changes to file.
+		/// Specifies the file extension of automatically created backup copies. 
+		/// The BackupFileExtension will be appended to the existing file extension, e.g. "Project1.nspj.bak".
 		/// </summary>
-		[Category("NShape")]
+		[CategoryNShape()]
 		[DefaultValue(DefaultBackupFileExtension)]
 		public string BackupFileExtension {
 			get { return backupFileExtension; }
@@ -152,13 +202,19 @@ namespace Dataweb.NShape {
 		[Browsable(false)]
 		public string ProjectFilePath {
 			get {
-				if (string.IsNullOrEmpty(directoryName))
-					throw new InvalidOperationException("Directory for XML repository not set.");
-				if (string.IsNullOrEmpty(projectName))
-					throw new InvalidOperationException("Project name for XML repository not set.");
 				string result = Path.Combine(directoryName, projectName);
 				if (!string.IsNullOrEmpty(fileExtension)) result += fileExtension;
 				return result;
+			}
+			set {
+				if (string.IsNullOrEmpty(value)) {
+					directoryName = null;
+					projectName = null;
+				} else {
+					directoryName = Path.GetDirectoryName(value);
+					projectName = Path.GetFileNameWithoutExtension(value);
+					fileExtension = Path.GetExtension(value);
+				}
 			}
 		}
 
@@ -182,6 +238,21 @@ namespace Dataweb.NShape {
 			}
 		}
 
+
+		/// <summary>
+		/// Specifies whether images are stored in files or 'inline' as base 64 string.
+		/// </summary>
+		[CategoryNShape()]
+		[DefaultValue(ImageFileLocation.Embedded)]
+		public ImageFileLocation ImageLocation {
+			get { return storeImageLocation ?? defaultImageLocation; }
+			set {
+				// When setting the imageLocation explicitly, override the setting read from the store.
+				storeImageLocation = null;
+				defaultImageLocation = value; 
+			}
+		}
+
 		#endregion
 
 
@@ -201,14 +272,14 @@ namespace Dataweb.NShape {
 
 		/// <override></override>
 		public override bool Exists() {
-			return File.Exists(ProjectFilePath);
+			return File.Exists(ProjectFilePath) || Stream != null;
 		}
 
 
 		/// <override></override>
 		public override void ReadVersion(IStoreCache cache) {
 			if (cache == null) throw new ArgumentNullException("cache");
-			version = DoReadVersion(cache, false);
+			version = DoReadVersion(cache, (Stream != null));
 			cache.SetRepositoryBaseVersion(version);
 		}
 
@@ -227,20 +298,23 @@ namespace Dataweb.NShape {
 
 		/// <override></override>
 		public override void Close(IStoreCache storeCache) {
+			base.Close(storeCache);
 			isOpen = false;
 			isOpenComplete = false;
-			Close();
-			base.Close(storeCache);
+			CloseReader();
+			CloseWriter();
+			storeImageLocation = null;
 		}
 
 
 		/// <override></override>
 		public override void Erase() {
-			if (File.Exists(ProjectFilePath)) {
-				if (BackupGenerationMode != BackupFileGenerationMode.None)
-					CreateBackupFiles(ProjectFilePath);
+			if (BackupGenerationMode != BackupFileGenerationMode.None)
+				CreateBackupFiles(ProjectFilePath);
 
-				// Delete project file and (optional) image directory
+			// Delete project file and (optional) image directory
+			// (Check for existance because creating backup file will not copy but rename the original files)
+			if (File.Exists(ProjectFilePath)) {
 				File.Delete(ProjectFilePath);
 				if (Directory.Exists(ImageDirectory))
 					Directory.Delete(ImageDirectory, true);
@@ -283,7 +357,36 @@ namespace Dataweb.NShape {
 
 		/// <override></override>
 		public override void LoadDiagramShapes(IStoreCache cache, Diagram diagram) {
-			if (isOpen) OpenComplete(cache);
+			if (isOpen) {
+				if (LazyLoading) {
+					// If the diagram shapes were loaded before, do nothing
+					if (diagramsToLoad != null && !diagramsToLoad.Contains(diagram))
+						return;
+					// Open the store stream
+					OpenReader(cache, GetReadStream());
+
+					// Find first diagram
+					IEntityType diagramEntityType = cache.FindEntityTypeByName(Diagram.EntityTypeName);
+					string diagramTag = GetElementTag(diagramEntityType);
+					XmlSkipToElement(diagramTag);
+
+					// Find given diagram (according to its Id)
+					string diagramIdStr = ((IEntity)diagram).Id.ToString();
+					while (xmlReader.GetAttribute(0) != diagramIdStr)
+						xmlReader.ReadToNextSibling(diagramTag);
+					xmlReader.ReadToDescendant(shapesTag);
+
+					ReadDiagramShapes(cache, xmlReader, diagram);
+					ReadDiagramShapeConnections(cache, xmlReader);
+
+					// Remove the diagram from the list of not-yet-loaded diagrams
+					if (diagramsToLoad != null) {
+						diagramsToLoad.Remove(diagram);
+						if (diagramsToLoad.Count == 0) diagramsToLoad = null;
+					}
+				} else
+					OpenComplete(cache);
+			}
 		}
 
 
@@ -350,16 +453,45 @@ namespace Dataweb.NShape {
 			if (cache == null) throw new ArgumentNullException("cache");
 			if (!isOpen) throw new NShapeException("Store is not open.");
 			if (string.IsNullOrEmpty(ProjectName)) throw new NShapeException("Project name was not specified.");
+			if (diagramsToLoad != null && diagramsToLoad.Count > 0)
+				throw new NShapeException("Not all diagram shapes have been loaded. Load all diagram shapes before saving.");
+
+			if (Stream != null)
+				SaveChangesToStream(cache);
+			else
+				SaveChangesToFile(cache);
+		}
+
+
+		private void SaveChangesToFile(IStoreCache cache) {
+			// New strategy:
+			// * Calculate temporary file names
+			// -------------------------
+			//		* Open file as stream
+			//		* Set stream as current store stream
+			//      -------------------------
+			//			* Save repository to stream
+			//      -------------------------
+			//		* Unset stream as current store stream
+			//		* Close (dispose) file's stream
+			// -------------------------
+			// * Restore original file names
+			// 
+			// * Create backup files (if wanted)
+			// * Replace original files with temporary files
+			// 
+			// * Read store
+			
+			
+			// Calculate temporary file names for project and image directory
 			string tempProjectFilePath = GetTemporaryProjectFilePath();
 			string tempImageDirectory = CalcImageDirectoryName(tempProjectFilePath);
 			try {
-				// Save changes to temporary file
 				try {
-					// Set imageDirectoryPath to temporary directory, otherwise 
-					// all images will be saved to original image directory
-					imageDirectory = tempImageDirectory;
-					DoSaveChanges(tempProjectFilePath, cache);
+					// Save changes to temporary file
+					DoSaveChanges(cache, tempProjectFilePath);
 				} finally {
+					// Restore image directory (will be changed when calling DoSaveChanges with a path that differs from ProjectFilePath)
 					imageDirectory = CalcImageDirectoryName(ProjectFilePath);
 				}
 				//
@@ -369,8 +501,7 @@ namespace Dataweb.NShape {
 						Erase();
 						break;
 					case BackupFileGenerationMode.BakFile:
-						if (File.Exists(ProjectFilePath))
-							CreateBackupFiles(ProjectFilePath);
+						CreateBackupFiles(ProjectFilePath);
 						break;
 					default: throw new InvalidEnumArgumentException();
 				}
@@ -382,13 +513,11 @@ namespace Dataweb.NShape {
 					if (++retryCnt > 100) break;
 				}
 				//
-				// Rename temporary files
+				// Replace original files with temporary files (by renaming them)
 				Debug.Assert(File.Exists(tempProjectFilePath));
 				File.Move(tempProjectFilePath, ProjectFilePath);
 				if (Directory.Exists(tempImageDirectory))
 					Directory.Move(tempImageDirectory, ImageDirectory);
-				// Re-Open project file
-				OpenFile(cache, ProjectFilePath);
 			} catch (Exception exc) {
 				Debug.Print(exc.Message);
 				throw;
@@ -399,6 +528,24 @@ namespace Dataweb.NShape {
 				if (Directory.Exists(tempImageDirectory))
 					Directory.Exists(tempImageDirectory);
 			}
+		}
+
+
+		/// <summary>Saves the contents of the given store cache to the given stream as UTF8 encoded XML string</summary>
+		private void SaveChangesToStream(IStoreCache cache) {
+		    if (cache == null) throw new ArgumentNullException("cache");
+			if (Stream == null) throw new NShapeException("Cannot save to stream: Stream does not exist.");
+		    //if (!stream.CanSeek) throw new ArgumentException("The provided stream does not support seeking.");
+		    if (!isOpen) throw new NShapeException("Store is not open.");
+		    if (string.IsNullOrEmpty(ProjectName)) throw new NShapeException("Project name was not specified.");
+		    try {
+		        // Save changes to stream
+		        DoSaveChanges(cache, Stream);
+		    } catch (Exception exc) {
+		        Debug.Print(exc.Message);
+		        throw;
+		    } finally {
+		    }
 		}
 
 
@@ -425,17 +572,18 @@ namespace Dataweb.NShape {
 		/// <summary>
 		/// Reads the save version from the XML file.
 		/// </summary>
-		protected int DoReadVersion(IStoreCache cache, bool keepFileOpen) {
+		protected int DoReadVersion(IStoreCache cache, bool keepOpen) {
 			if (cache == null) throw new ArgumentNullException("cache");
 			if (isOpen) throw new InvalidOperationException(string.Format("{0} is already open.", GetType().Name));
-			OpenFile(cache, ProjectFilePath);
+			// Open the stream (if existing)
+			OpenReader(cache, GetReadStream());
 			try {
 				xmlReader.MoveToContent();
 				if (xmlReader.Name != rootTag || !xmlReader.HasAttributes)
 					throw new NShapeException("XML file '{0}' is not a valid NShape project file.", ProjectFilePath);
 				return int.Parse(xmlReader.GetAttribute(0));
 			} finally {
-				if (!keepFileOpen) Close();
+				if (!keepOpen) CloseReader();
 			}
 		}
 		
@@ -446,21 +594,29 @@ namespace Dataweb.NShape {
 		protected void DoOpen(IStoreCache cache, bool create) {
 			if (cache == null) throw new ArgumentNullException("cache");
 			if (isOpen) throw new InvalidOperationException(string.Format("{0} is already open.", GetType().Name));
+			// Reset the image location read from store
+			storeImageLocation = null;
 			if (create) {
-				// Nothing to do. Data is kept in memory until SaveChanges is called.
+				// Update version number (in case the store was attached after creating the project)
+				Version = cache.RepositoryBaseVersion;
+				//
+				// Nothing else to do. Data is kept in memory until SaveChanges is called.
+				//
 				isOpenComplete = true;
 			} else {
 				try {
-					int fileVersion = DoReadVersion(cache, true);
-					Debug.Assert(fileVersion == version);
+					if (!isOpen) {
+						int fileVersion = DoReadVersion(cache, true);
+						Debug.Assert(fileVersion == version);
+					}
 					XmlSkipStartElement(rootTag);
 					// We only read the designs and the project here. This gives the application
 					// a chance to load required libraries. Templates and diagramControllers are then loaded
 					// in OpenComplete.
 					ReadProjectSettings(cache, xmlReader);
-				} catch (Exception exc) {
-					Close();
-					throw exc;
+				} catch (Exception) {
+					CloseReader();
+					throw;
 				}
 			}
 			isOpen = true;
@@ -471,7 +627,7 @@ namespace Dataweb.NShape {
 		/// Calculates the directory for the images given the complete file path.
 		/// </summary>
 		protected string CalcImageDirectoryName() {
-			return CalcImageDirectoryName(ProjectFilePath);
+			return CalcImageDirectoryName(StoreFilePath);
 		}
 
 
@@ -494,270 +650,19 @@ namespace Dataweb.NShape {
 			else return object.Equals(id, default(T));
 		}
 
+
+		/// <summary>
+		/// Indicates whether the given ids are considered as equal.
+		/// </summary>
+		protected internal bool AreEqual(object id1, object id2) {
+			if (object.ReferenceEquals(id1, id2)) return true;
+			else return object.Equals(id1, id2);
+		}
+
 		#endregion
 
 
-		#region [Protected] Types: XmlStoreReader and XmlStoreWriter
-
-		/// <summary>
-		/// Writes fields and inner objects to XML.
-		/// </summary>
-		protected class XmlStoreWriter : RepositoryWriter {
-
-			/// <summary>
-			/// Initializes a new instance of <see cref="T:Dataweb.NShape.XmlStore.XmlStoreWriter" />.
-			/// </summary>
-			public XmlStoreWriter(XmlWriter xmlWriter, XmlStore store, IStoreCache cache)
-				: base(cache) {
-				if (xmlWriter == null) throw new ArgumentNullException("xmlWriter");
-				if (store == null) throw new ArgumentNullException("store");
-				this.store = store;
-				this.xmlWriter = xmlWriter;
-			}
-
-
-			#region RepositoryWriter Members
-
-			/// <override></override>
-			protected override void DoWriteId(object id) {
-				++PropertyIndex;
-				string fieldName = GetXmlAttributeName(PropertyIndex);
-				if (id == null)
-					XmlAddAttributeString(fieldName, Guid.Empty.ToString());
-				else
-					XmlAddAttributeString(fieldName, id.ToString());
-			}
-
-
-			/// <override></override>
-			protected override void DoWriteBool(bool value) {
-				++PropertyIndex;
-				XmlAddAttributeString(GetXmlAttributeName(PropertyIndex), value.ToString());
-			}
-
-
-			/// <override></override>
-			protected override void DoWriteByte(byte value) {
-				++PropertyIndex;
-				XmlAddAttributeString(GetXmlAttributeName(PropertyIndex), value.ToString());
-			}
-
-
-			/// <override></override>
-			protected override void DoWriteInt16(short value) {
-				++PropertyIndex;
-				XmlAddAttributeString(GetXmlAttributeName(PropertyIndex), value.ToString());
-			}
-
-
-			/// <override></override>
-			protected override void DoWriteInt32(int value) {
-				++PropertyIndex;
-				string fieldName = GetXmlAttributeName(PropertyIndex);
-				XmlAddAttributeString(fieldName, value.ToString());
-			}
-
-
-			/// <override></override>
-			protected override void DoWriteInt64(long value) {
-				++PropertyIndex;
-				XmlAddAttributeString(GetXmlAttributeName(PropertyIndex), value.ToString());
-			}
-
-
-			/// <override></override>
-			protected override void DoWriteFloat(float value) {
-				++PropertyIndex;
-				XmlAddAttributeString(GetXmlAttributeName(PropertyIndex), value.ToString());
-			}
-
-
-			/// <override></override>
-			protected override void DoWriteDouble(double value) {
-				++PropertyIndex;
-				XmlAddAttributeString(GetXmlAttributeName(PropertyIndex), value.ToString());
-			}
-
-
-			/// <override></override>
-			protected override void DoWriteChar(char value) {
-				++PropertyIndex;
-				XmlAddAttributeString(GetXmlAttributeName(PropertyIndex), value.ToString());
-			}
-
-
-			/// <override></override>
-			protected override void DoWriteString(string value) {
-				++PropertyIndex;
-				XmlAddAttributeString(GetXmlAttributeName(PropertyIndex), (value == null) ? string.Empty : value);
-			}
-
-
-			/// <override></override>
-			protected override void DoWriteDate(DateTime value) {
-				++PropertyIndex;
-				XmlAddAttributeString(GetXmlAttributeName(PropertyIndex), value.ToUniversalTime().ToString(datetimeFormat));
-			}
-
-
-			/// <override></override>
-			protected override void DoWriteImage(Image image) {
-				++PropertyIndex;
-				if (image == null) {
-					XmlAddAttributeString(GetXmlAttributeName(PropertyIndex), "");
-				} else {
-					// Retrieve image directory name and image name
-					string filePath = store.ImageDirectory;
-					string fileName = GetImageFileName(image);
-
-					// Create directory if it does not exist
-					if (!Directory.Exists(filePath))
-						Directory.CreateDirectory(filePath);
-
-					// Build image file path and set file extension
-					filePath = store.UnifyPath(Path.Combine(filePath, fileName));
-
-					if (image is Metafile) {
-						using (Graphics gfx = Graphics.FromHwnd(IntPtr.Zero)) {
-							IntPtr hdc = gfx.GetHdc();
-							using (Metafile metaFile = new Metafile(filePath, hdc)) {
-								gfx.ReleaseHdc(hdc);
-								using (Graphics metaFileGfx = Graphics.FromImage(metaFile)) {
-									Rectangle bounds = Rectangle.Empty;
-									bounds.Width = image.Width;
-									bounds.Height = image.Height;
-									ImageAttributes imgAttribs = GdiHelpers.GetImageAttributes(ImageLayoutMode.Original);
-									GdiHelpers.DrawImage(metaFileGfx, image, imgAttribs, ImageLayoutMode.Original, bounds, bounds);
-								}
-							}
-						}
-					} else image.Save(filePath, image.RawFormat);
-
-					string currentDirName = store.UnifyPath(Path.GetDirectoryName(store.ProjectFilePath));
-					if (!string.IsNullOrEmpty(currentDirName))
-						filePath = filePath.Replace(currentDirName, ".");
-					else {
-						currentDirName = store.UnifyPath(Path.GetDirectoryName(Path.GetFullPath(store.ProjectFilePath)));
-						filePath = filePath.Replace(currentDirName, ".");
-					}
-					XmlAddAttributeString(GetXmlAttributeName(PropertyIndex), filePath);
-				}
-			}
-
-
-			/// <override></override>
-			protected override void DoBeginWriteInnerObjects() {
-				// Sanity checks
-				if (propertyInfos == null)
-					throw new InvalidOperationException("EntityType is not set.");
-				if (Entity == null)
-					throw new InvalidOperationException("InnerObject's parent object is not set to an instance of an object.");
-				if (!(propertyInfos[PropertyIndex + 1] is EntityInnerObjectsDefinition))
-					throw new InvalidOperationException(string.Format("The current property info for '{0}' does not refer to inner objects. Check whether the writing methods fit the PropertyInfos property.", propertyInfos[PropertyIndex + 1]));
-				// Advance to next inner objects property
-				++PropertyIndex;
-				innerObjectsWriter = new XmlStoreWriter(xmlWriter, store, Cache);
-				innerObjectsWriter.Reset(((EntityInnerObjectsDefinition)propertyInfos[PropertyIndex]).PropertyDefinitions);
-				xmlWriter.WriteStartElement(Cache.CalculateElementName(propertyInfos[PropertyIndex].Name));
-			}
-
-
-			/// <override></override>
-			protected override void DoEndWriteInnerObjects() {
-				xmlWriter.WriteEndElement();
-			}
-
-
-			/// <override></override>
-			protected override void DoBeginWriteInnerObject() {
-				Debug.Assert(Entity != null && innerObjectsWriter != null);
-				xmlWriter.WriteStartElement(Cache.CalculateElementName(((EntityInnerObjectsDefinition)propertyInfos[PropertyIndex]).EntityTypeName));
-				innerObjectsWriter.Prepare(null);
-				// Skip the property index for the id since inner objects do not have one.
-				++InnerObjectsWriter.PropertyIndex;
-			}
-
-
-			/// <override></override>
-			protected override void DoEndWriteInnerObject() {
-				Debug.Assert(Entity != null && innerObjectsWriter != null);
-				xmlWriter.WriteEndElement();
-			}
-
-
-			/// <override></override>
-			protected override void DoDeleteInnerObjects() {
-				throw new NotImplementedException();
-			}
-
-
-			/// <override></override>
-			protected internal override void Prepare(IEntity entity) {
-				base.Prepare(entity);
-			}
-
-			#endregion
-
-
-			#region [Private] Methods
-
-			private string GetXmlAttributeName(int propertyIndex) {
-				/* Not required for inner objects
-				 * if (Entity == null) 
-					throw new NShapeException("Persistable object to store is not set. Please assign an IEntity object to the property Object before calling a save method.");*/
-				if (propertyInfos == null)
-					throw new NShapeException("EntityType is not set. Please assign an EntityType to the property EntityType before calling a save method.");
-				return propertyIndex == -1 ? "id" : propertyInfos[propertyIndex].ElementName;
-			}
-
-
-			private string GetImageFileName(Image image) {
-				string imageName = image.Tag.ToString();
-				return GetImageFileName(image, imageName);
-			}
-
-
-			private string GetImageFileName(Image image, string imageName) {
-				if (string.IsNullOrEmpty(imageName)) imageName = "Image";
-				imageName += string.Format(" ({0})", Entity.Id.ToString());
-
-				if (image.RawFormat.Guid == ImageFormat.Bmp.Guid) imageName += ".bmp";
-				else if (image.RawFormat.Guid == ImageFormat.Emf.Guid) imageName += ".emf";
-				else if (image.RawFormat.Guid == ImageFormat.Exif.Guid) imageName += ".exif";
-				else if (image.RawFormat.Guid == ImageFormat.Gif.Guid) imageName += ".gif";
-				else if (image.RawFormat.Guid == ImageFormat.Icon.Guid) imageName += ".ico";
-				else if (image.RawFormat.Guid == ImageFormat.Jpeg.Guid) imageName += ".jpeg";
-				else if (image.RawFormat.Guid == ImageFormat.MemoryBmp.Guid) imageName += ".bmp";
-				else if (image.RawFormat.Guid == ImageFormat.Png.Guid) imageName += ".png";
-				else if (image.RawFormat.Guid == ImageFormat.Tiff.Guid) imageName += ".tiff";
-				else if (image.RawFormat.Guid == ImageFormat.Wmf.Guid) imageName += ".wmf";
-				else Debug.Fail("Unsupported image format.");
-
-				return imageName;
-			}
-
-
-			private void XmlAddAttributeString(string name, string value) {
-				xmlWriter.WriteAttributeString(name, value);
-			}
-
-
-			private XmlStoreWriter InnerObjectsWriter {
-				get { return (XmlStoreWriter)innerObjectsWriter; }
-			}
-
-			#endregion
-
-
-			#region Fields
-
-			private XmlStore store;
-
-			private XmlWriter xmlWriter;
-
-			#endregion
-		}
-
+		#region [Protected] Type: XmlStoreReader 
 
 		/// <summary>
 		/// Implements a cache repositoryReader for XML.
@@ -889,32 +794,18 @@ namespace Dataweb.NShape {
 				DateTime dateTime;
 				if (!DateTime.TryParseExact(attrValue, datetimeFormat, null, System.Globalization.DateTimeStyles.AssumeUniversal, out dateTime))
 					dateTime = Convert.ToDateTime(attrValue);	// ToDo: This is for compatibility with older file versions - Remove later
+				xmlReader.MoveToNextAttribute();
 				return dateTime.ToLocalTime();
 			}
 
 
 			/// <override></override>
 			protected override Image DoReadImage() {
-				// GDI+ only reads the file header and keeps the image file locked for loading the 
-				// image data later on demand. 
-				// So we have to read the entire image to a buffer and create the image from a 
-				// MemoryStream in order to avoid locked (and thus unaccessible) image files.
 				Image result = null;
-				string filePath = xmlReader.GetAttribute(PropertyIndex + xmlAttributeOffset);
+				string fileName = xmlReader.GetAttribute(PropertyIndex + xmlAttributeOffset);
+				if (!string.IsNullOrEmpty(fileName))
+					result = store.LoadImage(fileName);
 				xmlReader.MoveToNextAttribute();
-				if (!string.IsNullOrEmpty(filePath)) {
-					string fileName = store.UnifyPath(Path.Combine(store.ImageDirectory, Path.GetFileName(filePath)));
-					byte[] buffer = null;
-					using (FileStream fileStream = new FileStream(fileName, FileMode.Open, FileAccess.Read)) {
-						buffer = new byte[fileStream.Length];
-						fileStream.Read(buffer, 0, buffer.Length);
-						fileStream.Close();
-					}
-					if (buffer != null) {
-						MemoryStream memStream = new MemoryStream(buffer);
-						result = Image.FromStream(memStream);
-					}
-				}
 				return result;
 			}
 
@@ -928,9 +819,9 @@ namespace Dataweb.NShape {
 				++PropertyIndex;
 				ValidatePropertyIndex();
 				object result = null;
-				string resultString = xmlReader.GetAttribute(PropertyIndex + xmlAttributeOffset);
-				if (!string.IsNullOrEmpty(resultString)) {
-					result = new Guid(resultString);
+				string idStr = xmlReader.GetAttribute(PropertyIndex + xmlAttributeOffset);
+				if (!string.IsNullOrEmpty(idStr)) {
+					result = ParseId(idStr);
 					if (result.Equals(Guid.Empty))
 						result = null;
 				}
@@ -988,10 +879,408 @@ namespace Dataweb.NShape {
 			private const int xmlAttributeOffset = 1;
 
 			private XmlStore store;
-
 			private XmlReader xmlReader;
 
 			#endregion
+		}
+
+		#endregion
+
+
+		#region [Protected] Types: XmlStoreWriters
+
+		/// <summary>
+		/// Writes fields and inner objects to XML.
+		/// </summary>
+		protected class XmlStoreWriter : RepositoryWriter {
+
+			/// <summary>
+			/// Initializes a new instance of <see cref="T:Dataweb.NShape.XmlStore.XmlStoreWriter" />.
+			/// </summary>
+			public XmlStoreWriter(XmlWriter xmlWriter, XmlStore xmlStore, IStoreCache cache)
+				: base(cache) {
+				if (xmlWriter == null) throw new ArgumentNullException("xmlWriter");
+				if (xmlStore == null) throw new ArgumentNullException("xmlStore");
+				this.xmlStore = xmlStore;
+				this.xmlWriter = xmlWriter;
+			}
+
+
+			#region RepositoryWriter Members
+
+			/// <override></override>
+			protected override void DoWriteId(object id) {
+				++PropertyIndex;
+				string fieldName = GetXmlAttributeName(PropertyIndex);
+				if (id == null)
+					XmlAddAttributeString(fieldName, Guid.Empty.ToString());
+				else
+					XmlAddAttributeString(fieldName, id.ToString());
+			}
+
+
+			/// <override></override>
+			protected override void DoWriteBool(bool value) {
+				++PropertyIndex;
+				XmlAddAttributeString(GetXmlAttributeName(PropertyIndex), value.ToString());
+			}
+
+
+			/// <override></override>
+			protected override void DoWriteByte(byte value) {
+				++PropertyIndex;
+				XmlAddAttributeString(GetXmlAttributeName(PropertyIndex), value.ToString());
+			}
+
+
+			/// <override></override>
+			protected override void DoWriteInt16(short value) {
+				++PropertyIndex;
+				XmlAddAttributeString(GetXmlAttributeName(PropertyIndex), value.ToString());
+			}
+
+
+			/// <override></override>
+			protected override void DoWriteInt32(int value) {
+				++PropertyIndex;
+				string fieldName = GetXmlAttributeName(PropertyIndex);
+				XmlAddAttributeString(fieldName, value.ToString());
+			}
+
+
+			/// <override></override>
+			protected override void DoWriteInt64(long value) {
+				++PropertyIndex;
+				XmlAddAttributeString(GetXmlAttributeName(PropertyIndex), value.ToString());
+			}
+
+
+			/// <override></override>
+			protected override void DoWriteFloat(float value) {
+				++PropertyIndex;
+				XmlAddAttributeString(GetXmlAttributeName(PropertyIndex), value.ToString());
+			}
+
+
+			/// <override></override>
+			protected override void DoWriteDouble(double value) {
+				++PropertyIndex;
+				XmlAddAttributeString(GetXmlAttributeName(PropertyIndex), value.ToString());
+			}
+
+
+			/// <override></override>
+			protected override void DoWriteChar(char value) {
+				++PropertyIndex;
+				XmlAddAttributeString(GetXmlAttributeName(PropertyIndex), value.ToString());
+			}
+
+
+			/// <override></override>
+			protected override void DoWriteString(string value) {
+				++PropertyIndex;
+				XmlAddAttributeString(GetXmlAttributeName(PropertyIndex), (value == null) ? string.Empty : value);
+			}
+
+
+			/// <override></override>
+			protected override void DoWriteDate(DateTime value) {
+				++PropertyIndex;
+				XmlAddAttributeString(GetXmlAttributeName(PropertyIndex), value.ToUniversalTime().ToString(datetimeFormat));
+			}
+
+
+			/// <override></override>
+			protected override void DoWriteImage(Image image) {
+				++PropertyIndex;
+				if (image == null) {
+					XmlAddAttributeString(GetXmlAttributeName(PropertyIndex), "");
+				} else {
+					string fileName = xmlStore.SaveImageFile(Entity, image);
+					XmlAddAttributeString(GetXmlAttributeName(PropertyIndex), fileName);
+				}
+			}
+
+
+			/// <override></override>
+			protected override void DoBeginWriteInnerObjects() {
+				// Sanity checks
+				if (propertyInfos == null)
+					throw new InvalidOperationException("EntityType is not set.");
+				if (Entity == null)
+					throw new InvalidOperationException("InnerObject's parent object is not set to an instance of an object.");
+				if (!(propertyInfos[PropertyIndex + 1] is EntityInnerObjectsDefinition))
+					throw new InvalidOperationException(string.Format("The current property info for '{0}' does not refer to inner objects. Check whether the writing methods fit the PropertyInfos property.", propertyInfos[PropertyIndex + 1]));
+				// Advance to next inner objects property
+				++PropertyIndex;
+				innerObjectsWriter = new XmlStoreWriter(xmlWriter, xmlStore, Cache);
+				innerObjectsWriter.Reset(((EntityInnerObjectsDefinition)propertyInfos[PropertyIndex]).PropertyDefinitions);
+				xmlWriter.WriteStartElement(Cache.CalculateElementName(propertyInfos[PropertyIndex].Name));
+			}
+
+
+			/// <override></override>
+			protected override void DoEndWriteInnerObjects() {
+				xmlWriter.WriteEndElement();
+			}
+
+
+			/// <override></override>
+			protected override void DoBeginWriteInnerObject() {
+				Debug.Assert(Entity != null && innerObjectsWriter != null);
+				xmlWriter.WriteStartElement(Cache.CalculateElementName(((EntityInnerObjectsDefinition)propertyInfos[PropertyIndex]).EntityTypeName));
+				innerObjectsWriter.Prepare(null);
+				// Skip the property index for the id since inner objects do not have one.
+				++InnerObjectsWriter.PropertyIndex;
+			}
+
+
+			/// <override></override>
+			protected override void DoEndWriteInnerObject() {
+				Debug.Assert(Entity != null && innerObjectsWriter != null);
+				xmlWriter.WriteEndElement();
+			}
+
+
+			/// <override></override>
+			protected override void DoDeleteInnerObjects() {
+				throw new NotImplementedException();
+			}
+
+
+			/// <override></override>
+			protected internal override void Prepare(IEntity entity) {
+				base.Prepare(entity);
+			}
+
+			#endregion
+
+
+			#region [Private] Methods
+
+			/// <summary>
+			/// Gets an XML compatible attribute name for the property definition at the specified index.
+			/// </summary>
+			private string GetXmlAttributeName(int propertyIndex) {
+				/* Not required for inner objects
+				 * if (Entity == null) 
+					throw new NShapeException("Persistable object to store is not set. Please assign an IEntity object to the property Object before calling a save method.");*/
+				if (propertyInfos == null)
+					throw new NShapeException("EntityType is not set. Please assign an EntityType to the property EntityType before calling a save method.");
+				return propertyIndex == -1 ? "id" : propertyInfos[propertyIndex].ElementName;
+			}
+
+
+			/// <summary>
+			/// Writes an attribute with the given name/value to the current XML node.
+			/// </summary>
+			private void XmlAddAttributeString(string name, string value) {
+				xmlWriter.WriteAttributeString(name, value);
+			}
+
+
+			private XmlStoreWriter InnerObjectsWriter {
+				get { return (XmlStoreWriter)innerObjectsWriter; }
+			}
+
+			#endregion
+
+
+			// Fields
+			private XmlWriter xmlWriter;
+			private XmlStore xmlStore;
+		}
+
+
+		/// <summary>
+		/// Writes images as Base64 string to the given XML writer.
+		/// This repository writer is used for collecting all images fom all entities without saving anything else but images.
+		/// </summary>
+		protected class XmlEmbeddedImageWriter : RepositoryWriter {
+
+			/// <summary>
+			/// Initializes a new instance of <see cref="T:Dataweb.NShape.XmlStore.XmlStoreWriter" />.
+			/// </summary>
+			public XmlEmbeddedImageWriter(XmlWriter xmlWriter, XmlStore xmlStore, IStoreCache cache)
+				: base(cache) {
+				if (xmlWriter == null) throw new ArgumentNullException("xmlWriter");
+				if (xmlStore == null) throw new ArgumentNullException("xmlStore");
+				this.xmlStore = xmlStore;
+				this.xmlWriter = xmlWriter;
+			}
+
+
+			#region RepositoryWriter Members
+
+			/// <override></override>
+			protected override void DoWriteId(object id) {
+				SkipProperty();
+			}
+
+
+			/// <override></override>
+			protected override void DoWriteBool(bool value) {
+				SkipProperty();
+			}
+
+
+			/// <override></override>
+			protected override void DoWriteByte(byte value) {
+				SkipProperty();
+			}
+
+
+			/// <override></override>
+			protected override void DoWriteInt16(short value) {
+				SkipProperty();
+			}
+
+
+			/// <override></override>
+			protected override void DoWriteInt32(int value) {
+				SkipProperty();
+			}
+
+
+			/// <override></override>
+			protected override void DoWriteInt64(long value) {
+				SkipProperty();
+			}
+
+
+			/// <override></override>
+			protected override void DoWriteFloat(float value) {
+				SkipProperty();
+			}
+
+
+			/// <override></override>
+			protected override void DoWriteDouble(double value) {
+				SkipProperty();
+			}
+
+
+			/// <override></override>
+			protected override void DoWriteChar(char value) {
+				SkipProperty();
+			}
+
+
+			/// <override></override>
+			protected override void DoWriteString(string value) {
+				SkipProperty();
+			}
+
+
+			/// <override></override>
+			protected override void DoWriteDate(DateTime value) {
+				SkipProperty();
+			}
+
+
+			/// <override></override>
+			protected override void DoWriteImage(Image image) {
+				++PropertyIndex;
+				if (image == null) {
+					// Nothing to do
+				} else {
+					xmlStore.SaveEmbeddedImage(Entity, image);
+				}
+			}
+
+
+			/// <override></override>
+			protected override void DoWriteModelObject(IModelObject modelObject) {
+				SkipProperty();
+			}
+
+
+			/// <override></override>
+			protected override void DoWriteStyle(IStyle style) {
+				SkipProperty();
+			}
+
+
+			/// <override></override>
+			protected override void DoWriteTemplate(Template template) {
+				SkipProperty();
+			}
+
+
+			/// <override></override>
+			protected override void DoBeginWriteInnerObjects() {
+				// Sanity checks
+				if (propertyInfos == null)
+					throw new InvalidOperationException("EntityType is not set.");
+				if (Entity == null)
+					throw new InvalidOperationException("InnerObject's parent object is not set to an instance of an object.");
+				if (!(propertyInfos[PropertyIndex + 1] is EntityInnerObjectsDefinition))
+					throw new InvalidOperationException(string.Format("The current property info for '{0}' does not refer to inner objects. Check whether the writing methods fit the PropertyInfos property.", propertyInfos[PropertyIndex + 1]));
+				// Advance to next inner objects property
+				++PropertyIndex;
+				innerObjectsWriter = new XmlEmbeddedImageWriter(xmlWriter, xmlStore, Cache);
+				innerObjectsWriter.Reset(((EntityInnerObjectsDefinition)propertyInfos[PropertyIndex]).PropertyDefinitions);
+			}
+
+
+			/// <override></override>
+			protected override void DoEndWriteInnerObjects() {
+				// Nothing to do here
+			}
+
+
+			/// <override></override>
+			protected override void DoBeginWriteInnerObject() {
+				Debug.Assert(Entity != null && innerObjectsWriter != null);
+				innerObjectsWriter.Prepare(null);
+				// Skip the property index for the id since inner objects do not have one.
+				++InnerObjectsWriter.PropertyIndex;
+			}
+
+
+			/// <override></override>
+			protected override void DoEndWriteInnerObject() {
+				Debug.Assert(Entity != null && innerObjectsWriter != null);
+				// Nothing else to do here
+			}
+
+
+			/// <override></override>
+			protected override void DoDeleteInnerObjects() {
+				throw new NotImplementedException();
+			}
+
+
+			/// <override></override>
+			protected internal override void Prepare(IEntity entity) {
+				base.Prepare(entity);
+			}
+
+			#endregion
+
+
+			#region [Private] Methods and Fields
+
+			private void SkipProperty() {
+				// Nothing to do: Advance to the next property
+				++PropertyIndex;
+			}
+
+
+			private XmlEmbeddedImageWriter InnerObjectsWriter {
+				get { return (XmlEmbeddedImageWriter)innerObjectsWriter; }
+			}
+
+
+			private const string imageTag = "image";
+			private const string entityIdTag = "entity_id";
+			private const string propertyNameTag = "property_name";
+
+			private XmlStore xmlStore;
+			private XmlWriter xmlWriter;
+
+			#endregion
+
 		}
 
 		#endregion
@@ -1006,12 +1295,220 @@ namespace Dataweb.NShape {
 		}
 
 
+		/// <summary>
+		/// Loads an image from the given image file from the store's image storage.
+		/// </summary>
+		internal Image LoadImage(string fileName) {
+			if (string.IsNullOrEmpty(fileName)) throw new ArgumentNullException("fileName");
+			
+			Image result = null;
+			if (embeddedImages != null) {
+				// Search image in the list of embedded images...
+				if (embeddedImages.TryGetValue(fileName, out result))
+					// ... and remove it as soon as it was fetched by its entity.
+					embeddedImages.Remove(fileName);
+				else { Debug.Fail("Image {0} was not found in the list of embedded images.", fileName); }
+				if (embeddedImages.Count == 0) embeddedImages = null;
+			} else if (Directory.Exists(ImageDirectory)) {
+				// Read image from file
+				string filePath = UnifyPath(Path.Combine(ImageDirectory, Path.GetFileName(fileName)));
+
+				// GDI+ only reads the file header and keeps the image file locked for loading the 
+				// image data later on demand. 
+				// So we have to read the entire image to a buffer and create the image from a 
+				// MemoryStream in order to avoid locked (and thus unaccessible) image files.
+				byte[] buffer = null;
+				using (FileStream fileStream = new FileStream(filePath, FileMode.Open, FileAccess.Read)) {
+					buffer = new byte[fileStream.Length];
+					fileStream.Read(buffer, 0, buffer.Length);
+					fileStream.Close();
+				}
+				if (buffer != null) {
+					MemoryStream memStream = new MemoryStream(buffer);
+					result = Image.FromStream(memStream);
+				}
+			}
+			return result;
+		}
+		
+		
+		/// <summary>
+		/// Saves the given image to an image file in the store's ImageDirectory.
+		/// A file name will be calculated and returned.
+		/// </summary>
+		private string SaveImageFile(IEntity entity, Image image) {
+			// Calculate image name
+			string fileName = GetImageFileName(entity, image);
+
+			// Save image to file
+			switch (ImageLocation) {
+				case ImageFileLocation.Directory:
+					SaveImageFile(fileName, image);
+					break;
+				case ImageFileLocation.Embedded:
+					// Do nothing here. Just return the file name
+					break;
+				default:
+					throw new NotSupportedException(string.Format("Unsupported {0} value '{1}'", typeof(ImageFileLocation).GetType().FullName, ImageLocation));
+			}
+			return fileName;
+		}
+
+
+		private void SaveImageFile(string fileName, Image image) {
+			// Create directory if it does not exist
+			if (!Directory.Exists(ImageDirectory))
+				Directory.CreateDirectory(ImageDirectory);
+
+			// Build image file path and set file extension
+			string filePath = UnifyPath(Path.Combine(ImageDirectory, fileName));
+			// Save image file to image directory
+			using (Stream stream = File.Open(filePath, FileMode.OpenOrCreate, FileAccess.Write))
+				GdiHelpers.SaveImage(image, stream);
+		}
+
+
+		/// <summary>
+		/// Saves the given image as base64 encoded string to the store's stream/file.
+		/// A file name will be calculated and returned.
+		/// </summary>
+		private string SaveEmbeddedImage(IEntity entity, Image image) {
+			// Calculate image name
+			string fileName = GetImageFileName(entity, image);
+
+			// Save image to file
+			switch (ImageLocation) {
+				case ImageFileLocation.Directory:
+					// Do nothing here. Just return the file name
+					break;
+				case ImageFileLocation.Embedded:
+					SaveEmbeddedImage(fileName, image);
+					break;
+				default:
+					throw new NotSupportedException(string.Format("Unsupported {0} value '{1}'", typeof(ImageFileLocation).GetType().FullName, ImageLocation));
+			}
+			return fileName;
+		}
+		
+		
+		private void SaveEmbeddedImage(string fileName, Image image) {
+			// Save the image to a memory stream before embedding the underlying byte array (of 
+			// the memory stream) as base64 string.
+			using (MemoryStream memStream = new MemoryStream()) {
+				GdiHelpers.SaveImage(image, memStream);
+
+				// Write (complete) XML node
+				xmlWriter.WriteStartElement(imageTag);
+				xmlWriter.WriteAttributeString(fileNameTag, fileName);
+				xmlWriter.WriteBase64(memStream.GetBuffer(), 0, (int)memStream.Length);
+				xmlWriter.WriteEndElement();
+			}
+		}
+
+
+		// This method works, but it has a little side efect: Metafiles grow each time they are saved using this method.
+		// So we are using the GdiHelpers' method "SaveImage" which uses the native GDI+ functions.
+		private static void SaveImageToStream(Image image, Stream stream) {
+			if (image is Metafile) {
+				// The MetaFile.Save() method will use the PNG encoder (see MSDN documentation), so the metafile 
+				// would be converted into a bitmap. In order to avoid this, we create a new meta file and 
+				// copy the original meta file by drawing it to the new one.
+				using (Graphics gfx = Graphics.FromHwnd(IntPtr.Zero)) {
+					IntPtr hdc = gfx.GetHdc();
+					using (Metafile metaFile = new Metafile(stream, hdc)) {
+						gfx.ReleaseHdc(hdc);
+						using (Graphics metaFileGfx = Graphics.FromImage(metaFile)) {
+							Rectangle bounds = Rectangle.Empty;
+							bounds.Width = image.Width;
+							bounds.Height = image.Height;
+							ImageAttributes imgAttribs = GdiHelpers.GetImageAttributes(ImageLayoutMode.Original);
+							GdiHelpers.DrawImage(metaFileGfx, image, imgAttribs, ImageLayoutMode.Original, bounds, bounds);
+						}
+					}
+				}
+			} else
+				image.Save(stream, image.RawFormat);
+		}
+
+
+		// Contains the file path to the current store file (ProjectFilePath or temporary file path)
+		// Resets the imageDirectory thus forcing a re-caulation of the image directory path based 
+		// on the new store file path.
+		private string StoreFilePath {
+			get { return storeFilePath ?? ProjectFilePath; }
+			set {
+				storeFilePath = value;
+				imageDirectory = null;
+			}
+		}
+
+
+		/// <summary>
+		/// Retrieves the file path of the project xml file.
+		/// </summary>
+		[Browsable(false)]
+		private Stream Stream {
+			get { return externalStream; }
+			set { externalStream = value; }
+		}
+
+
+		internal static object ParseId(string idStr) {
+			object result = null;
+			if (IsGuidString(idStr))
+				result = new Guid(idStr);
+			else {
+				long idValue;
+				if (long.TryParse(idStr, out idValue))
+					result = idValue;
+			}
+			return result;
+		}
+
+
+		internal string GetImageFileName(IEntity entity, Image image) {
+			string imageName = image.Tag.ToString();
+			return GetImageFileName(entity, image, imageName);
+		}
+
+
+		internal string GetImageFileName(IEntity entity, Image image, string imageName) {
+			if (entity == null) throw new ArgumentNullException("entity");
+			try {
+				// If the imageName is a path, we extract the file name
+				if (!string.IsNullOrEmpty(imageName) && imageName.Contains("\\"))
+					imageName = Path.GetFileNameWithoutExtension(imageName); 
+			} catch(ArgumentException) { }
+			string result = string.Format("{0} ({1})", string.IsNullOrEmpty(imageName) ? "Image":imageName, entity.Id.ToString());
+
+			if (image.RawFormat.Guid == ImageFormat.Bmp.Guid) result += ".bmp";
+			else if (image.RawFormat.Guid == ImageFormat.Emf.Guid) result += ".emf";
+			else if (image.RawFormat.Guid == ImageFormat.Exif.Guid) result += ".exif";
+			else if (image.RawFormat.Guid == ImageFormat.Gif.Guid) result += ".gif";
+			else if (image.RawFormat.Guid == ImageFormat.Icon.Guid) result += ".ico";
+			else if (image.RawFormat.Guid == ImageFormat.Jpeg.Guid) result += ".jpeg";
+			else if (image.RawFormat.Guid == ImageFormat.MemoryBmp.Guid) result += ".bmp";
+			else if (image.RawFormat.Guid == ImageFormat.Png.Guid) result += ".png";
+			else if (image.RawFormat.Guid == ImageFormat.Tiff.Guid) result += ".tiff";
+			else if (image.RawFormat.Guid == ImageFormat.Wmf.Guid) result += ".wmf";
+			else Debug.Fail("Unsupported image format.");
+
+			return result;
+		}
+
+
+		private static bool IsGuidString(string str) {
+			const char separator = '-';
+			return (str.Length == 36 && (str[8] == separator && str[13] == separator && str[18] == separator && str[23] == separator));
+		}
+
+
 		#region [Private] Methods: Save project files
 
-		private string CalcImageDirectoryName(string projectFilePath) {
-			string result = Path.GetDirectoryName(projectFilePath);
+		private string CalcImageDirectoryName(string filePath) {
+			string result = Path.GetDirectoryName(filePath);
 			if (string.IsNullOrEmpty(result)) throw new ArgumentException("XML repository file name must be a complete path.");
-			result = UnifyPath(Path.Combine(result, Path.GetFileNameWithoutExtension(projectFilePath) + " Images"));
+			result = UnifyPath(Path.Combine(result, Path.GetFileNameWithoutExtension(filePath) + " Images"));
 			return result;
 		}
 
@@ -1021,56 +1518,109 @@ namespace Dataweb.NShape {
 		}
 
 
-		private void CreateBackupFiles(string projectFilePath) {
-			if (!File.Exists(projectFilePath)) throw new FileNotFoundException("Project file does not exist.", projectFilePath);
-			string projectImageDir = CalcImageDirectoryName(projectFilePath);
-			// Calculate backup file names:
-			// Add the backup file extension in order to preserve the original file extension
-			string backupFilepath = projectFilePath + backupFileExtension;
-			string backupImageDir = CalcImageDirectoryName(projectFilePath) + backupFileExtension;
-			// Delete old backup (if one exists)
-			try {
-				if (File.Exists(backupFilepath)) {
-					File.Delete(backupFilepath);
+		private void CreateBackupFiles(string filePath) {
+			if (File.Exists(filePath)) {
+				string projectImageDir = CalcImageDirectoryName(filePath);
+				// Calculate backup file names:
+				// Add the backup file extension in order to preserve the original file extension
+				string backupFilepath = filePath + backupFileExtension;
+				string backupImageDir = CalcImageDirectoryName(filePath) + backupFileExtension;
+				try {
+					// Delete old backup (if existing)
+					if (File.Exists(backupFilepath))
+						File.Delete(backupFilepath);
 					if (Directory.Exists(backupImageDir))
 						Directory.Delete(backupImageDir, true);
+					// Rename current files
+					File.Move(filePath, backupFilepath);
+					if (Directory.Exists(projectImageDir))
+						Directory.Move(projectImageDir, backupImageDir);
+				} catch (Exception) {
+					throw;
 				}
-				// Rename current files
-				File.Move(projectFilePath, backupFilepath);
-				if (Directory.Exists(projectImageDir))
-					Directory.Move(projectImageDir, backupImageDir);
-			} catch (Exception) {
-				throw;
 			}
 		}
 
 
-		private void DoSaveChanges(string filePath, IStoreCache cache) {
+		private void DoSaveChanges(IStoreCache cache, string filePath) {
 			try {
+				// Set the current store file path (also adjusts the image directory)
+				if (filePath != ProjectFilePath)
+					StoreFilePath = filePath;
+
 				// If it is a new project, we must create the file. Otherwise it is already open.
-				string imageDirectory = CalcImageDirectoryName(filePath);
 				if (cache.ProjectId == null) {
-					CreateFile(cache, filePath, false);
+					CreateFile(filePath, false);
 				} else if (cache.LoadedProjects[cache.ProjectId].State == ItemState.Deleted) {
 					// First try to delete the file.
 					// This ensures that the image directory still exists in case the file cannot be deleted.
 					if (File.Exists(filePath)) 
 						File.Delete(filePath);
-					if (Directory.Exists(imageDirectory)) 
-						Directory.Delete(imageDirectory, true);
+					if (Directory.Exists(ImageDirectory)) 
+						Directory.Delete(ImageDirectory, true);
 				} else {
 					OpenComplete(cache);
+					CloseReader();
 					// TODO 2: We should keep the file open and clear it here instead of re-creating it.
-					Close();
-					CreateFile(cache, filePath, true);
+					CreateFile(filePath, true);
 				}
+				OpenWriter(cache, GetWriteStream());
 				WriteProject(cache);
 			} finally {
+				storeFilePath = null;
 				// Close and reopen to update Windows directory and keep file ownership
-				Close();
+				CloseWriter();
 			}
 		}
 
+
+		private void DoSaveChanges(IStoreCache cache, Stream stream) {
+			if (version != cache.RepositoryBaseVersion) 
+				throw new NShapeException("The store's Load/save version '{0}' differs from the repository's load/save version '{1}'.", version, cache.RepositoryBaseVersion);
+			try {
+				CloseReader();
+				OpenWriter(cache, stream);
+				WriteProject(cache);
+			} finally {
+				// Close and reopen to update Windows directory and keep file ownership
+				CloseWriter();
+			}
+		}
+
+
+		private Stream GetReadStream() {
+			Stream storeStream = Stream ?? projectFileStream;
+			if (storeStream == null)
+				storeStream = projectFileStream = OpenFileStream(StoreFilePath, true);
+			return storeStream;
+		}
+
+
+		private Stream GetWriteStream() {
+			Stream storeStream = Stream ?? projectFileStream;
+			if (storeStream == null)
+				storeStream = projectFileStream = OpenFileStream(StoreFilePath, false);
+			return storeStream;
+		}
+
+
+		private Stream OpenFileStream(string filePath, bool forReading) {
+			if (string.IsNullOrEmpty(filePath)) throw new ArgumentNullException("filePath");
+			if (forReading && !File.Exists(filePath)) throw new FileNotFoundException("File not found or access denied", filePath);
+			// Assign file stream to fileStream field
+			return File.Open(filePath, FileMode.OpenOrCreate, 
+				forReading ? FileAccess.Read : FileAccess.ReadWrite, 
+				forReading ? FileShare.Read : FileShare.None);
+		}
+
+
+		private void CloseFileStream(Stream stream) {
+			if (stream == null) throw new ArgumentNullException("stream");
+			stream.Close();
+			stream.Dispose();
+			stream = null;
+		}
+	
 		#endregion
 
 
@@ -1085,9 +1635,7 @@ namespace Dataweb.NShape {
 			XmlSkipStartElement(projectTag);
 			repositoryReader.DoBeginObject();
 			object id = repositoryReader.ReadId();
-			if (id == null) {
-				((IEntity)project).AssignId(Guid.Empty);
-			} else ((IEntity)project).AssignId(id);
+			((IEntity)project).AssignId(id ?? Guid.Empty);
 
 			((IEntity)project).LoadFields(repositoryReader, cache.RepositoryBaseVersion);
 			xmlReader.Read(); // read out of attributes
@@ -1095,6 +1643,9 @@ namespace Dataweb.NShape {
 				if (pi is EntityInnerObjectsDefinition)
 					((IEntity)project).LoadInnerObjects(pi.Name, repositoryReader, cache.RepositoryBaseVersion);
 			cache.LoadedProjects.Add(new EntityBucket<ProjectSettings>(project, null, ItemState.Original));
+			
+			// Load embedded images
+			ReadEmbeddedImages(cache, xmlReader);
 			
 			// Load the project styles
 			Design projectDesign = new Design();
@@ -1123,6 +1674,7 @@ namespace Dataweb.NShape {
 						// Global designs are stored with parent id DBNull
 						cache.LoadedDesigns.Add(new EntityBucket<Design>(design, null, ItemState.Original));
 						design.Clear();
+
 						ReadAllStyles(cache, design);
 					}
 				} while (xmlReader.ReadToNextSibling(designEntityType.ElementName));
@@ -1179,6 +1731,35 @@ namespace Dataweb.NShape {
 				XmlReadEndElement(GetElementTag(styleEntityType));
 			}
 			XmlReadEndElement(GetElementCollectionTag(styleEntityType));
+		}
+
+
+		private void ReadEmbeddedImages(IStoreCache cache, XmlReader xmlReader) {
+			if (XmlSkipStartElement(imagesTag)) {
+				// The images tag will only be written in case of ImageLocation == Embedded
+				storeImageLocation = ImageFileLocation.Embedded;
+				if (xmlReader.NodeType != XmlNodeType.EndElement) {
+					// Create the storage for the embedded images
+					embeddedImages = new SortedList<string, Image>();
+					// Read all embedded images
+					do {
+						if (XmlSkipStartElement(imageTag)) {
+							xmlReader.MoveToFirstAttribute();
+							// Read file name
+							string fileName = xmlReader.GetAttribute(fileNameTag);
+							// Read embedded image (do not dispose the memory stream as this would destroy the image)
+							xmlReader.Read();
+							string base64String = xmlReader.ReadString();
+							byte[] buffer = Convert.FromBase64String(base64String);
+							MemoryStream memStream = new MemoryStream(buffer);
+
+							embeddedImages.Add(fileName, Image.FromStream(memStream));
+						}
+					} while (xmlReader.ReadToNextSibling(imageTag));
+					
+				}
+				XmlSkipEndElement(imagesTag);
+			}
 		}
 
 
@@ -1307,24 +1888,31 @@ namespace Dataweb.NShape {
 							if (pi is EntityInnerObjectsDefinition)
 								((IEntity)diagram).LoadInnerObjects(pi.Name, repositoryReader, diagramEntityType.RepositoryVersion);
 						cache.LoadedDiagrams.Add(new EntityBucket<Diagram>(diagram, cache.Project, ItemState.Original));
-						XmlSkipAttributes();
-						XmlStoreReader reader = new XmlStoreReader(xmlReader, this, cache);
-						ReadDiagramShapes(cache, reader, diagram);
-						ReadDiagramShapeConnections(cache, reader);
+                        // Skip the diagram shapes in case of partial loading is enabled
+						if (!LazyLoading) {
+							XmlSkipAttributes();
+							XmlStoreReader reader = new XmlStoreReader(xmlReader, this, cache);
+							ReadDiagramShapes(cache, xmlReader, diagram);
+							ReadDiagramShapeConnections(cache, xmlReader);
+							xmlReader.ReadToNextSibling(diagramTag);
+						} else {
+							if (diagramsToLoad == null) diagramsToLoad = new List<Diagram>();
+							diagramsToLoad.Add(diagram);
+						}
 					}
-				} while (xmlReader.ReadToNextSibling(diagramTag));
+				} while (XmlSkipToElement(diagramTag));
 				XmlSkipEndElement(diagramCollectionTag);
 			}
 		}
 
 
-		private void ReadDiagramShapes(IStoreCache cache, XmlStoreReader reader, Diagram diagram) {
+		private void ReadDiagramShapes(IStoreCache cache, XmlReader xmlReader, Diagram diagram) {
 			if (XmlSkipStartElement(shapesTag)) {
+				XmlStoreReader storeReader = new XmlStoreReader(xmlReader, this, cache);
 				while (xmlReader.NodeType != XmlNodeType.EndElement) {
-					Shape shape = ReadShape(cache, reader, diagram);
+					Shape shape = ReadShape(cache, storeReader, diagram);
 					diagram.Shapes.Add(shape);
 					diagram.AddShapeToLayers(shape, shape.Layers);	// not really necessary
-					//XmlSkipAttributes();
 				}
 				XmlSkipEndElement(shapesTag);
 			}
@@ -1364,15 +1952,15 @@ namespace Dataweb.NShape {
 		}
 
 
-		private void ReadDiagramShapeConnections(IStoreCache cache, XmlStoreReader reader) {
+		private void ReadDiagramShapeConnections(IStoreCache cache, XmlReader xmlReader) {
 			if (XmlSkipStartElement(connectionsTag)) {
 				while (string.Compare(xmlReader.Name, connectionTag, StringComparison.InvariantCultureIgnoreCase) == 0) {
 					xmlReader.MoveToFirstAttribute();
-					object connectorId = new Guid(xmlReader.GetAttribute(0));
+					object connectorId = ParseId(xmlReader.GetAttribute(0));
 					xmlReader.MoveToNextAttribute();
 					int gluePointId = int.Parse(xmlReader.GetAttribute(1));
 					xmlReader.MoveToNextAttribute();
-					object targetShapeId = new Guid(xmlReader.GetAttribute(2));
+					object targetShapeId = ParseId(xmlReader.GetAttribute(2));
 					xmlReader.MoveToNextAttribute();
 					int targetPointId = int.Parse(xmlReader.GetAttribute(3));
 					xmlReader.MoveToNextAttribute();
@@ -1416,6 +2004,7 @@ namespace Dataweb.NShape {
 			XmlReadEndElement(modelObjectTag);
 			// Insert entity into cache
 			cache.LoadedModelObjects.Add(new EntityBucket<IModelObject>(modelObject, owner, ItemState.Original));
+
 			return modelObject;
 		}
 
@@ -1424,55 +2013,86 @@ namespace Dataweb.NShape {
 
 		#region [Private] Methods: Write to XML file
 
-		private void CreateFile(IStoreCache cache, string pathName, bool overwrite) {
-			Debug.Assert(repositoryWriter == null);
+		private void CreateFile(string path, bool overwrite) {
 			string imageDirectoryName = CalcImageDirectoryName();
 			if (!overwrite) {
-				string tempPathName = GetTemporaryProjectFilePath();
-				if (File.Exists(pathName)) {
-					if (pathName == tempPathName) 
-						File.Delete(pathName);
-					else throw new IOException(string.Format("File {0} already exists.", pathName));
+				string tempPath = GetTemporaryProjectFilePath();
+				if (File.Exists(path)) {
+					if (path == tempPath) 
+						File.Delete(path);
+					else throw new IOException(string.Format("File {0} already exists.", path));
 				}
 				if (Directory.Exists(imageDirectoryName)) {
-					if (imageDirectoryName == CalcImageDirectoryName(tempPathName)) 
+					if (imageDirectoryName == CalcImageDirectoryName(tempPath)) 
 						Directory.Delete(imageDirectoryName, true);
 					else throw new IOException(string.Format("Image directory {0} already exists.", imageDirectoryName));
 				}
+				// Image directory will be created on demand.
 			}
+		}
+
+
+		private void OpenWriter(IStoreCache cache, Stream stream) {
+			Debug.Assert(repositoryWriter == null);
 			XmlWriterSettings settings = new XmlWriterSettings();
 			settings.Indent = true;
-			xmlWriter = XmlWriter.Create(pathName, settings);
+			xmlWriter = XmlWriter.Create(stream, settings);
 			repositoryWriter = new XmlStoreWriter(xmlWriter, this, cache);
-			// Image directory will be created on demand.
 		}
 
 
-		private void OpenFile(IStoreCache cache, string fileName) {
-			xmlReader = XmlReader.Create(fileName, GetXmlReaderSettings());
-			xmlReader.Read();
-			repositoryReader = new XmlStoreReader(xmlReader, this, cache);
-		}
-
-
-		private void OpenStream(IStoreCache cache, Stream stream) {
+		private void OpenReader(IStoreCache cache, Stream stream) {
+			if (cache == null) throw new ArgumentNullException("cache");
+			if (stream == null) throw new ArgumentNullException("stream");
+			// Rewind stream if necessary
+			if (stream.Position != 0) stream.Position = 0;
+			// Create readers
 			xmlReader = XmlReader.Create(stream, GetXmlReaderSettings());
 			xmlReader.Read();
 			repositoryReader = new XmlStoreReader(xmlReader, this, cache);
 		}
 
 
-		private void Close() {
-			repositoryWriter = null;
+		private void CloseReader() {
 			repositoryReader = null;
-			if (xmlWriter != null) {
-				xmlWriter.Close();
-				xmlWriter = null;
-			}
 			if (xmlReader != null) {
-				xmlReader.Close();
-				xmlReader = null;
+				try {
+					xmlReader.Close();
+				} finally { 
+					xmlReader = null; 
+				}
 			}
+			if (projectFileStream != null) {
+				try {
+					CloseFileStream(projectFileStream);
+				} finally {
+					projectFileStream = null;
+				}
+			}
+			Debug.Assert(xmlWriter == null);
+			Debug.Assert(repositoryWriter == null);
+		}
+
+
+		private void CloseWriter() {
+			repositoryWriter = null;
+			if (xmlWriter != null) {
+				try {
+					xmlWriter.Flush();
+					xmlWriter.Close();
+				} finally {
+					xmlWriter = null;
+				}
+			}
+			if (projectFileStream != null) {
+				try {
+					CloseFileStream(projectFileStream);
+				} finally {
+					projectFileStream = null;
+				}
+			}
+			Debug.Assert(xmlReader == null);
+			Debug.Assert(repositoryReader == null);
 		}
 
 
@@ -1512,9 +2132,13 @@ namespace Dataweb.NShape {
 			if (entity.Id == null) entity.AssignId(Guid.NewGuid());
 			repositoryWriter.WriteId(entity.Id);
 			entity.SaveFields(repositoryWriter, projectSettingsEntityType.RepositoryVersion);
+			// Save libraries
 			foreach (EntityPropertyDefinition pi in projectSettingsEntityType.PropertyDefinitions)
 				if (pi is EntityInnerObjectsDefinition)
 					entity.SaveInnerObjects(pi.Name, repositoryWriter, projectSettingsEntityType.RepositoryVersion);
+			// Save embedded images
+			if (ImageLocation == ImageFileLocation.Embedded)
+				WriteEmbeddedImages(cache);
 			// Save the pseudo design
 			entity = cache.ProjectDesign;
 			if (entity.Id == null) entity.AssignId(Guid.NewGuid());
@@ -1530,15 +2154,11 @@ namespace Dataweb.NShape {
 			// Save designs and styles
 			XmlOpenElement(designCollectionTag);
 			repositoryWriter.Reset(designEntityType.PropertyDefinitions);
-			// Save loaded Designs
-			foreach (EntityBucket<Design> designItem in cache.LoadedDesigns) {
-				if (designItem.State == ItemState.Deleted) continue;
-				WriteDesign(cache, designItem.ObjectRef);
-			}
-			// Save new designs
-			foreach (KeyValuePair<Design, IEntity> d in cache.NewDesigns) {
-				((IEntity)d.Key).AssignId(Guid.NewGuid());
-				WriteDesign(cache, d.Key);
+			foreach (Design design in GetLoadedDesigns(cache))
+				WriteDesign(cache, design);
+			foreach (Design design in GetNewDesigns(cache)) {
+				AssignId(design);
+				WriteDesign(cache, design);
 			}
 			XmlCloseElement();
 		}
@@ -1572,17 +2192,13 @@ namespace Dataweb.NShape {
 		private void WriteStyles<TStyle>(IStoreCache cache, IEntityType styleEntityType, Design design) {
 			XmlOpenElement(GetElementCollectionTag(styleEntityType));
 			repositoryWriter.Reset(styleEntityType.PropertyDefinitions);
-			// Save Styles
-			foreach (EntityBucket<IStyle> styleItem in cache.LoadedStyles) {
-				if (styleItem.State == ItemState.Deleted) continue;
-				if (styleItem.Owner == design && styleItem.ObjectRef is TStyle)
-					WriteStyle(styleEntityType, styleItem.ObjectRef);
-			}
-			foreach (KeyValuePair<IStyle, IEntity> s in cache.NewStyles)
-				if (s.Key is TStyle) {
-					Debug.Assert(s.Key.Id == null);
-					s.Key.AssignId(Guid.NewGuid());
-					WriteStyle(styleEntityType, s.Key);
+			foreach (IStyle style in GetLoadedStyles(cache, design))
+				if (style is TStyle) 
+					WriteStyle(styleEntityType, style);
+			foreach (IStyle style in GetNewStyles(cache, design))
+				if (style is TStyle) {
+					AssignId(style);
+					WriteStyle(styleEntityType, style);
 				}
 			XmlCloseElement();
 		}
@@ -1605,21 +2221,18 @@ namespace Dataweb.NShape {
 			IEntityType entityType = cache.FindEntityTypeByName(Template.EntityTypeName);
 			XmlOpenElement(GetElementCollectionTag(entityType));
 			repositoryWriter.Reset(entityType.PropertyDefinitions);
-			// Save loaded templates
-			foreach (EntityBucket<Template> templateItem in cache.LoadedTemplates) {
-				if (templateItem.State == ItemState.Deleted) continue;
-				WriteTemplate(cache, entityType, templateItem.ObjectRef);
+			foreach (Template template in GetLoadedTemplates(cache))
+				WriteTemplate(cache, entityType, template);
+			foreach (Template template in GetNewTemplates(cache)) {
+				AssignId(template);
+				WriteTemplate(cache, entityType, template);
 			}
-			// Save new templates, shapes and model objects
-			foreach (KeyValuePair<Template, IEntity> t in cache.NewTemplates)
-				WriteTemplate(cache, entityType, t.Key);
 			XmlCloseElement();
 		}
 
 
 		private void WriteTemplate(IStoreCache cache, IEntityType entityType, Template template) {
 			XmlOpenElement(templateTag);
-
 			// Save template definition
 			repositoryWriter.Reset(entityType.PropertyDefinitions);
 			repositoryWriter.Prepare(template);
@@ -1648,22 +2261,17 @@ namespace Dataweb.NShape {
 
 		private void WriteModelMappings(IStoreCache cache, Template template) {
 			XmlOpenElement(modelmappingsTag);
-			foreach (EntityBucket<IModelMapping> eb in cache.LoadedModelMappings) {
-				if (eb.State == ItemState.Deleted) continue;
-				// Template shapes have a null Owner
-				if (eb.Owner != null && eb.Owner == template)
-					WriteModelMapping(cache, eb.ObjectRef, repositoryWriter);
-			}
-			foreach (KeyValuePair<IModelMapping, IEntity> sp in cache.NewModelMappings) {
-				if (sp.Value == template)
-					WriteModelMapping(cache, sp.Key, repositoryWriter);
+			foreach (IModelMapping modelMapping in GetLoadedModelMappings(cache, template))
+				WriteModelMapping(cache, modelMapping);
+			foreach (IModelMapping modelMapping in GetNewModelMappings(cache, template)) {
+				AssignId(modelMapping);
+				WriteModelMapping(cache, modelMapping);
 			}
 			XmlCloseElement();
 		}
 
 
-		private void WriteModelMapping(IStoreCache cache, IModelMapping modelMapping, XmlStoreWriter writer) {
-			//IEntityType entityType = cache.FindEntityTypeByName(modelMapping.EntityTypeName);
+		private void WriteModelMapping(IStoreCache cache, IModelMapping modelMapping) {
 			string entityTypeName;
 			if (modelMapping is NumericModelMapping) entityTypeName = NumericModelMapping.EntityTypeName;
 			else if (modelMapping is FormatModelMapping) entityTypeName = FormatModelMapping.EntityTypeName;
@@ -1673,15 +2281,62 @@ namespace Dataweb.NShape {
 			IEntityType entityType = cache.FindEntityTypeByName(entityTypeName);
 			// write Shape-Tag with EntityType
 			XmlOpenElement(entityType.ElementName);
-			writer.Reset(entityType.PropertyDefinitions);
-			writer.Prepare(modelMapping);
+			repositoryWriter.Reset(entityType.PropertyDefinitions);
+			repositoryWriter.Prepare(modelMapping);
 			if (((IEntity)modelMapping).Id == null) ((IEntity)modelMapping).AssignId(Guid.NewGuid());
-			writer.WriteId(((IEntity)modelMapping).Id);
-			((IEntity)modelMapping).SaveFields(writer, entityType.RepositoryVersion);
+			repositoryWriter.WriteId(((IEntity)modelMapping).Id);
+			((IEntity)modelMapping).SaveFields(repositoryWriter, entityType.RepositoryVersion);
 			foreach (EntityPropertyDefinition pi in entityType.PropertyDefinitions)
 				if (pi is EntityInnerObjectsDefinition)
-					((IEntity)modelMapping).SaveInnerObjects(pi.Name, writer, entityType.RepositoryVersion);
+					((IEntity)modelMapping).SaveInnerObjects(pi.Name, repositoryWriter, entityType.RepositoryVersion);
 			XmlCloseElement();
+		}
+
+
+		private void WriteEmbeddedImages(IStoreCache cache) {
+			if (ImageLocation == ImageFileLocation.Embedded) {
+			    XmlOpenElement(imagesTag);
+		        
+			    // Create XmlEmbeddedImageWriter
+			    XmlEmbeddedImageWriter imgWriter = new XmlEmbeddedImageWriter(xmlWriter, this, cache);
+			    
+				// Write all images of all entities to the stream/file
+				foreach (IEntity entity in GetAllDesigns(cache))
+					WriteEmbeddedEntityImages(cache, imgWriter, entity, cache.FindEntityTypeByName(Design.EntityTypeName));
+				foreach (IStyle style in GetAllStyles(cache, null)) {
+					string entityTypeName = null;
+					if (style is IColorStyle) entityTypeName = ColorStyle.EntityTypeName;
+					else if (style is ICapStyle) entityTypeName = CapStyle.EntityTypeName;
+					else if (style is ICharacterStyle) entityTypeName = CharacterStyle.EntityTypeName;
+					else if (style is IFillStyle) entityTypeName = FillStyle.EntityTypeName;
+					else if (style is ILineStyle) entityTypeName = LineStyle.EntityTypeName;
+					else if (style is IParagraphStyle) entityTypeName = ParagraphStyle.EntityTypeName;
+					else throw new ArgumentException("Unsupported style type!");
+					WriteEmbeddedEntityImages(cache, imgWriter, style, cache.FindEntityTypeByName(entityTypeName));
+				}
+				foreach (IModelObject modelObject in GetAllModelObjects(cache, null))
+					WriteEmbeddedEntityImages(cache, imgWriter, modelObject, cache.FindEntityTypeByName(modelObject.Type.FullName));
+				foreach (IEntity entity in GetAllTemplates(cache))
+					WriteEmbeddedEntityImages(cache, imgWriter, entity, cache.FindEntityTypeByName(Template.EntityTypeName));
+				foreach (IEntity entity in GetAllDiagrams(cache))
+					WriteEmbeddedEntityImages(cache, imgWriter, entity, cache.FindEntityTypeByName(Diagram.EntityTypeName));
+				foreach (Shape shape in GetAllShapes(cache, null))
+					WriteEmbeddedEntityImages(cache, imgWriter, shape, cache.FindEntityTypeByName(shape.Type.FullName));
+				
+			    XmlCloseElement();
+			}
+		}
+
+
+		private void WriteEmbeddedEntityImages(IStoreCache cache, XmlEmbeddedImageWriter imgWriter, IEntity entity, IEntityType entityType) {
+			imgWriter.Reset(entityType.PropertyDefinitions);
+			imgWriter.Prepare(entity);
+			imgWriter.WriteId(entity.Id);
+			entity.SaveFields(imgWriter, cache.RepositoryBaseVersion);
+			foreach (EntityPropertyDefinition pi in entityType.PropertyDefinitions)
+				if (pi is EntityInnerObjectsDefinition)
+					entity.SaveInnerObjects(pi.Name, imgWriter, version);
+			imgWriter.Finish();
 		}
 
 
@@ -1711,19 +2366,17 @@ namespace Dataweb.NShape {
 		private void WriteModelObjects(IStoreCache cache, Model model) {
 			XmlOpenElement(modelObjectsTag);
 			// We do not want to write template model objects here.
-			foreach (EntityBucket<IModelObject> mob in cache.LoadedModelObjects) {
-				if (mob.State == ItemState.Deleted) continue;
-				if (mob.Owner == model || mob.Owner is IModelObject)
-					WriteModelObject(cache, mob.ObjectRef, repositoryWriter);
+			foreach (IModelObject modelObject in GetLoadedModelObjects(cache, model))
+				WriteModelObject(cache, modelObject, repositoryWriter);
+			foreach (IModelObject modelObject in GetNewModelObjects(cache, model)) {
+				AssignId(modelObject);
+				WriteModelObject(cache, modelObject, repositoryWriter);
 			}
-			foreach (KeyValuePair<IModelObject, IEntity> mokvp in cache.NewModelObjects)
-				if (mokvp.Value == model || mokvp.Value is IModelObject)
-					WriteModelObject(cache, mokvp.Key, repositoryWriter);
 			XmlCloseElement();
 		}
 
 
-		private void WriteModelObject(IStoreCache cache, IModelObject modelObject, XmlStoreWriter writer) {
+		private void WriteModelObject(IStoreCache cache, IModelObject modelObject, RepositoryWriter writer) {
 			IEntityType modelObjectEntityType = cache.FindEntityTypeByName(modelObject.Type.FullName);
 			string modelObjectTag = GetElementTag(modelObjectEntityType);
 			XmlOpenElement(modelObjectTag);
@@ -1732,6 +2385,9 @@ namespace Dataweb.NShape {
 			if (modelObject.Id == null) modelObject.AssignId(Guid.NewGuid());
 			writer.WriteId(modelObject.Id);
 			modelObject.SaveFields(writer, modelObjectEntityType.RepositoryVersion);
+			foreach (EntityPropertyDefinition pi in modelObjectEntityType.PropertyDefinitions)
+				if (pi is EntityInnerObjectsDefinition)
+					((IEntity)modelObject).SaveInnerObjects(pi.Name, writer, modelObjectEntityType.RepositoryVersion);
 			writer.Finish();
 			// ToDo: Save model object's children
 			if (cache is IRepository) {
@@ -1746,16 +2402,11 @@ namespace Dataweb.NShape {
 			IEntityType diagramEntityType = cache.FindEntityTypeByName(Diagram.EntityTypeName);
 			string diagramCollectionTag = GetElementCollectionTag(diagramEntityType);
 			XmlOpenElement(diagramCollectionTag);
-			// Save loaded diagramControllers
-			foreach (EntityBucket<Diagram> diagramItem in cache.LoadedDiagrams) {
-				if (diagramItem.State == ItemState.Deleted) continue;
-				WriteDiagram(cache, diagramEntityType, diagramItem.ObjectRef);
-			}
-			// Save new diagrams
-			foreach (KeyValuePair<Diagram, IEntity> d in cache.NewDiagrams) {
-				Debug.Assert(((IEntity)d.Key).Id == null);
-				((IEntity)d.Key).AssignId(Guid.NewGuid());
-				WriteDiagram(cache, diagramEntityType, d.Key);
+			foreach (Diagram diagram in GetLoadedDiagrams(cache))
+				WriteDiagram(cache, diagramEntityType, diagram);
+			foreach (Diagram diagram in GetNewDiagrams(cache)) {
+				AssignId(diagram);
+				WriteDiagram(cache, diagramEntityType, diagram);
 			}
 			XmlCloseElement();
 		}
@@ -1779,20 +2430,17 @@ namespace Dataweb.NShape {
 
 		private void WriteDiagramShapes(IStoreCache cache, Diagram diagram) {
 			XmlOpenElement(shapesTag);
-			foreach (EntityBucket<Shape> eb in cache.LoadedShapes) {
-				// Template shapes have a null Owner
-				if (eb.Owner != null && eb.Owner == diagram && eb.State != ItemState.Deleted)
-					WriteShape(cache, eb.ObjectRef, repositoryWriter);
-			}
-			foreach (KeyValuePair<Shape, IEntity> sp in cache.NewShapes) {
-				if (sp.Value == diagram)
-					WriteShape(cache, sp.Key, repositoryWriter);
+			foreach (Shape shape in GetLoadedShapes(cache, diagram))
+				WriteShape(cache, shape, repositoryWriter);
+			foreach (Shape shape in GetNewShapes(cache, diagram)) {
+				AssignId(shape);
+				WriteShape(cache, shape, repositoryWriter);
 			}
 			XmlCloseElement();
 		}
 
 
-		private void WriteShape(IStoreCache cache, Shape shape, XmlStoreWriter writer) {
+		private void WriteShape(IStoreCache cache, Shape shape, RepositoryWriter writer) {
 			IEntityType shapeEntityType = cache.FindEntityTypeByName(shape.Type.FullName);
 			// write Shape-Tag with EntityType
 			XmlOpenElement(shapeEntityType.ElementName);
@@ -1847,6 +2495,160 @@ namespace Dataweb.NShape {
 		#endregion
 
 
+		#region [Private] Methods: Retrieving Entities
+
+		private IEnumerable<TEntity> GetEntities<TEntity>(IEnumerable<EntityBucket<TEntity>> loadedEntities, IEntity owner) 
+			where TEntity : IEntity 
+		{
+			foreach (EntityBucket<TEntity> item in loadedEntities) {
+				if (item.State == ItemState.Deleted) continue;
+				if (owner == null || owner == item.Owner)
+					yield return item.ObjectRef;
+			}
+		}
+
+
+		private IEnumerable<TEntity> GetEntities<TEntity>(IEnumerable<KeyValuePair<TEntity, IEntity>> newEntities, IEntity owner)
+			where TEntity : IEntity 
+		{
+			foreach (KeyValuePair<TEntity, IEntity> item in newEntities) {
+				if (owner == null || owner == item.Value)
+					yield return item.Key;
+			}
+		}
+
+
+		private void AssignId(IEntity entity) {
+			Debug.Assert(entity.Id == null);
+			entity.AssignId(Guid.NewGuid());
+		}
+
+
+		private IEnumerable<Design> GetLoadedDesigns(IStoreCache cache) {
+			return GetEntities<Design>(cache.LoadedDesigns, null);
+		}
+
+		private IEnumerable<Design> GetNewDesigns(IStoreCache cache) {
+			return GetEntities<Design>(cache.NewDesigns, null);
+		}
+
+		private IEnumerable<Design> GetAllDesigns(IStoreCache cache) {
+			foreach (Design d in GetLoadedDesigns(cache)) yield return d;
+			foreach (Design d in GetNewDesigns(cache)) yield return d;
+		}
+
+
+		private IEnumerable<Diagram> GetLoadedDiagrams(IStoreCache cache) {
+			return GetEntities<Diagram>(cache.LoadedDiagrams, null);
+		}
+		
+		private IEnumerable<Diagram> GetNewDiagrams(IStoreCache cache) {
+			return GetEntities<Diagram>(cache.NewDiagrams, null);
+		}
+
+		private IEnumerable<Diagram> GetAllDiagrams(IStoreCache cache) {
+			foreach (Diagram d in GetLoadedDiagrams(cache)) yield return d;
+			foreach (Diagram d in GetNewDiagrams(cache)) yield return d;
+		}
+
+		
+		private IEnumerable<IModelMapping> GetLoadedModelMappings(IStoreCache cache, Template owner) {
+			// Original condition for getting loaded model mappings:
+			//// Template shapes have a null Owner
+			//if (eb.Owner != null && eb.Owner == template)
+			return GetEntities<IModelMapping>(cache.LoadedModelMappings, owner);
+		}
+
+		private IEnumerable<IModelMapping> GetNewModelMappings(IStoreCache cache, Template owner) {
+			return GetEntities<IModelMapping>(cache.NewModelMappings, owner);
+		}
+
+		private IEnumerable<IModelMapping> GetAllModelMappings(IStoreCache cache, Template owner) {
+			foreach (IModelMapping m in GetLoadedModelMappings(cache, owner)) yield return m;
+			foreach (IModelMapping m in GetNewModelMappings(cache, owner)) yield return m;
+		}
+
+				
+		private IEnumerable<IModelObject> GetLoadedModelObjects(IStoreCache cache, Model owner) {
+			// Original condition for retrieving loaded model objects:
+			// if (mob.Owner == model || mob.Owner is IModelObject)
+			return GetEntities<IModelObject>(cache.LoadedModelObjects, owner);
+		}
+
+		private IEnumerable<IModelObject> GetNewModelObjects(IStoreCache cache, Model owner) {
+			// Original condition for retrieving new model objects:
+			// if (mokvp.Value == model || mokvp.Value is IModelObject)
+			return GetEntities<IModelObject>(cache.NewModelObjects, owner);
+		}
+
+		private IEnumerable<IModelObject> GetAllModelObjects(IStoreCache cache, Model owner) {
+			foreach (IModelObject m in GetLoadedModelObjects(cache, owner)) yield return m;
+			foreach (IModelObject m in GetNewModelObjects(cache, owner)) yield return m;
+		}
+
+		
+		private IEnumerable<Model> GetLoadedModels(IStoreCache cache) {
+			return GetEntities<Model>(cache.LoadedModels, null);
+		}
+
+		private IEnumerable<Model> GetNewModels(IStoreCache cache) {
+			return GetEntities<Model>(cache.NewModels, null);
+		}
+
+		private IEnumerable<Model> GetAllModels(IStoreCache cache) {
+			foreach (Model m in GetLoadedModels(cache)) yield return m;
+			foreach (Model m in GetNewModels(cache)) yield return m;
+		}
+
+		
+		private IEnumerable<Shape> GetLoadedShapes(IStoreCache cache, Diagram owner) {
+			// Original condition for retrieving loaded shapes:
+			// if (eb.Owner != null && eb.Owner == diagram && eb.State != ItemState.Deleted)
+			return GetEntities<Shape>(cache.LoadedShapes, owner);
+		}
+
+		private IEnumerable<Shape> GetNewShapes(IStoreCache cache, Diagram owner) {
+			return GetEntities<Shape>(cache.NewShapes, owner);
+		}
+
+		private IEnumerable<Shape> GetAllShapes(IStoreCache cache, Diagram owner) {
+			foreach (Shape s in GetLoadedShapes(cache, owner)) yield return s;
+			foreach (Shape s in GetNewShapes(cache, owner)) yield return s;
+		}
+
+		
+		private IEnumerable<IStyle> GetLoadedStyles(IStoreCache cache, Design owner) {
+			// Original condition for retrieving loaded styles:
+			//if ((styleItem.Owner == design || AreEqual(styleItem.Owner.Id, ((IEntity)design).Id)) && styleItem.ObjectRef is TStyle)
+			return GetEntities<IStyle>(cache.LoadedStyles, owner);
+		}
+
+		private IEnumerable<IStyle> GetNewStyles(IStoreCache cache, Design owner) {
+			return GetEntities<IStyle>(cache.NewStyles, owner);
+		}
+
+		private IEnumerable<IStyle> GetAllStyles(IStoreCache cache, Design owner) {
+			foreach (IStyle s in GetLoadedStyles(cache, owner)) yield return s;
+			foreach (IStyle s in GetNewStyles(cache, owner)) yield return s;
+		}
+
+
+		private IEnumerable<Template> GetLoadedTemplates(IStoreCache cache) {
+			return GetEntities<Template>(cache.LoadedTemplates, null);
+		}
+
+		private IEnumerable<Template> GetNewTemplates(IStoreCache cache) {
+			return GetEntities<Template>(cache.NewTemplates, null);
+		}
+
+		private IEnumerable<Template> GetAllTemplates(IStoreCache cache) {
+			foreach (Template t in GetLoadedTemplates(cache)) yield return t;
+			foreach (Template t in GetNewTemplates(cache)) yield return t;
+		}
+
+		#endregion
+
+
 		#region [Private] Methods: Obtain object tags and field structure
 
 		// TODO 2: Replace this access in place.
@@ -1874,7 +2676,7 @@ namespace Dataweb.NShape {
 		}
 
 
-		// If the current element is a start element with the given, the function reads
+		// If the current element is a start element with the given name, the function reads
 		// it and returns true. If it is not, the function does nothing and returns false.
 		private bool XmlReadStartElement(string name) {
 			if (xmlReader.IsStartElement(name)) {
@@ -1953,9 +2755,11 @@ namespace Dataweb.NShape {
 
 		private const string DefaultFileExtension = ".xml";
 
-
 		// Predefined XML Element Tags
 		private const string projectTag = "project";
+		private const string imagesTag = "images";
+		private const string imageTag = "image";
+		private const string fileNameTag = "file_name";
 		private const string shapesTag = "shapes";
 		private const string modelObjectsTag = "model_objects";
 		private const string rootTag = "dataweb_nshape";
@@ -1983,6 +2787,8 @@ namespace Dataweb.NShape {
 		private string backupFileExtension = DefaultBackupFileExtension;
 		// Specifies whether a backup file should be created when saving the contents to file.
 		private BackupFileGenerationMode backupGenerationMode = BackupFileGenerationMode.BakFile;
+		private ImageFileLocation defaultImageLocation = XmlStore.ImageFileLocation.Directory;
+		private ImageFileLocation? storeImageLocation = null;
 
 		private bool isOpen;
 
@@ -1995,12 +2801,23 @@ namespace Dataweb.NShape {
 		/// <summary>Indicates that the whole file is in memory.</summary>
 		private bool isOpenComplete = false;
 
+		// Specifies whether or not to load the XML repository completely
+		private bool usePartialLoading = false;
+
 		// element attributes
 		private Dictionary<string, string[]> attributeFields = new Dictionary<string, string[]>();
 
-		string imageDirectory;
+		// Contains the path to the directory where images are stored (ImageLocation.Directory only)
+		private string imageDirectory;
+		
+		// Contains the file path to the current store file (ProjectFilePath or temporary file path)
+		private string storeFilePath;
 
-		//private MemoryStream memoryStream = null;
+		private Stream projectFileStream = null;
+		private Stream externalStream = null;
+		private SortedList<string, Image> embeddedImages = null;
+		private List<Diagram> diagramsToLoad = null;
+
 		private XmlReader xmlReader;
 		private XmlWriter xmlWriter;
 		private XmlStoreWriter repositoryWriter = null;

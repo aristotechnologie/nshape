@@ -41,7 +41,6 @@ namespace Dataweb.NShape.Advanced {
 	/// <summary>
 	/// Groups a set of shapes together.
 	/// </summary>
-	/// <remarks>RequiredPermissions set</remarks>
 	public class ShapeGroup : Shape, IShapeGroup {
 
 		internal static ShapeGroup CreateInstance(ShapeType shapeType, Template template) {
@@ -63,8 +62,10 @@ namespace Dataweb.NShape.Advanced {
 			
 			// Do not recalculate Center after adding the children because in case the group is rotated, 
 			// the rotation center would not be the same.
-			if (source.Children != null)
-				children.CopyFrom(source.Children);
+			if (source.Children != null) {
+				if (ChildrenCollection == null) ChildrenCollection = (GroupShapeAggregation)CreateChildrenCollection(source.Children.Count);
+				ChildrenCollection.CopyFrom(source.Children);
+			}
 
 			// Do not assign to the property but to the field because the children are already on their (rotated) positions
 			if (source is IPlanarShape)
@@ -127,9 +128,9 @@ namespace Dataweb.NShape.Advanced {
 						owner = null;
 					}
 					if (value is ShapeGroup)
-						owner = ((ShapeGroup)value).children;
-					else if (value.children is ShapeAggregation)
-						owner = (ShapeAggregation)value.children;
+						owner = ((ShapeGroup)value).ChildrenCollection;
+					else if (value.ChildrenCollection is ShapeAggregation)
+						owner = (ShapeAggregation)value.Children;
 					else throw new ArgumentException(string.Format("{0}'s Children property must be a {1}", value.GetType().Name, typeof(ShapeAggregation).Name));
 				} else owner = null;
 			}
@@ -138,7 +139,7 @@ namespace Dataweb.NShape.Advanced {
 
 		/// <override></override>
 		public override IShapeCollection Children {
-			get { return children; }
+			get { return ChildrenCollection; }
 		}
 
 
@@ -183,7 +184,7 @@ namespace Dataweb.NShape.Advanced {
 
 		/// <override></override>
 		public override void NotifyModelChanged(int modelPropertyId) {
-			for (int i = children.Count - 1; i >= 0; --i)
+			for (int i = ChildrenCollection.Count - 1; i >= 0; --i)
 				NotifyModelChanged(modelPropertyId);
 		}
 
@@ -265,7 +266,7 @@ namespace Dataweb.NShape.Advanced {
 			result.Offset(X, Y);
 			float distance, lowestDistance = float.MaxValue;
 			// Use the nearest intersection point not contained by an other shape of the group
-			foreach (Shape shape in children) {
+			foreach (Shape shape in ChildrenCollection) {
 				// ToDo3: Improve this implementation by using InterSectOutlineWithLineSegment(fromX, fromY, X, Y)
 				Point p = shape.CalculateConnectionFoot(fromX, fromY);
 				if (p == Point.Empty) {
@@ -283,7 +284,7 @@ namespace Dataweb.NShape.Advanced {
 					// If the new nearest point is contained by an other shape:
 					// Skip it, as we do not want lines that cross, intersect or end within shapes of the group
 					bool otherShapeContainsPoint = false;
-					foreach (Shape s in children.BottomUp) {
+					foreach (Shape s in ChildrenCollection.BottomUp) {
 						if (s == shape) continue;
 						if (s.ContainsPoint(p.X, p.Y)) {
 							otherShapeContainsPoint = true;
@@ -307,9 +308,9 @@ namespace Dataweb.NShape.Advanced {
 			rect.Y = y;
 			rect.Width = width;
 			rect.Height = height;
-			if (children.Count <= 0) return Geometry.RectangleContainsPoint(rect, X, Y);
-			else if (Geometry.RectangleIntersectsWithRectangle(rect, children.GetBoundingRectangle(false))) {
-				foreach (Shape shape in children)
+			if (ChildrenCollection.Count <= 0) return Geometry.RectangleContainsPoint(rect, X, Y);
+			else if (Geometry.RectangleIntersectsWithRectangle(rect, ChildrenCollection.GetBoundingRectangle(false))) {
+				foreach (Shape shape in ChildrenCollection)
 					if (shape.IntersectsWith(x, y, width, height))
 						return true;
 			}
@@ -320,7 +321,7 @@ namespace Dataweb.NShape.Advanced {
 		/// <override></override>
 		public override IEnumerable<Point> IntersectOutlineWithLineSegment(int x1, int y1, int x2, int y2) {
 			// Use the nearest intersection point not contained by an other shape of the group
-			foreach (Shape shape in children) {
+			foreach (Shape shape in ChildrenCollection) {
 				foreach (Point p in shape.IntersectOutlineWithLineSegment(x1, y1, x2, y2))
 					if (!ContainsPoint(p.X, p.Y)) yield return p;
 			}
@@ -337,7 +338,7 @@ namespace Dataweb.NShape.Advanced {
 					return RotatePointId;
 				controlPointCapability ^= ControlPointCapabilities.Rotate;
 			}
-			foreach (Shape shape in children) {
+			foreach (Shape shape in ChildrenCollection) {
 				ControlPointId pointId = shape.HitTest(x, y, controlPointCapability, range);
 				//if (pointId != ControlPointId.None) return pointId;
 
@@ -353,7 +354,7 @@ namespace Dataweb.NShape.Advanced {
 			if (X == x && Y == y)
 				return true;
 			// TODO 2: Can be optimized using the shape map.
-			foreach (Shape shape in children)
+			foreach (Shape shape in ChildrenCollection)
 				if (shape.ContainsPoint(x, y))
 					return true;
 			return false;
@@ -363,9 +364,9 @@ namespace Dataweb.NShape.Advanced {
 		/// <override></override>
 		public override Rectangle GetBoundingRectangle(bool tight) {
 			Rectangle result = Rectangle.Empty;
-			if (children.Count <= 0) result.Offset(X, Y);
+			if (ChildrenCollection.Count <= 0) result.Offset(X, Y);
 			else {
-				result = children.GetBoundingRectangle(tight);
+				result = ChildrenCollection.GetBoundingRectangle(tight);
 				if (!Geometry.RectangleContainsPoint(result, X, Y))
 					result = Geometry.UniteRectangles(X, Y, X, Y, result);
 			}
@@ -375,7 +376,7 @@ namespace Dataweb.NShape.Advanced {
 
 		/// <override></override>
 		protected internal override IEnumerable<Point> CalculateCells(int cellSize) {
-			foreach (Shape s in children)
+			foreach (Shape s in ChildrenCollection)
 				foreach (Point p in s.CalculateCells(cellSize))
 					yield return p;
 		}
@@ -384,12 +385,12 @@ namespace Dataweb.NShape.Advanced {
 
 		/// <override></override>
 		public override int X {
-			get { return children.Center.X; }
+			get { return ChildrenCollection.Center.X; }
 			set {
-				int origValue = children.Center.X;
-				if (!MoveTo(value, children.Center.Y)) {
-					MoveTo(origValue, children.Center.Y);
-					throw new InvalidOperationException(string.Format("Shape cannot move to {0}.", new Point(value, children.Center.Y)));
+				int origValue = ChildrenCollection.Center.X;
+				if (!MoveTo(value, ChildrenCollection.Center.Y)) {
+					MoveTo(origValue, ChildrenCollection.Center.Y);
+					throw new InvalidOperationException(string.Format("Shape cannot move to {0}.", new Point(value, ChildrenCollection.Center.Y)));
 				}
 			}
 		}
@@ -397,12 +398,12 @@ namespace Dataweb.NShape.Advanced {
 
 		/// <override></override>
 		public override int Y {
-			get { return children.Center.Y; }
+			get { return ChildrenCollection.Center.Y; }
 			set {
-				int origValue = children.Center.Y;
-				if (!MoveTo(children.Center.X, value)) {
-					MoveTo(children.Center.X, origValue);
-					throw new InvalidOperationException(string.Format("Shape cannot move to {0}.", new Point(children.Center.X, value)));
+				int origValue = ChildrenCollection.Center.Y;
+				if (!MoveTo(ChildrenCollection.Center.X, value)) {
+					MoveTo(ChildrenCollection.Center.X, origValue);
+					throw new InvalidOperationException(string.Format("Shape cannot move to {0}.", new Point(ChildrenCollection.Center.X, value)));
 				}
 			}
 		}
@@ -420,7 +421,7 @@ namespace Dataweb.NShape.Advanced {
 			Invalidate();
 			if (Owner != null) Owner.NotifyChildMoving(this);
 
-			result = children.NotifyParentMoved(deltaX, deltaY);
+			result = ChildrenCollection.NotifyParentMoved(deltaX, deltaY);
 
 			if (Owner != null) Owner.NotifyChildMoved(this);
 			Invalidate();
@@ -460,7 +461,7 @@ namespace Dataweb.NShape.Advanced {
 			}
 
 			// Notify children and owner (calls rotate for all children)
-			if (!children.NotifyParentRotated(deltaAngle, X, Y)) result = false;
+			if (!ChildrenCollection.NotifyParentRotated(deltaAngle, X, Y)) result = false;
 			if (Owner != null) Owner.NotifyChildRotated(this);
 			return result;
 		}
@@ -470,7 +471,7 @@ namespace Dataweb.NShape.Advanced {
 		public override Point GetControlPointPosition(ControlPointId controlPointId) {
 			if (controlPointId == ControlPointId.Reference)
 				//return location;
-				return children.Center;
+				return ChildrenCollection.Center;
 			else if (controlPointId == RotatePointId)
 				return RotatePoint;
 			else if (controlPointId == ControlPointId.None)
@@ -515,8 +516,8 @@ namespace Dataweb.NShape.Advanced {
 			set {
 				if (displayService != value) {
 					displayService = value;
-					if (children != null && children.Count > 0)
-						children.SetDisplayService(displayService);
+					if (ChildrenCollection != null && ChildrenCollection.Count > 0)
+						ChildrenCollection.SetDisplayService(displayService);
 				}
 			}
 		}
@@ -524,7 +525,7 @@ namespace Dataweb.NShape.Advanced {
 
 		/// <override></override>
 		public override void MakePreview(IStyleSet styleSet) {
-			foreach (Shape shape in children)
+			foreach (Shape shape in ChildrenCollection)
 				shape.MakePreview(styleSet);
 		}
 
@@ -544,7 +545,7 @@ namespace Dataweb.NShape.Advanced {
 		/// <override></override>
 		public override bool HasStyle(IStyle style) {
 			bool result = false;
-			foreach (Shape shape in children)
+			foreach (Shape shape in ChildrenCollection)
 				if (shape.HasStyle(style)) result = true;
 			return result;
 		}
@@ -553,7 +554,7 @@ namespace Dataweb.NShape.Advanced {
 		/// <override></override>
 		protected internal override bool NotifyStyleChanged(IStyle style) {
 			bool result = false;
-			foreach (Shape shape in children)
+			foreach (Shape shape in ChildrenCollection)
 				if (shape.NotifyStyleChanged(style)) result = true;
 			return result;
 		}
@@ -562,7 +563,7 @@ namespace Dataweb.NShape.Advanced {
 		/// <override></override>
 		public override void Draw(Graphics graphics) {
 			if (graphics == null) throw new ArgumentNullException("graphics");
-			children.Draw(graphics);
+			ChildrenCollection.Draw(graphics);
 		}
 
 
@@ -570,7 +571,7 @@ namespace Dataweb.NShape.Advanced {
 		public override void DrawOutline(Graphics graphics, Pen pen) {
 			if (graphics == null) throw new ArgumentNullException("graphics");
 			if (pen == null) throw new ArgumentNullException("pen");
-			children.DrawOutline(graphics, pen);
+			ChildrenCollection.DrawOutline(graphics, pen);
 		}
 
 
@@ -602,7 +603,7 @@ namespace Dataweb.NShape.Advanced {
 
 
 		/// <ToBeCompleted></ToBeCompleted>
-		[Category("Layout")]
+		[CategoryLayout()]
 		[Description("Rotation angle of the Shape in tenths of degree.")]
 		[PropertyMappingId(PropertyIdAngle)]
 		[RequiredPermission(Permission.Layout)]
@@ -724,7 +725,7 @@ namespace Dataweb.NShape.Advanced {
 		/// <override></override>
 		public override void Dispose() {
 			if (ModelObject != null) ModelObject = null;
-			foreach (Shape child in children) child.Dispose();
+			foreach (Shape child in ChildrenCollection) child.Dispose();
 		}
 
 		#endregion
@@ -736,7 +737,7 @@ namespace Dataweb.NShape.Advanced {
 			if (shapeType == null) throw new ArgumentNullException("shapeType");
 			this.shapeType = shapeType;
 			this.template = template;
-			children = new GroupShapeAggregation(this);
+			ChildrenCollection = (GroupShapeAggregation)CreateChildrenCollection(DefaultCapacity);
 		}
 
 
@@ -746,13 +747,13 @@ namespace Dataweb.NShape.Advanced {
 			if (shapeType == null) throw new ArgumentNullException("shapeType");
 			this.shapeType = shapeType;
 			this.template = null;
-			children = new GroupShapeAggregation(this);
+			ChildrenCollection = (GroupShapeAggregation)CreateChildrenCollection(DefaultCapacity);
 		}
 
 
 		/// <override></override>
 		protected internal override void InitializeToDefault(IStyleSet styleSet) {
-			foreach (Shape shape in children)
+			foreach (Shape shape in ChildrenCollection)
 				shape.InitializeToDefault(styleSet);
 		}
 
@@ -780,6 +781,23 @@ namespace Dataweb.NShape.Advanced {
 		}
 
 
+		/// <override></override>
+		protected internal new GroupShapeAggregation ChildrenCollection {
+			get { return (GroupShapeAggregation)base.ChildrenCollection; }
+			internal set {
+				if (value != null && !(value is GroupShapeAggregation))
+					throw new ArgumentException(string.Format("{0}'s ChildrenCollection has to derived from GroupShapeAggregation."));
+				base.ChildrenCollection = value;
+			}
+		}
+
+
+		/// <override></override>
+		protected override ShapeAggregation CreateChildrenCollection(int capacity) {
+			return new GroupShapeAggregation(this, capacity);
+		}
+
+
 		/// <ToBeCompleted></ToBeCompleted>
 		protected ShapeCollection Owner {
 			get { return owner; }
@@ -787,7 +805,7 @@ namespace Dataweb.NShape.Advanced {
 
 
 		private Point RotatePoint {
-			get { return (children != null) ? children.Center : Point.Empty; }
+			get { return (ChildrenCollection != null) ? ChildrenCollection.Center : Point.Empty; }
 		}
 
 
@@ -803,7 +821,6 @@ namespace Dataweb.NShape.Advanced {
 		private IDisplayService displayService;
 		private char permissionSetName = 'A';
 		private ShapeCollection owner = null;
-		private new GroupShapeAggregation children;
 		private object id = null;
 		private object tag = null;
 		private string data = null;
@@ -813,6 +830,8 @@ namespace Dataweb.NShape.Advanced {
 		// ShapeGroup fields
 		private const int RotatePointId = 1;
 		private int angle;
+
+		private const int DefaultCapacity = 4;
 		#endregion
 	}
 

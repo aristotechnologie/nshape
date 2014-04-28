@@ -53,7 +53,7 @@ namespace Dataweb.NShape.WinFormsUI {
 		/// <summary>
 		/// Specifies the version of the assembly containing the component.
 		/// </summary>
-		[Category("NShape")]
+		[CategoryNShape()]
 		public string ProductVersion {
 			get { return this.GetType().Assembly.GetName().Version.ToString(); }
 		}
@@ -62,7 +62,7 @@ namespace Dataweb.NShape.WinFormsUI {
 		/// <summary>
 		/// The controller of this presenter.
 		/// </summary>
-		[Category("NShape")]
+		[CategoryNShape()]
 		public ToolSetController ToolSetController {
 			get { return toolSetController; }
 			set {
@@ -84,7 +84,7 @@ namespace Dataweb.NShape.WinFormsUI {
 		/// <summary>
 		/// Specifies a ListView used as user interface for this presenter.
 		/// </summary>
-		[Category("NShape")]
+		[CategoryNShape()]
 		public ListView ListView {
 			get { return listView; }
 			set {
@@ -122,7 +122,7 @@ namespace Dataweb.NShape.WinFormsUI {
 		/// <summary>
 		/// Specifies if MenuItemDefs that are not granted should appear as MenuItems in the dynamic context menu.
 		/// </summary>
-		[Category("Behavior")]
+		[CategoryBehavior()]
 		public bool HideDeniedMenuItems {
 			get { return hideMenuItemsIfNotGranted; }
 			set { hideMenuItemsIfNotGranted = value; }
@@ -133,7 +133,7 @@ namespace Dataweb.NShape.WinFormsUI {
 		/// If true, the standard context menu is created from MenuItemDefs. 
 		/// If false, a user defined context menu is shown without creating additional menu items.
 		/// </summary>
-		[Category("Behavior")]
+		[CategoryBehavior()]
 		public bool ShowDefaultContextMenu {
 			get { return showDefaultContextMenu; }
 			set { showDefaultContextMenu = value; }

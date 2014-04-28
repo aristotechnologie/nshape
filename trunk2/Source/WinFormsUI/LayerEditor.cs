@@ -16,6 +16,7 @@ using System.ComponentModel;
 using System.Drawing;
 using System.Windows.Forms;
 
+using Dataweb.NShape.Advanced;
 using Dataweb.NShape.Controllers;
 
 
@@ -39,7 +40,7 @@ namespace Dataweb.NShape.WinFormsUI {
 		/// <summary>
 		/// Specifies the version of the assembly containing the component.
 		/// </summary>
-		[Category("NShape")]
+		[CategoryNShape()]
 		[Browsable(true)]
 		public new string ProductVersion {
 			get { return base.ProductVersion; }
@@ -49,7 +50,7 @@ namespace Dataweb.NShape.WinFormsUI {
 		/// <summary>
 		/// Specifies the DiagramPresenter for this layer editor.
 		/// </summary>
-		[Category("NShape")]
+		[CategoryNShape()]
 		public IDiagramPresenter DiagramPresenter {
 			get { return presenter.DiagramPresenter; }
 			set { presenter.DiagramPresenter = value; }
@@ -59,7 +60,7 @@ namespace Dataweb.NShape.WinFormsUI {
 		/// <summary>
 		/// Specifies a DiagramSetController which provides the diagrams, this layer editor refers to.
 		/// </summary>
-		[Category("NShape")]
+		[CategoryNShape()]
 		public DiagramSetController DiagramSetController {
 			get { return controller.DiagramSetController; }
 			set { controller.DiagramSetController = value; }

@@ -101,8 +101,10 @@ namespace Dataweb.NShape.Advanced {
 		/// <summary>
 		/// Specfies name of the property as used in the repository.
 		/// </summary>
-		/// <remarks>This is a convenience property for the cache. Applications 
-		/// should never access it.</remarks>
+		/// <remarks>
+		/// This is a convenience property for the cache. 
+		/// Applications should never access it.
+		/// </remarks>
 		public string ElementName {
 			get { return elementName; }
 			internal set { elementName = value; }
@@ -223,9 +225,10 @@ namespace Dataweb.NShape.Advanced {
 	/// <summary>
 	/// Describes an entity in the conceptual data model.
 	/// </summary>
-	/// <remarks>An entity type is used to map the object model to the conceptual 
-	/// data model. Since the XML document represents that conceptual model, the 
-	/// entity types define the schema of the XML document.</remarks>
+	/// <remarks>
+	/// An entity type is used to map the object model to the conceptual data model. 
+	/// Since the XML document represents that conceptual model, the entity types define the schema of the XML document.
+	/// </remarks>
 	/// <status>reviewed</status>
 	public interface IEntityType {
 

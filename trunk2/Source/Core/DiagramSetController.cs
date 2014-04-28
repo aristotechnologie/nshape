@@ -76,7 +76,7 @@ namespace Dataweb.NShape.Controllers {
 		/// <summary>
 		/// Specifies the version of the assembly containing the component.
 		/// </summary>
-		[Category("NShape")]
+		[CategoryNShape()]
 		public string ProductVersion {
 			get { return this.GetType().Assembly.GetName().Version.ToString(); }
 		}
@@ -85,7 +85,7 @@ namespace Dataweb.NShape.Controllers {
 		/// <summary>
 		/// Provides access to a <see cref="T:Dataweb.NShape.Project" />.
 		/// </summary>
-		[Category("NShape")]
+		[CategoryNShape()]
 		public Project Project {
 			get { return project; }
 			set {
@@ -553,10 +553,10 @@ namespace Dataweb.NShape.Controllers {
 			if (shapes == null) throw new ArgumentNullException("shapes");
 			reason = null;
 			if (!Project.SecurityManager.IsGranted(Permission.Insert, shapes)) {
-				reason = string.Format("Permission {0} not granted.", Permission.Insert);
+				reason = string.Format(Properties.Resources.MessageFmt_Permission0NotGranted, Permission.Insert);
 				return false;
 			} else if (diagram.Shapes.ContainsAny(shapes)) {
-				reason = "Diagram already containsat least one sof the shapes to be inserted.";
+				reason = Properties.Resources.MessageTxt_DiagramAlreadyContainsAtLeastOneOfTheShapesToBeInserted;
 				return false;
 			} else return true;
 		}
@@ -622,14 +622,14 @@ namespace Dataweb.NShape.Controllers {
 			if (diagram == null) throw new ArgumentNullException("diagram");
 			reason = null;
 			if (editBuffer.IsEmpty) {
-				reason = "No shapes cut/copied.";
+				reason = Properties.Resources.MessageTxt_NoShapesCutOrCopied;
 				return false;
 			} else {
 				if (editBuffer.action != EditAction.Copy)
 					if (!CanInsertShapes(diagram, editBuffer.shapes))
 						return false;
 				if (!Project.SecurityManager.IsGranted(Permission.Insert, editBuffer.shapes)) {
-					reason = string.Format("Permission '{0}' not granted.", Permission.Insert);
+					reason = string.Format(Properties.Resources.MessageFmt_Permission0NotGranted, Permission.Insert);
 					return false;
 				} else return true;
 			}
@@ -656,11 +656,11 @@ namespace Dataweb.NShape.Controllers {
 				if (shape is IShapeGroup && shape.Parent == null)
 					return CanInsertShapes(diagram, shape.Children, out reason);
 				else {
-					reason = "Shape is not a group shape.";
+					reason = Properties.Resources.MessageTxt_ShapeIsNotAGroupShape;
 					return false;
 				}
 			}
-			reason = "No shapes to ungroup";
+			reason = Properties.Resources.MessageFmt_NoShapesToUngroup;
 			return false;
 		}
 
@@ -686,15 +686,15 @@ namespace Dataweb.NShape.Controllers {
 			reason = null;
 			Shape compositeShape = shapes.Bottom;
 			if (shapes.Count <= 1)
-				reason = "No shapes selected.";
+				reason = Properties.Resources.MessageFmt_NoShapesSelected;
 			else if (shapes.Count <= 1)
-				reason = "Not enough shapes selected.";
+				reason = Properties.Resources.MessageFmt_NotEnoughShapesSelected;
 			else if (!CanDeleteShapes(diagram, shapes))
-				reason = string.Format("Permission {0} is not granted.", Permission.Delete);
+				reason = string.Format(Properties.Resources.MessageFmt_Permission0NotGranted, Permission.Delete);
 			else if (!Project.SecurityManager.IsGranted(Permission.Present, compositeShape))
-				reason = string.Format("Permission {0} is not granted.", Permission.Present);
+				reason = string.Format(Properties.Resources.MessageFmt_Permission0NotGranted, Permission.Present);
 			else if (compositeShape is IShapeGroup)
-				reason = "Groups cannot be aggregated.";
+				reason = Properties.Resources.MessageTxt_GroupsCannotBeAggregated;
 			return string.IsNullOrEmpty(reason);
 		}
 
@@ -713,15 +713,17 @@ namespace Dataweb.NShape.Controllers {
 			reason = null;
 			Shape compositeShape = shapes.TopMost;
 			if (shapes.Count == 0)
-				reason = "No shapes selected.";
+				reason = Properties.Resources.MessageFmt_NoShapesSelected;
 			else if (shapes.Count > 1)
-				reason = "Too many shapes selected.";
+				reason = Properties.Resources.MessageTxt_TooManyShapesSelected;
 			else if (compositeShape is IShapeGroup)
-				reason = "Groups cannot be disaggregated.";
+				reason = Properties.Resources.MessageTxt_GroupsCannotBeDisaggregated;
+			else if (compositeShape.Children.Count == 0)
+				reason = Properties.Resources.MessageTxt_ShapeIsNotACompositeShape;
 			else if (!CanInsertShapes(diagram, compositeShape.Children))
-				reason = string.Format("Permission {0} is not granted.", Permission.Insert);
+				reason = string.Format(Properties.Resources.MessageFmt_Permission0NotGranted, Permission.Insert);
 			else if (!Project.SecurityManager.IsGranted(Permission.Present, compositeShape))
-				reason = string.Format("Permission {0} is not granted.", Permission.Present);
+				reason = string.Format(Properties.Resources.MessageFmt_Permission0NotGranted, Permission.Present);
 			return string.IsNullOrEmpty(reason);
 		}
 
@@ -974,18 +976,18 @@ namespace Dataweb.NShape.Controllers {
 		}
 
 
-		private DiagramShapeEventArgs GetShapeEventArgs(Shape shape, Diagram diagram) {
-			if (shape == null) throw new ArgumentNullException("shape");
-			diagramShapeEventArgs.SetDiagramShapes(shape, diagram);
-			return diagramShapeEventArgs;
-		}
+		//private DiagramShapesEventArgs GetShapeEventArgs(Shape shape, Diagram diagram) {
+		//    if (shape == null) throw new ArgumentNullException("shape");
+		//    diagramShapeEventArgs.SetDiagramShapes(shape, diagram);
+		//    return diagramShapeEventArgs;
+		//}
 
 
-		private DiagramShapeEventArgs GetShapeEventArgs(IEnumerable<Shape> shapes, Diagram diagram) {
-			if (shapes == null) throw new ArgumentNullException("shapes");
-			diagramShapeEventArgs.SetDiagramShapes(shapes, diagram);
-			return diagramShapeEventArgs;
-		}
+		//private DiagramShapesEventArgs GetShapeEventArgs(IEnumerable<Shape> shapes, Diagram diagram) {
+		//    if (shapes == null) throw new ArgumentNullException("shapes");
+		//    diagramShapeEventArgs.SetDiagramShapes(shapes, diagram);
+		//    return diagramShapeEventArgs;
+		//}
 
 
 		private ModelObjectsEventArgs GetModelObjectsEventArgs(IEnumerable<IModelObject> modelObjects) {
@@ -1011,7 +1013,6 @@ namespace Dataweb.NShape.Controllers {
 		private List<IModelObject> modelBuffer = new List<IModelObject>();
 		// EventArgs buffers
 		private DiagramEventArgs diagramEventArgs = new DiagramEventArgs();
-		private DiagramShapeEventArgs diagramShapeEventArgs = new DiagramShapeEventArgs();
 		private ModelObjectsEventArgs modelObjectEventArgs = new ModelObjectsEventArgs();
 
 		#endregion
@@ -1023,18 +1024,18 @@ namespace Dataweb.NShape.Controllers {
 	/// <summary>
 	/// Specifies the draw mode of selection indicators and grips.
 	/// </summary>
-	public enum IndicatorDrawMode { 
-		/// <ToBeCompleted></ToBeCompleted>
+	public enum IndicatorDrawMode {
+		/// <summary>Selection indicators and grips will be drawn normally.</summary>
 		Normal,
-		/// <ToBeCompleted></ToBeCompleted>
+		/// <summary>Selection indicators and grips will be drawn in an highlighted way, typically in a signal color.</summary>
 		Highlighted,
-		/// <ToBeCompleted></ToBeCompleted>
+		/// <summary>Selection indicators and grips will be drawn in a less noticeable way, typically in gray or transparent.</summary>
 		Deactivated
 	};
 
 
 	/// <summary>
-	/// This is the NShape representation of <see cref="T:System.Windows.Forms.MouseButtons" /> (Framework 2.0)
+	/// This is the NShape representation of the <see cref="T:System.Windows.Forms.MouseButtons" /> enumeration.
 	/// </summary>
 	[Flags]
 	public enum MouseButtonsDg {
@@ -1076,13 +1077,13 @@ namespace Dataweb.NShape.Controllers {
 		KeyPress, 
 		/// <summary>A key was released.</summary>
 		KeyUp, 
-		/// <summary>A key is going to be pressed.</summary>
+		/// <summary>A key is going to be pressed down.</summary>
 		PreviewKeyDown 
 	}
 
 
 	/// <summary>
-	/// Specifies key codes and modifiers. This is the NShape representation of <see cref="T:System.Windows.Forms.Keys" /> (Framework 2.0)
+	/// Specifies key codes and modifiers. This is the NShape representation of the <see cref="T:System.Windows.Forms.Keys" /> enumeration.
 	/// </summary>
 	[Flags]
 	public enum KeysDg {
@@ -1730,10 +1731,10 @@ namespace Dataweb.NShape.Controllers {
 
 
 	/// <ToBeCompleted></ToBeCompleted>
-	public class ShapeEventArgs : EventArgs {
+	public class ShapesEventArgs : EventArgs {
 
 		/// <ToBeCompleted></ToBeCompleted>
-		public ShapeEventArgs(IEnumerable<Shape> shapes) {
+		public ShapesEventArgs(IEnumerable<Shape> shapes) {
 			if (shapes == null) throw new ArgumentNullException("shapes");
 			this.shapes.AddRange(shapes);
 		}
@@ -1743,7 +1744,7 @@ namespace Dataweb.NShape.Controllers {
 			get { return shapes; }
 		}
 
-		internal ShapeEventArgs() {
+		internal ShapesEventArgs() {
 			this.shapes.Clear();
 		}
 
@@ -1758,6 +1759,31 @@ namespace Dataweb.NShape.Controllers {
 		}
 
 		private ReadOnlyList<Shape> shapes = new ReadOnlyList<Shape>();
+	}
+
+
+	/// <ToBeCompleted></ToBeCompleted>
+	public class ShapeEventArgs : EventArgs {
+
+		/// <ToBeCompleted></ToBeCompleted>
+		public ShapeEventArgs(Shape shape) {
+			if (shape == null) throw new ArgumentNullException("shape");
+			this.shape = shape;
+		}
+
+		/// <ToBeCompleted></ToBeCompleted>
+		public Shape Shape {
+			get { return shape; }
+		}
+
+		internal ShapeEventArgs() {
+		}
+
+		internal void SetShape(Shape shape) {
+			this.shape = shape;
+		}
+
+		private Shape shape = null;
 	}
 
 
@@ -1794,10 +1820,10 @@ namespace Dataweb.NShape.Controllers {
 
 
 	/// <ToBeCompleted></ToBeCompleted>
-	public class DiagramShapeEventArgs : ShapeEventArgs {
+	public class DiagramShapesEventArgs : ShapesEventArgs {
 
 		/// <ToBeCompleted></ToBeCompleted>
-		public DiagramShapeEventArgs(IEnumerable<Shape> shapes, Diagram diagram)
+		public DiagramShapesEventArgs(IEnumerable<Shape> shapes, Diagram diagram)
 			: base(shapes) {
 			if (diagram == null) throw new ArgumentNullException("diagram");
 			this.diagram = diagram;
@@ -1810,7 +1836,7 @@ namespace Dataweb.NShape.Controllers {
 		}
 
 
-		internal DiagramShapeEventArgs()
+		internal DiagramShapesEventArgs()
 			: base() {
 		}
 
@@ -1818,8 +1844,8 @@ namespace Dataweb.NShape.Controllers {
 		internal void SetDiagram(Diagram diagram) {
 			this.diagram = diagram;
 		}
-		
-		
+
+
 		internal void SetDiagramShapes(IEnumerable<Shape> shapes, Diagram diagram) {
 			SetShapes(shapes);
 			SetDiagram(diagram);
@@ -1833,40 +1859,6 @@ namespace Dataweb.NShape.Controllers {
 
 
 		private Diagram diagram;
-	}
-
-
-	/// <ToBeCompleted></ToBeCompleted>
-	public class ShapeMouseEventArgs : MouseEventArgsDg {
-
-		/// <ToBeCompleted></ToBeCompleted>
-		public ShapeMouseEventArgs(IEnumerable<Shape> shapes, Diagram diagram, MouseEventType eventType, MouseButtonsDg buttons, int clicks, int delta, Point location, KeysDg modifiers)
-			: base(eventType, buttons, clicks, delta, location, modifiers) {
-			if (shapes == null) throw new ArgumentNullException("shapes");
-			this.shapes.AddRange(shapes);
-			this.diagram = diagram;
-		}
-
-		/// <ToBeCompleted></ToBeCompleted>
-		public IReadOnlyCollection<Shape> Shapes { get { return shapes; } }
-
-		internal ShapeMouseEventArgs()
-			: base() {
-			this.shapes.Clear();
-		}
-
-		internal void SetShapes(IEnumerable<Shape> shapes) {
-			this.shapes.Clear();
-			this.shapes.AddRange(shapes);
-		}
-
-		internal void SetShape(Shape shape) {
-			this.shapes.Clear();
-			this.shapes.Add(shape);
-		}
-
-		private ReadOnlyList<Shape> shapes = new ReadOnlyList<Shape>();
-		private Diagram diagram = null;
 	}
 
 	#endregion

@@ -31,7 +31,14 @@ namespace Dataweb.NShape {
 		/// <summary>
 		/// Specifies the base storage format version.
 		/// </summary>
+		/// <description>This version describes the general storage format, e.g. for entities that 
+		/// are not implemented in shape libraries.</description>
 		int Version { get; set; }
+
+		/// <summary>
+		/// Specifies whether the repository's load/save version can be modified.
+		/// </summary>
+		bool CanModifyVersion { get; }
 
 		/// <summary>
 		/// Specifies the project for this repository. Null if not set.
@@ -49,12 +56,12 @@ namespace Dataweb.NShape {
 		/// </summary>
 		void RemoveEntityType(string entityTypeName);
 
-		// TODO 2: Unnecessary; remove them when closed.
 		/// <summary>
 		/// Removes all registered entity types.
 		/// </summary>
-		/// <remarks>This method must be called before different libraries are loaded
-		/// and their entities re-registered.</remarks>
+		/// <remarks>
+		/// This method must be called before different libraries are loaded and their entities re-registered.
+		/// </remarks>
 		void RemoveAllEntityTypes();
 
 		/// <summary>
@@ -71,8 +78,10 @@ namespace Dataweb.NShape {
 		/// <summary>
 		/// Creates and opens a new project in the repository.
 		/// </summary>
-		/// <remarks>Create does not actually create the repository. We want to give the client 
-		/// a chance to not flush it and thereby not having performed any durable action.</remarks>
+		/// <remarks>
+		/// Create does not actually create the repository. We want to give the client 
+		/// a chance to not flush it and thereby not having performed any durable action.
+		/// </remarks>
 		void Create();
 
 		/// <summary>
@@ -119,7 +128,6 @@ namespace Dataweb.NShape {
 		/// Submits all modifications in the repository to the data store.
 		/// </summary>
 		void SaveChanges();
-
 
 		/// <summary>
 		/// Checks whether the given shape type is referenced by any shapes in the project. 
@@ -406,13 +414,11 @@ namespace Dataweb.NShape {
 		/// </summary>
 		bool IsTemplateInUse(Template template);
 
-
 		/// <summary>
 		/// Checks if one of the given templates is referenced by any shape in any diagram of the project.
 		/// If the repositories store supports partial loading, the store performs the same checks without loading the corresponding objects.
 		/// </summary>
 		bool IsTemplateInUse(IEnumerable<Template> templates);
-
 
 		/// <summary>
 		/// Fetches a single object from the repository.
@@ -534,19 +540,29 @@ namespace Dataweb.NShape {
 		/// </summary>
 		/// <param name="id">Id of object to fetch</param>
 		/// <returns>Reference to object or null, if object was not found.</returns>
-		Diagram GetDiagram(object id);
+        /// <remarks>
+		/// If the store supports partial loading, the diagram shapes are not loaded. 
+        /// Use GetDiagramShapes for loading the diagram's content.
+		/// </remarks>
+        Diagram GetDiagram(object id);
 
 		/// <summary>
 		/// Fetches a single diagram identified by its name.
 		/// </summary>
-		Diagram GetDiagram(string name);
+        /// <remarks>
+		/// If the store supports partial loading, the diagram shapes are not loaded. 
+        /// Use GetDiagramShapes for loading the diagram's content.
+		/// </remarks>
+        Diagram GetDiagram(string name);
 
 		/// <summary>
 		/// Returns all the diagrams of this project.
 		/// </summary>
-		/// <remarks>If the store supports partial loading, the diagram shapes are not loaded. 
-		/// Use LoadDaigramShapes for loading the diagram's content.</remarks>
-		IEnumerable<Diagram> GetDiagrams();
+        /// <remarks>
+		/// If the store supports partial loading, the diagram shapes are not loaded. 
+        /// Use GetDiagramShapes for loading the diagram's content.
+		/// </remarks>
+        IEnumerable<Diagram> GetDiagrams();
 
 		/// <summary>
 		/// Inserts the given diagram into the repository.
@@ -602,7 +618,8 @@ namespace Dataweb.NShape {
 		/// Makes sure that the shapes for the given diagram that intersect with one 
 		/// of the given rectangles are loaded.
 		/// </summary>
-		/// <remarks>Partial loading via rectangles parameter is not supported yet.</remarks>
+		/// <remarks>Partial loading via rectangles parameter is not supported yet. Currently alle 
+        /// shapes of the diagram are loaded.</remarks>
 		void GetDiagramShapes(Diagram diagram, params Rectangle[] rectangles);
 
 		/// <ToBeCompleted></ToBeCompleted>

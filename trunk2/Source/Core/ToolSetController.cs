@@ -99,7 +99,7 @@ namespace Dataweb.NShape.Controllers {
 		/// <summary>
 		/// Specifies the version of the assembly containing the component.
 		/// </summary>
-		[Category("NShape")]
+		[CategoryNShape()]
 		public string ProductVersion {
 			get { return this.GetType().Assembly.GetName().Version.ToString(); }
 		}
@@ -108,7 +108,7 @@ namespace Dataweb.NShape.Controllers {
 		/// <summary>
 		/// The <see cref="T:Dataweb.NShape.Controllers.DiagramSetController" /> that uses the SelectedTool for editing diagrams.
 		/// </summary>
-		[Category("NShape")]
+		[CategoryNShape()]
 		[Description("Specifies the NShape DiagramSetController to which this toolbox belongs. This is a mandotory property.")]
 		public DiagramSetController DiagramSetController {
 			get { return diagramSetController; }
@@ -404,39 +404,39 @@ namespace Dataweb.NShape.Controllers {
 			if (clickedTool is TemplateTool) clickedTemplate = ((TemplateTool)clickedTool).Template;
 
 			isFeasible = true;
-			description = "Create a new Template";
-			yield return new DelegateMenuItemDef("Create Template...", null, description, isFeasible, Permission.Templates,
+			description = Properties.Resources.MessageTxt_CreateANewTemplate;
+			yield return new DelegateMenuItemDef(Properties.Resources.CaptjonTxt_CreateTemplateWithDialog, null, description, isFeasible, Permission.Templates,
 				(action, project) => OnTemplateEditorSelected(new TemplateEditorEventArgs(project)));
 
 			isFeasible = (clickedTemplate != null);
-			description = isFeasible ? string.Format("Edit Template '{0}'", clickedTemplate.Title) :
-				"No template tool selected";
-			yield return new DelegateMenuItemDef("Edit Template...", null, description, isFeasible, Permission.Templates,
+			description = isFeasible ? string.Format(Properties.Resources.MessageFmt_EditTemplate0, clickedTemplate.Title) :
+				Properties.Resources.MessageTxt_NoTemplateToolSelected;
+			yield return new DelegateMenuItemDef(Properties.Resources.CaptionTxt_EditTemplate, null, description, isFeasible, Permission.Templates,
 				(action, project) => OnTemplateEditorSelected(new TemplateEditorEventArgs(project, clickedTemplate)));
 			
 			isFeasible =  (clickedTemplate != null);
 			if (!isFeasible) 
-				description = "No template tool selected";
+				description = Properties.Resources.MessageTxt_NoTemplateToolSelected;
 			else {
 				// Check if template is in use
 				isFeasible = !Project.Repository.IsTemplateInUse(clickedTemplate);
-				if (isFeasible) description = string.Format("Delete Template '{0}'", clickedTemplate.Title);
-				else description = string.Format("Template '{0}' is in use.", clickedTemplate.Title);
+				if (isFeasible) description = string.Format(Properties.Resources.MessageFmt_DeleteTemplate0, clickedTemplate.Title);
+				else description = string.Format(Properties.Resources.MessageFmt_Template0IsInUse, clickedTemplate.Title);
 			}
-			yield return new CommandMenuItemDef("Delete Template...", null, description, isFeasible,
+			yield return new CommandMenuItemDef(Properties.Resources.CaptionTxt_DeleteTemplate, null, description, isFeasible,
 				isFeasible ? new DeleteTemplateCommand(clickedTemplate) : null);
 
 			yield return new SeparatorMenuItemDef();
 
 			isFeasible = true;
-			description = "Edit the current design or create new designs";
-			yield return new DelegateMenuItemDef("Show Design Editor...", Properties.Resources.DesignEditorBtn,
+			description = Properties.Resources.MessageTxt_EditTheCurrentDesignOrCreateNewDesigns;
+			yield return new DelegateMenuItemDef(Properties.Resources.CaptionTxt_ShowDesignEditor, Properties.Resources.DesignEditorBtn,
 				description, isFeasible, Permission.Designs,
 				(action, project) => OnDesignEditorSelected(EventArgs.Empty));
 
 			isFeasible = true;
-			description = "Load and unload shape and/or model libraries";
-			yield return new DelegateMenuItemDef("Show Library Manager...", Properties.Resources.LibrariesBtn,
+			description = Properties.Resources.MessageTxt_LoadAndUnloadShapeAndOrModelLibraries;
+			yield return new DelegateMenuItemDef(Properties.Resources.CaptionTxt_ShowLibraryManager, Properties.Resources.LibrariesBtn,
 				description, isFeasible, Permission.Templates,
 				(action, project) => OnLibraryManagerSelected(EventArgs.Empty));
 		}
@@ -639,9 +639,9 @@ namespace Dataweb.NShape.Controllers {
 
 		private void RegisterProjectEvents() {
 			diagramSetController.Project.LibraryLoaded += Project_LibraryLoaded;
-			diagramSetController.Project.Opened += Project_ProjectOpened;
 			diagramSetController.Project.Closing += Project_ProjectClosing;
 			diagramSetController.Project.Closed += Project_ProjectClosed;
+			diagramSetController.Project.Opened += Project_ProjectOpened;
 			if (diagramSetController.Project.IsOpen)
 				Project_ProjectOpened(this, null);
 		}

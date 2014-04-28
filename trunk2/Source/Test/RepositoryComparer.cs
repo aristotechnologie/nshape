@@ -132,6 +132,8 @@ namespace NShapeTest {
 
 
 		public static void Compare(IStyle styleA, IStyle styleB, int version) {
+			if (styleA == null && styleB == null) 
+				return;
 			if (styleA is ICapStyle && styleB is ICapStyle)
 				Compare((ICapStyle)styleA, (ICapStyle)styleB, version);
 			else if (styleA is ICharacterStyle && styleB is ICharacterStyle)
@@ -149,6 +151,8 @@ namespace NShapeTest {
 
 
 		public static void Compare(ICapStyle styleA, ICapStyle styleB, int version) {
+			if (styleA == null && styleB == null) 
+				return;
 			CompareBaseStyle(styleA, styleB, version);
 			Compare(styleA.ColorStyle, styleB.ColorStyle, version);
 			Assert.AreEqual<CapShape>(styleA.CapShape, styleB.CapShape);
@@ -157,6 +161,8 @@ namespace NShapeTest {
 
 
 		public static void Compare(ICharacterStyle styleA, ICharacterStyle styleB, int version) {
+			if (styleA == null && styleB == null) 
+				return;
 			CompareBaseStyle(styleA, styleB, version);
 			Compare(styleA.ColorStyle, styleB.ColorStyle, version);
 			Assert.AreEqual<FontFamily>(styleA.FontFamily, styleB.FontFamily);
@@ -168,6 +174,8 @@ namespace NShapeTest {
 
 
 		public static void Compare(IColorStyle styleA, IColorStyle styleB, int version) {
+			if (styleA == null && styleB == null) 
+				return;
 			if (styleA == ColorStyle.Empty && styleB == ColorStyle.Empty) return;
 			CompareBaseStyle(styleA, styleB, version);
 			Assert.AreEqual<int>(styleA.Color.ToArgb(), styleB.Color.ToArgb());
@@ -177,6 +185,8 @@ namespace NShapeTest {
 
 
 		public static void Compare(IFillStyle styleA, IFillStyle styleB, int version) {
+			if (styleA == null && styleB == null) 
+				return;
 			CompareBaseStyle(styleA, styleB, version);
 			Compare(styleA.BaseColorStyle, styleB.BaseColorStyle, version);
 			Compare(styleA.AdditionalColorStyle, styleB.AdditionalColorStyle, version);
@@ -192,6 +202,8 @@ namespace NShapeTest {
 
 
 		public static void Compare(ILineStyle styleA, ILineStyle styleB, int version) {
+			if (styleA == null && styleB == null) 
+				return;
 			CompareBaseStyle(styleA, styleB, version);
 			Compare(styleA.ColorStyle, styleB.ColorStyle, version);
 			Assert.AreEqual<System.Drawing.Drawing2D.DashCap>(styleA.DashCap, styleB.DashCap);
@@ -208,10 +220,12 @@ namespace NShapeTest {
 
 		public static void Compare(IParagraphStyle styleA, IParagraphStyle styleB, int version) {
 			CompareBaseStyle(styleA, styleB, version);
-			Assert.AreEqual<ContentAlignment>(styleA.Alignment, styleB.Alignment);
-			Assert.AreEqual<TextPadding>(styleA.Padding, styleB.Padding);
-			Assert.AreEqual<StringTrimming>(styleA.Trimming, styleB.Trimming);
-			Assert.AreEqual<bool>(styleA.WordWrap, styleB.WordWrap);
+			if (styleA != null && styleB != null) {
+				Assert.AreEqual<ContentAlignment>(styleA.Alignment, styleB.Alignment);
+				Assert.AreEqual<TextPadding>(styleA.Padding, styleB.Padding);
+				Assert.AreEqual<StringTrimming>(styleA.Trimming, styleB.Trimming);
+				Assert.AreEqual<bool>(styleA.WordWrap, styleB.WordWrap);
+			}
 		}
 
 		#endregion
@@ -232,8 +246,7 @@ namespace NShapeTest {
 			Compare(templateA.Shape, templateB.Shape, version);
 			Compare(templateA.Shape.ModelObject, templateB.Shape.ModelObject, version);
 			CompareObjectCount(templateA.Shape.GetControlPointIds(ControlPointCapabilities.All), templateB.Shape.GetControlPointIds(ControlPointCapabilities.All));
-			int pointCount = Count(templateA.Shape.GetControlPointIds(ControlPointCapabilities.All));
-			for (ControlPointId ptId = pointCount; ptId >= ControlPointId.Reference; --ptId) {
+			foreach (ControlPointId ptId in templateA.Shape.GetControlPointIds(ControlPointCapabilities.Connect)) {
 				Assert.AreEqual<TerminalId>(templateA.GetMappedTerminalId(ptId), templateB.GetMappedTerminalId(ptId));
 				Assert.AreEqual<string>(templateA.GetMappedTerminalName(ptId), templateB.GetMappedTerminalName(ptId));
 			}
@@ -363,16 +376,28 @@ namespace NShapeTest {
 				CompareId(shapeA.Template, shapeB.Template);
 				Assert.AreEqual<LayerIds>(shapeA.Layers, shapeB.Layers);
 				Assert.AreEqual<IDisplayService>(shapeA.DisplayService, shapeB.DisplayService);
-				Assert.AreEqual<Rectangle>(shapeA.GetBoundingRectangle(true), shapeB.GetBoundingRectangle(true));
-				Assert.AreEqual<Rectangle>(shapeA.GetBoundingRectangle(false), shapeB.GetBoundingRectangle(false));
+				if (version <= 3 && shapeA is ILinearShape) {
+					CompareBounds(shapeA.GetBoundingRectangle(true), shapeB.GetBoundingRectangle(true), version);
+					CompareBounds(shapeA.GetBoundingRectangle(false), shapeB.GetBoundingRectangle(false), version);
+				} else {
+					Assert.AreEqual<Rectangle>(shapeA.GetBoundingRectangle(true), shapeB.GetBoundingRectangle(true));
+					Assert.AreEqual<Rectangle>(shapeA.GetBoundingRectangle(false), shapeB.GetBoundingRectangle(false));
+				}
 				Compare(shapeA.LineStyle, shapeB.LineStyle, version);
 				Compare(shapeA.ModelObject, shapeB.ModelObject, version);
-				Compare(shapeA.Parent, shapeB.Parent, version);
+				// Comparing the whole shapes would lead to endless recursive calls in case of child shapes
+				CompareId(shapeA.Parent, shapeB.Parent);
 				Assert.AreEqual<char>(shapeA.SecurityDomainName, shapeB.SecurityDomainName);
 				Assert.AreEqual<bool>(shapeA.Tag != null, shapeB.Tag != null);
 				CompareString(shapeA.Type.FullName, shapeB.Type.FullName, true);
-				Assert.AreEqual<int>(shapeA.X, shapeB.X);
-				Assert.AreEqual<int>(shapeA.Y, shapeB.Y);
+				if (version <= 3 && shapeA is ILinearShape) {
+					Point a = new Point(shapeA.X, shapeA.Y);
+					Point b = new Point(shapeB.X, shapeB.Y);
+					ComparePosition(a, b, version);
+				} else {
+					Assert.AreEqual<int>(shapeA.X, shapeB.X);
+					Assert.AreEqual<int>(shapeA.Y, shapeB.Y);
+				}
 				// 
 				// Compare ZOrder and Layers
 				// ToDo: Implement this
@@ -392,9 +417,9 @@ namespace NShapeTest {
 				Assert.AreEqual<bool>(shapeAConnected, shapeBConnected);
 				if (shapeAConnected && shapeBConnected) {
 					if (CompareIds)
-						CompareConnectionsById(shapeA, shapeB);
+						CompareConnectionsById(shapeA, shapeB, version);
 					else {
-						CompareConnectionsByControlPointIds(shapeA, shapeB);
+						CompareConnectionsByControlPointIds(shapeA, shapeB, version);
 					}
 				}
 				//
@@ -412,7 +437,7 @@ namespace NShapeTest {
 		}
 
 
-		private static void CompareConnectionsById(Shape shapeA, Shape shapeB) {
+		private static void CompareConnectionsById(Shape shapeA, Shape shapeB, int version) {
 			List<ShapeConnectionInfo> connectionsA = new List<ShapeConnectionInfo>(shapeA.GetConnectionInfos(ControlPointId.Any, null));
 			List<ShapeConnectionInfo> connectionsB = new List<ShapeConnectionInfo>(shapeB.GetConnectionInfos(ControlPointId.Any, null));
 			if (connectionsA.Count != connectionsB.Count) {
@@ -424,7 +449,7 @@ namespace NShapeTest {
 					IEntity entityA = (IEntity)connectionsA[sIdx].OtherShape;
 					IEntity entityB = (IEntity)connectionsB[lIdx].OtherShape;
 					if (entityA.Id.Equals(entityB.Id)) {
-						CompareConnection(shapeA, connectionsA[lIdx], shapeB, connectionsB[sIdx]);
+						CompareConnection(shapeA, connectionsA[lIdx], shapeB, connectionsB[sIdx], version);
 						connectionFound = true;
 						break;
 					}
@@ -434,7 +459,7 @@ namespace NShapeTest {
 		}
 
 
-		private static void CompareConnection(Shape shapeA, ShapeConnectionInfo connectionA, Shape shapeB, ShapeConnectionInfo connectionB) {
+		private static void CompareConnection(Shape shapeA, ShapeConnectionInfo connectionA, Shape shapeB, ShapeConnectionInfo connectionB, int version) {
 			CompareId(shapeA, shapeB);
 			CompareId(connectionB.OtherShape, connectionB.OtherShape);
 			if (connectionA != ShapeConnectionInfo.Empty && connectionB != ShapeConnectionInfo.Empty) {
@@ -442,30 +467,26 @@ namespace NShapeTest {
 					Assert.IsTrue(connectionA.OwnPointId == connectionB.OwnPointId);
 				if (connectionA.OtherPointId >= ControlPointId.Reference && connectionB.OtherPointId >= ControlPointId.Reference)
 					Assert.IsTrue(connectionA.OtherPointId == connectionB.OtherPointId);
-				bool ownPointPosIsEqual = false;
-				bool otherPointPosIsEqual = false;
 				if (shapeA.HasControlPointCapability(connectionA.OwnPointId, ControlPointCapabilities.Glue)) {
+					Assert.AreEqual(connectionA.OtherPointId, connectionB.OtherPointId);
 					Point pointA = shapeA.GetControlPointPosition(connectionA.OwnPointId);
 					Point pointB = shapeB.GetControlPointPosition(connectionB.OwnPointId);
-					ownPointPosIsEqual = (pointA == pointB);
-					otherPointPosIsEqual = (connectionA.OtherPointId == connectionB.OtherPointId);
+					ComparePosition(pointA, pointB, version);
 				} else {
-					ownPointPosIsEqual = (connectionA.OwnPointId == connectionB.OwnPointId);
+					Assert.AreEqual(connectionA.OwnPointId, connectionB.OwnPointId);
 					Point pointA = connectionA.OtherShape.GetControlPointPosition(connectionA.OtherPointId);
 					Point pointB = connectionB.OtherShape.GetControlPointPosition(connectionB.OtherPointId);
-					otherPointPosIsEqual = (pointA == pointB);
+					ComparePosition(pointA, pointB, version);
 				}
-				Assert.IsTrue(ownPointPosIsEqual);
-				Assert.IsTrue(otherPointPosIsEqual);
 			} else Assert.IsTrue(connectionA == ShapeConnectionInfo.Empty && connectionB == ShapeConnectionInfo.Empty);
 		}
 
 
-		private static void CompareConnectionsByControlPointIds(Shape shapeA, Shape shapeB) {
+		private static void CompareConnectionsByControlPointIds(Shape shapeA, Shape shapeB, int version) {
 			foreach (ControlPointId gluePtId in shapeB.GetControlPointIds(ControlPointCapabilities.Glue)) {
 				ShapeConnectionInfo connectionA = shapeB.GetConnectionInfo(gluePtId, null);
 				ShapeConnectionInfo connectionB = shapeB.GetConnectionInfo(gluePtId, null);
-				CompareConnection(shapeA, connectionA, shapeB, connectionB);
+				CompareConnection(shapeA, connectionA, shapeB, connectionB, version);
 			}
 		}
 
@@ -499,6 +520,29 @@ namespace NShapeTest {
 					Compare(shapeA.GetCaptionParagraphStyle(i), shapeB.GetCaptionParagraphStyle(i), version);
 					CompareString(shapeA.GetCaptionText(i), shapeB.GetCaptionText(i), false);
 				}
+			}
+		}
+
+
+		private static void ComparePosition(Point a, Point b, int version) {
+			if (version <= 3) {
+				int delta = (version <= 2) ? 4 : 1;
+				Assert.IsTrue(Math.Abs(a.X - b.X) <= delta);
+				Assert.IsTrue(Math.Abs(a.Y - b.Y) <= delta);
+			} else
+				Assert.AreEqual(a, b);
+		}
+
+
+		private static void CompareBounds(Rectangle a, Rectangle b, int version) {
+			ComparePosition(a.Location, b.Location, version);
+			if (version <= 3) {
+				int delta = (version <= 2) ? 8 : 2;
+				Assert.IsTrue(Math.Abs(a.Width - b.Width) <= delta);
+				Assert.IsTrue(Math.Abs(a.Height - b.Height) <= delta);
+			} else {
+				Assert.AreEqual(a.Width, b.Width);
+				Assert.AreEqual(a.Height, b.Height);
 			}
 		}
 

@@ -755,10 +755,10 @@ namespace Dataweb.NShape.WinFormsUI {
 			this.BackColor = System.Drawing.SystemColors.Window;
 			this.CancelButton = this.closeButton;
 			this.ClientSize = new System.Drawing.Size(474, 392);
-			this.Controls.Add(this.flowPanel);
 			this.Controls.Add(this.repulsionPanel);
-			this.Controls.Add(this.alignmentPanel);
+			this.Controls.Add(this.flowPanel);
 			this.Controls.Add(expansionPanel);
+			this.Controls.Add(this.alignmentPanel);
 			this.Controls.Add(this.redoButton);
 			this.Controls.Add(this.undoButton);
 			this.Controls.Add(this.previewButton);

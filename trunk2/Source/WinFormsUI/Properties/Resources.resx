@@ -130,10 +130,12 @@
   <data name="AssignToLayer" type="System.Resources.ResXFileRef, System.Windows.Forms">
     <value>..\Resources\AssignToLayer.bmp;System.Drawing.Bitmap, System.Drawing, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
   </data>
+  <data name="CaptionTxt_GroupSelect" xml:space="preserve">
+    <value>Select...</value>
+  </data>
   <data name="Checked" type="System.Resources.ResXFileRef, System.Windows.Forms">
     <value>..\Resources\Checked.bmp;System.Drawing.Bitmap, System.Drawing, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
   </data>
-  <assembly alias="System.Windows.Forms" name="System.Windows.Forms, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089" />
   <data name="CopyAsImage" type="System.Resources.ResXFileRef, System.Windows.Forms">
     <value>..\Resources\CopyAsImage.bmp;System.Drawing.Bitmap, System.Drawing, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
   </data>
@@ -148,6 +150,9 @@
   </data>
   <data name="DeleteBtn" type="System.Resources.ResXFileRef, System.Windows.Forms">
     <value>..\Resources\DeleteBtn.bmp;System.Drawing.Bitmap, System.Drawing, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
+  </data>
+  <data name="TooltipTxt_GroupSelect" xml:space="preserve">
+    <value>Select or unselect shapes.</value>
   </data>
   <data name="DiagramPropertiesBtn3" type="System.Resources.ResXFileRef, System.Windows.Forms">
     <value>..\Resources\DiagramPropertiesBtn3.bmp;System.Drawing.Bitmap, System.Drawing, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
@@ -217,5 +222,242 @@
   </data>
   <data name="Visible" type="System.Resources.ResXFileRef, System.Windows.Forms">
     <value>..\Resources\Visible.bmp;System.Drawing.Bitmap, System.Drawing, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
+  </data>
+  <data name="TooltipFmt_ShowInformationFor01" xml:space="preserve">
+    <value>Show information for {0} '{1}' </value>
+  </data>
+  <data name="TooltipFmt_MoreThan1ShapeSelected" xml:space="preserve">
+    <value>More than one shape selected.</value>
+  </data>
+  <data name="CaptionTxt_ShapeInfo" xml:space="preserve">
+    <value>Shape Info</value>
+  </data>
+  <data name="CaptionTxt_BringToFront" xml:space="preserve">
+    <value>Bring to Front</value>
+  </data>
+  <data name="TooltipFmt_Bring0ToFront" xml:space="preserve">
+    <value>Bring {0} shape to foreground.</value>
+  </data>
+  <data name="TooltipFmt_Bring0ShapesToFront" xml:space="preserve">
+    <value>Bring {0} shapes to foreground.</value>
+  </data>
+  <data name="TooltipFmt_Send0ToBackground" xml:space="preserve">
+    <value>Send {0} shape to background.</value>
+  </data>
+  <data name="TooltipFmt_Send0ShapesToBackground" xml:space="preserve">
+    <value>Send {0} shapes to background.</value>
+  </data>
+  <data name="CaptionTxt_SendToBack" xml:space="preserve">
+    <value>Send to Back</value>
+  </data>
+  <data name="TooltipFmt_NumberOfLayers" xml:space="preserve">
+    <value>{0} layers</value>
+  </data>
+  <data name="TooltipFmt_LayersByName" xml:space="preserve">
+    <value>layers {0}</value>
+  </data>
+  <data name="TooltipFmt_LayerByName" xml:space="preserve">
+    <value>layer {0}</value>
+  </data>
+  <data name="TooltipFmt_AssignShape0ToLayer1" xml:space="preserve">
+    <value>Assign {0} shape to {1}.</value>
+  </data>
+  <data name="TooltipFmt_AddShape0ToLayer1" xml:space="preserve">
+    <value>Add {0} to {1}.</value>
+  </data>
+  <data name="TooltipFmt_Assign0ShapesToLayer1" xml:space="preserve">
+    <value>Assign {0} shapes to {1}.</value>
+  </data>
+  <data name="TooltipFmt_Add0ShapesToLayer1" xml:space="preserve">
+    <value>Add {0} shapes to {1}.</value>
+  </data>
+  <data name="TooltipTxt_NoLayersActive" xml:space="preserve">
+    <value>No layers active.</value>
+  </data>
+  <data name="CaptionTxt_AssignShapesToActiveLayers" xml:space="preserve">
+    <value>Assign shapes to active layers</value>
+  </data>
+  <data name="CaptionTxt_AddShapesToActiveLayers" xml:space="preserve">
+    <value>Add shapes to active layers</value>
+  </data>
+  <data name="TooltipFmt_RemoveShape0FromAllLayers" xml:space="preserve">
+    <value>Remove {0} shape from all layers.</value>
+  </data>
+  <data name="TooltipFmt_Remove0ShapesFromAllLayers" xml:space="preserve">
+    <value>Remove {0} shapes from all layers.</value>
+  </data>
+  <data name="TooltipTxt_NoShapesSelected" xml:space="preserve">
+    <value>No shapes selected.</value>
+  </data>
+  <data name="TooltipTxt_SelectAllShapesOfTheDiagram" xml:space="preserve">
+    <value>Select all shapes of the diagram.</value>
+  </data>
+  <data name="TooltipTxt_AllShapesOfTheDiagramAreSelected" xml:space="preserve">
+    <value>All shapes of the diagram are selected.</value>
+  </data>
+  <data name="CaptionTxt_SelectAll" xml:space="preserve">
+    <value>Select all</value>
+  </data>
+  <data name="TooltipTxt_UnselectAllSelectedShapes" xml:space="preserve">
+    <value>Unselect all selected shapes.</value>
+  </data>
+  <data name="CaptionTxt_UnselectAll" xml:space="preserve">
+    <value>Unselect all</value>
+  </data>
+  <data name="TooltipFmt_SelectAllShapesOfType0InTheDiagram" xml:space="preserve">
+    <value>Select all shapes of type '{0}' in the diagram.</value>
+  </data>
+  <data name="CaptionTxt_SelectAllShapesOfAType" xml:space="preserve">
+    <value>Select all shapes of a type</value>
+  </data>
+  <data name="CaptionFmt_SelectAllShapesOfType0" xml:space="preserve">
+    <value>Select all shapes of type '{0}'</value>
+  </data>
+  <data name="CaptionTxt_SelectAllShapesBasedOnATemplate" xml:space="preserve">
+    <value>Select all shapes based on a template</value>
+  </data>
+  <data name="CaptionFmt_SelectAllShapesBasedOnTemplate0" xml:space="preserve">
+    <value>Select all shapes based on template '{0}'</value>
+  </data>
+  <data name="TooltipTxt_TheShapeUnderTheCursorIsNotBasedOnAnyTemplate" xml:space="preserve">
+    <value>The shape under the cursor is not based on any template.</value>
+  </data>
+  <data name="TooltipFmt_SelectAllShapesOfTheDiagramBasedOnTemplate0" xml:space="preserve">
+    <value>Select all shapes of the diagram based on template '{0}'.</value>
+  </data>
+  <data name="TooltipFmt_ShapesNotAssignedToLayers" xml:space="preserve">
+    <value>Shapes not assigned to layers.</value>
+  </data>
+  <data name="CaptionTxt_RemoveShapesFromAllLayers" xml:space="preserve">
+    <value>Remove shapes from all layers</value>
+  </data>
+  <data name="TooltipTxt_NotEnoughShapesSelected" xml:space="preserve">
+    <value>Not enough shapes selected.</value>
+  </data>
+  <data name="TooltipFmt_Group0Shapes" xml:space="preserve">
+    <value>Group {0} shapes.</value>
+  </data>
+  <data name="CaptionTxt_GroupShapes" xml:space="preserve">
+    <value>Group Shapes</value>
+  </data>
+  <data name="TooltipFmt_Ungroup0Shapes" xml:space="preserve">
+    <value>Ungroup {0} shapes.</value>
+  </data>
+  <data name="TooltipTxt_TheSelectedGroupIsMemberOfAnotherGroup" xml:space="preserve">
+    <value>The selected group is member of another group.</value>
+  </data>
+  <data name="CaptionTxt_UngroupShapes" xml:space="preserve">
+    <value>Ungroup Shapes</value>
+  </data>
+  <data name="TooltipFmt_Aggregate0ShapesAsCompositeShape" xml:space="preserve">
+    <value>Aggregate {0} shapes as composite shape.</value>
+  </data>
+  <data name="TooltipTxt_LinearShapesMayNotBeTheBaseForACompositeShape" xml:space="preserve">
+    <value>Linear shapes may not be the base for a composite shape.</value>
+  </data>
+  <data name="CaptionTxt_AggregateShapes" xml:space="preserve">
+    <value>Aggregate Shapes</value>
+  </data>
+  <data name="TooltipTxt_DisaggregateTheSelectedShapeAggregation" xml:space="preserve">
+    <value>Disaggregate the selected shape aggregation.</value>
+  </data>
+  <data name="TooltipTxt_SelectedShapeIsNotACompositeShape" xml:space="preserve">
+    <value>Selected shape is not a composite shape.</value>
+  </data>
+  <data name="TooltipTxt_TooManyShapesSelected" xml:space="preserve">
+    <value>Too many shapes selected.</value>
+  </data>
+  <data name="CaptionTxt_DisaggregateShapes" xml:space="preserve">
+    <value>Disaggregate Shapes</value>
+  </data>
+  <data name="TooltipFmt_CutShape0" xml:space="preserve">
+    <value>Cut {0} shape.</value>
+  </data>
+  <data name="TooltipFmt_Cut0Shapes" xml:space="preserve">
+    <value>Cut {0} shapes.</value>
+  </data>
+  <data name="CaptionTxt_Cut" xml:space="preserve">
+    <value>Cut</value>
+  </data>
+  <data name="CaptionTxt_CopyAsImage" xml:space="preserve">
+    <value>Copy as Image</value>
+  </data>
+  <data name="TooltipTxt_CopySelectionAsPNGAndEMFImageToClipboard" xml:space="preserve">
+    <value>Copy selected shapes as PNG and EMF image to clipboard.</value>
+  </data>
+  <data name="TooltipTxt_CopyDiagramAsPNGAndEMFImageToClipboard" xml:space="preserve">
+    <value>Copy diagram as PNG and EMF image to clipboard.</value>
+  </data>
+  <data name="CaptionTxt_Copy" xml:space="preserve">
+    <value>Copy</value>
+  </data>
+  <data name="TooltipFmt_CopyShape0" xml:space="preserve">
+    <value>Copy {0} shape.</value>
+  </data>
+  <data name="TooltipFmt_Copy0Shapes" xml:space="preserve">
+    <value>Copy {0} shapes.</value>
+  </data>
+  <data name="TooltipTxt_NoShapesCutCopiedYet" xml:space="preserve">
+    <value>No shapes cut/copied yet.</value>
+  </data>
+  <data name="CaptionTxt_Paste" xml:space="preserve">
+    <value>Paste</value>
+  </data>
+  <data name="TooltipFmt_PasteShape0" xml:space="preserve">
+    <value>Paste {0} shape.</value>
+  </data>
+  <data name="TooltipFmt_Paste0Shapes" xml:space="preserve">
+    <value>Paste {0} shapes.</value>
+  </data>
+  <data name="TooltipTxt_PropertiesAreNotAvailable" xml:space="preserve">
+    <value>Properties are not available.</value>
+  </data>
+  <data name="TooltipFmt_ShowPropertiesOfShape0" xml:space="preserve">
+    <value>Show properties of {0} shape.</value>
+  </data>
+  <data name="TooltipFmt_ShowPropertiesOf0Shapes" xml:space="preserve">
+    <value>Show properties of {0} shapes.</value>
+  </data>
+  <data name="TooltipFmt_ShowPropertiesOfDiagram0" xml:space="preserve">
+    <value>Show properties of diagram '{0}'.</value>
+  </data>
+  <data name="CaptionTxt_Properties" xml:space="preserve">
+    <value>Properties</value>
+  </data>
+  <data name="TooltipTxt_NoUndoCommandsLeft" xml:space="preserve">
+    <value>No undo commands left.</value>
+  </data>
+  <data name="CaptionTxt_Undo" xml:space="preserve">
+    <value>Undo</value>
+  </data>
+  <data name="TooltipTxt_NoRedoCommandsLeft" xml:space="preserve">
+    <value>No redo commands left.</value>
+  </data>
+  <data name="CaptionTxt_Redo" xml:space="preserve">
+    <value>Redo</value>
+  </data>
+  <data name="TooltipTxt_NoShapeUnderTheMouseCursor" xml:space="preserve">
+    <value>No shape under the mouse cursor.</value>
+  </data>
+  <data name="TooltipFmt_Permission0IsNotGranted" xml:space="preserve">
+    <value>Permission '{0}' is not granted.</value>
+  </data>
+  <data name="CaptionTxt_Delete" xml:space="preserve">
+    <value>Delete</value>
+  </data>
+  <data name="TooltipFmt_DeleteShape0" xml:space="preserve">
+    <value>Delete {0} shape.</value>
+  </data>
+  <data name="TooltipFmt_Delete0Shapes" xml:space="preserve">
+    <value>Delete {0} shapes.</value>
+  </data>
+  <data name="TooltipTxt_ThereAreShapesAssignedToTheModelObjects" xml:space="preserve">
+    <value>There are shapes assigned to the model(s).</value>
+  </data>
+  <data name="TooltipTxt_WithModelsPostfix" xml:space="preserve">
+    <value>with Models</value>
+  </data>
+  <data name="TooltipTxt_NoGroupSelected" xml:space="preserve">
+    <value>No group selected.</value>
   </data>
 </root>

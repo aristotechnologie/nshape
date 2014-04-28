@@ -28,7 +28,6 @@ namespace Dataweb.NShape.Advanced {
 	/// <summary>
 	/// Base class for all shape implementations
 	/// </summary>
-	/// <remarks>RequiredPermissions set</remarks>
 	public abstract class ShapeBase : Shape, IShapeCollection, IReadOnlyShapeCollection {
 
 		/// <override></override>
@@ -98,12 +97,12 @@ namespace Dataweb.NShape.Advanced {
 			// Clone children if there are any
 			if (source.Children != null && source.Children.Count > 0) {
 				// Create children collection if it does not exist
-				if (this.children == null)
-					this.children = new CompositeShapeAggregation(this);
+				if (IsChildrenCollectionEmpty)
+					ChildrenCollection = CreateChildrenCollection(source.Children.Count);
 				// Optimization: Copy the children collection if the shape is a standard shape
-				if (source is ShapeBase && ((ShapeBase)source).children != null)
-					this.children.CopyFrom(((ShapeBase)source).children);
-				else this.children.CopyFrom(source.Children);
+				if (source is ShapeBase && ((ShapeBase)source).ChildrenCollection != null)
+					this.ChildrenCollection.CopyFrom(((ShapeBase)source).ChildrenCollection);
+				else this.ChildrenCollection.CopyFrom(source.Children);
 			}
 		}
 
@@ -111,7 +110,7 @@ namespace Dataweb.NShape.Advanced {
 		/// <override></override>
 		public override void MakePreview(IStyleSet styleSet) {
 			if (styleSet == null) throw new ArgumentNullException("styleSet");
-			if (!IsChildrenCollectionEmpty) children.SetPreviewStyles(styleSet);
+			if (!IsChildrenCollectionEmpty) ChildrenCollection.SetPreviewStyles(styleSet);
 			privateLineStyle = styleSet.GetPreviewStyle(LineStyle);
 			if (ModelObject != null) ModelObject.Name += " (Preview)";
 			// ToDo: Add Suffix to modelObject's children, too
@@ -122,7 +121,7 @@ namespace Dataweb.NShape.Advanced {
 		public override bool HasStyle(IStyle style) {
 			if (IsStyleAffected(LineStyle, style)) return true;
 			if (!IsChildrenCollectionEmpty) {
-				foreach (Shape childShape in children)
+				foreach (Shape childShape in ChildrenCollection)
 					if (childShape.HasStyle(style)) return true;
 			}
 			return false;
@@ -156,7 +155,7 @@ namespace Dataweb.NShape.Advanced {
 				result = true;
 			}
 			if (!IsChildrenCollectionEmpty)
-				if (children.NotifyStyleChanged(style)) result = true;
+				if (ChildrenCollection.NotifyStyleChanged(style)) result = true;
 			return result;
 		}
 
@@ -228,7 +227,7 @@ namespace Dataweb.NShape.Advanced {
 						owner = null;
 					}
 					if (value is ShapeBase)
-						owner = ((ShapeBase)value).children;
+						owner = ((ShapeBase)value).ChildrenCollection;
 					else if (value.Children is ShapeAggregation)
 						owner = (ShapeAggregation)value.Children;
 					else {
@@ -246,7 +245,6 @@ namespace Dataweb.NShape.Advanced {
 			get { return tag; }
 			set { tag = value; }
 		}
-
 
 
 		/// <override></override>
@@ -276,8 +274,8 @@ namespace Dataweb.NShape.Advanced {
 		/// <override></override>
 		public override IEnumerable<MenuItemDef> GetMenuItemDefs(int mouseX, int mouseY, int range) {
 			bool isFeasible = ContainsPoint(mouseX, mouseY);
-			string description = "Create a new template.";
-			yield return new CommandMenuItemDef("Create Template", null, Color.Empty, "CreateTemplateAction",
+			string description = Properties.Resources.MessageTxt_CreateANewTemplate;
+			yield return new CommandMenuItemDef(Properties.Resources.CaptionTxt_CreateTemplate, null, Color.Empty, "CreateTemplateAction",
 				description, false, isFeasible,
 				new CreateTemplateCommand(string.Format("{0} {1}", Type.Name, GetHashCode()), this));
 
@@ -520,7 +518,7 @@ namespace Dataweb.NShape.Advanced {
 		/// <ToBeCompleted></ToBeCompleted>
 		protected bool ChildrenContainPoint(int x, int y) {
 			if (IsChildrenCollectionEmpty) return false;
-			else return children.ContainsPoint(x, y);
+			else return ChildrenCollection.ContainsPoint(x, y);
 		}
 
 
@@ -578,7 +576,7 @@ namespace Dataweb.NShape.Advanced {
 		/// <ToBeCompleted></ToBeCompleted>
 		protected bool IntersectsWithChildren(int x, int y, int width, int height) {
 			if (IsChildrenCollectionEmpty) return false;
-			else return children.IntersectsWith(x, y, width, height);
+			else return ChildrenCollection.IntersectsWith(x, y, width, height);
 		}
 
 
@@ -597,7 +595,7 @@ namespace Dataweb.NShape.Advanced {
 			} else {
 				Rectangle result = CalculateBoundingRectangle(tight);
 				if (Geometry.IsValid(result))
-					result = Geometry.UniteRectangles(result, children.GetBoundingRectangle(tight));
+					result = Geometry.UniteRectangles(result, ChildrenCollection.GetBoundingRectangle(tight));
 				return result;
 			}
 		}
@@ -632,12 +630,6 @@ namespace Dataweb.NShape.Advanced {
 		protected ShapeCollection Owner {
 			get { return owner; }
 			set { owner = value; }
-		}
-
-
-		/// <ToBeCompleted></ToBeCompleted>
-		protected ShapeAggregation ChildrenCollection {
-			get { return children; }
 		}
 
 
@@ -752,8 +744,8 @@ namespace Dataweb.NShape.Advanced {
 			set {
 				if (displayService != value) {
 					displayService = value;
-					if (children != null && children.Count > 0)
-						children.SetDisplayService(displayService);
+					if (ChildrenCollection != null && ChildrenCollection.Count > 0)
+						ChildrenCollection.SetDisplayService(displayService);
 				}
 			}
 		}
@@ -776,7 +768,7 @@ namespace Dataweb.NShape.Advanced {
 		/// </summary>
 		public override void Draw(Graphics graphics) {
 			if (graphics == null) throw new ArgumentNullException("graphics");
-			if (!IsChildrenCollectionEmpty) children.Draw(graphics);
+			if (!IsChildrenCollectionEmpty) ChildrenCollection.Draw(graphics);
 		}
 
 
@@ -785,7 +777,7 @@ namespace Dataweb.NShape.Advanced {
 			if (graphics == null) throw new ArgumentNullException("graphics");
 			if (pen == null) throw new ArgumentNullException("pen");
 			UpdateDrawCache();
-			if (!IsChildrenCollectionEmpty) children.DrawOutline(graphics, pen);
+			if (!IsChildrenCollectionEmpty) ChildrenCollection.DrawOutline(graphics, pen);
 		}
 
 
@@ -825,7 +817,7 @@ namespace Dataweb.NShape.Advanced {
 		/// Invalidates the area of the shape in the display
 		/// </summary>
 		public override void Invalidate() {
-			if (!IsChildrenCollectionEmpty) children.Invalidate();
+			if (!IsChildrenCollectionEmpty) ChildrenCollection.Invalidate();
 		}
 
 		#endregion
@@ -876,7 +868,7 @@ namespace Dataweb.NShape.Advanced {
 			int x = reader.ReadInt32();
 			int y = reader.ReadInt32();
 			MoveByCore(x, y);
-			// These property cause no invalidation
+			// These properties do not trigger invalidation
 			ZOrder = reader.ReadInt32();
 			Layers = (LayerIds)reader.ReadInt32();
 			SecurityDomainName = reader.ReadChar();
@@ -908,7 +900,7 @@ namespace Dataweb.NShape.Advanced {
 
 
 		/// <override></override>
-		protected override void SaveInnerObjectsCore(string PropertyName, IRepositoryWriter writer, int version) {
+		protected override void SaveInnerObjectsCore(string propertyName, IRepositoryWriter writer, int version) {
 			// nothing to do
 		}
 
@@ -1200,7 +1192,7 @@ namespace Dataweb.NShape.Advanced {
 
 			// Notify children
 			if (!IsChildrenCollectionEmpty)
-				result = children.NotifyParentMoved(deltaX, deltaY);
+				result = ChildrenCollection.NotifyParentMoved(deltaX, deltaY);
 
 			// Notify owner
 			if (Owner != null && !SuspendingOwnerNotification)
@@ -1228,7 +1220,7 @@ namespace Dataweb.NShape.Advanced {
 			InvalidateDrawCache();
 			// Notify children
 			if (!IsChildrenCollectionEmpty)
-				result = children.NotifyParentSized(deltaX, deltaY);
+				result = ChildrenCollection.NotifyParentSized(deltaX, deltaY);
 			// Notify owner
 			if (Owner != null && !SuspendingOwnerNotification)
 				Owner.NotifyChildResized(this);
@@ -1252,7 +1244,7 @@ namespace Dataweb.NShape.Advanced {
 			InvalidateDrawCache();
 			// Notify children
 			if (!IsChildrenCollectionEmpty)
-				result = children.NotifyParentRotated(deltaAngle, X, Y);
+				result = ChildrenCollection.NotifyParentRotated(deltaAngle, X, Y);
 			// Notify owner
 			if (Owner != null && !SuspendingOwnerNotification)
 				Owner.NotifyChildRotated(this);
@@ -1353,7 +1345,7 @@ namespace Dataweb.NShape.Advanced {
 
 
 		private Boolean IsChildrenCollectionEmpty {
-			get { return children == null; }
+			get { return ChildrenCollection == null; }
 		}
 
 
@@ -1388,17 +1380,6 @@ namespace Dataweb.NShape.Advanced {
 			return (message == null);
 		}
 
-		//private void CreateChildrenCollection() {
-		//    if (!IsChildrenCollectionEmpty) throw new InvalidOperationException("Children collection already exists");
-		//    children = new CompositeShapeAggregation(this);
-		//}
-
-
-		//private void DeleteChildrenCollection() {
-		//    if (IsChildrenCollectionEmpty) throw new InvalidOperationException("Children collection does not exist");
-		//    children = null;
-		//}
-
 
 		#region Explicit IShapeCollection implementation
 
@@ -1406,14 +1387,14 @@ namespace Dataweb.NShape.Advanced {
 		int ICollection.Count {
 			get {
 				if (IsChildrenCollectionEmpty) return 0;
-				else return children.Count;
+				else return ChildrenCollection.Count;
 			}
 		}
 
 
 		/// <override></override>
 		void ICollection.CopyTo(Array array, int index) {
-			if (!IsChildrenCollectionEmpty) children.CopyTo(array, index);
+			if (!IsChildrenCollectionEmpty) ChildrenCollection.CopyTo(array, index);
 		}
 
 
@@ -1421,7 +1402,7 @@ namespace Dataweb.NShape.Advanced {
 		object ICollection.SyncRoot {
 			get {
 				if (IsChildrenCollectionEmpty) return null;
-				else return children.SyncRoot;
+				else return ChildrenCollection.SyncRoot;
 			}
 		}
 
@@ -1430,7 +1411,7 @@ namespace Dataweb.NShape.Advanced {
 		bool ICollection.IsSynchronized {
 			get {
 				if (IsChildrenCollectionEmpty) return false;
-				else return children.IsSynchronized;
+				else return ChildrenCollection.IsSynchronized;
 			}
 		}
 
@@ -1439,7 +1420,7 @@ namespace Dataweb.NShape.Advanced {
 		int IReadOnlyShapeCollection.MaxZOrder {
 			get {
 				if (IsChildrenCollectionEmpty) return 0;
-				else return children.MaxZOrder;
+				else return ChildrenCollection.MaxZOrder;
 			}
 		}
 
@@ -1448,7 +1429,7 @@ namespace Dataweb.NShape.Advanced {
 		int IReadOnlyShapeCollection.MinZOrder {
 			get {
 				if (IsChildrenCollectionEmpty) return 0;
-				return children.MinZOrder;
+				return ChildrenCollection.MinZOrder;
 			}
 		}
 
@@ -1457,7 +1438,7 @@ namespace Dataweb.NShape.Advanced {
 		Shape IReadOnlyShapeCollection.TopMost {
 			get {
 				if (IsChildrenCollectionEmpty) return null;
-				else return children.TopMost;
+				else return ChildrenCollection.TopMost;
 			}
 		}
 
@@ -1466,7 +1447,7 @@ namespace Dataweb.NShape.Advanced {
 		Shape IReadOnlyShapeCollection.Bottom {
 			get {
 				if (IsChildrenCollectionEmpty) return null;
-				else return children.Bottom;
+				else return ChildrenCollection.Bottom;
 			}
 		}
 
@@ -1475,7 +1456,7 @@ namespace Dataweb.NShape.Advanced {
 		IEnumerable<Shape> IReadOnlyShapeCollection.TopDown {
 			get {
 				if (IsChildrenCollectionEmpty) return EmptyEnumerator<Shape>.Empty;
-				else return children.TopDown;
+				else return ChildrenCollection.TopDown;
 			}
 		}
 
@@ -1484,7 +1465,7 @@ namespace Dataweb.NShape.Advanced {
 		IEnumerable<Shape> IReadOnlyShapeCollection.BottomUp {
 			get {
 				if (IsChildrenCollectionEmpty) return EmptyEnumerator<Shape>.Empty;
-				else return children.BottomUp;
+				else return ChildrenCollection.BottomUp;
 			}
 		}
 
@@ -1492,36 +1473,36 @@ namespace Dataweb.NShape.Advanced {
 		/// <override></override>
 		Shape IReadOnlyShapeCollection.FindShape(int x, int y, int width, int height, bool completelyInside, Shape lastFound) {
 			if (IsChildrenCollectionEmpty) return null;
-			else return children.FindShape(x, y, width, height, completelyInside, lastFound);
+			else return ChildrenCollection.FindShape(x, y, width, height, completelyInside, lastFound);
 		}
 
 
 		/// <override></override>
 		Shape IReadOnlyShapeCollection.FindShape(int x, int y, ControlPointCapabilities controlPointCapabilities, int distance, Shape lastFound) {
 			if (IsChildrenCollectionEmpty) return null;
-			else return children.FindShape(x, y, controlPointCapabilities, distance, lastFound);
+			else return ChildrenCollection.FindShape(x, y, controlPointCapabilities, distance, lastFound);
 		}
 
 
 		/// <override></override>
 		IEnumerable<Shape> IReadOnlyShapeCollection.FindShapes(int x, int y, int width, int height, bool completelyInside) {
 			if (IsChildrenCollectionEmpty) return EmptyEnumerator<Shape>.Empty;
-			else return children.FindShapes(x, y, width, height, completelyInside);
+			else return ChildrenCollection.FindShapes(x, y, width, height, completelyInside);
 		}
 
 
 		/// <override></override>
 		IEnumerable<Shape> IReadOnlyShapeCollection.FindShapes(int x, int y, ControlPointCapabilities controlPointCapabilities, int distance) {
 			if (IsChildrenCollectionEmpty) return EmptyEnumerator<Shape>.Empty;
-			else return children.FindShapes(x, y, controlPointCapabilities, distance);
+			else return ChildrenCollection.FindShapes(x, y, controlPointCapabilities, distance);
 		}
 
 
 		/// <override></override>
 		void IShapeCollection.Add(Shape item) {
-			if (IsChildrenCollectionEmpty) children = new CompositeShapeAggregation(this);
+			if (IsChildrenCollectionEmpty) ChildrenCollection = CreateChildrenCollection(DefaultCapacity);
 			if (Owner != null && !SuspendingOwnerNotification) Owner.NotifyChildResizing(this);
-			children.Add(item);
+			ChildrenCollection.Add(item);
 			boundingRectangleLoose = boundingRectangleTight = Geometry.InvalidRectangle;
 			if (Owner != null && !SuspendingOwnerNotification) Owner.NotifyChildResized(this);
 		}
@@ -1546,9 +1527,9 @@ namespace Dataweb.NShape.Advanced {
 			if (Owner != null && !SuspendingOwnerNotification) Owner.NotifyChildResizing(this);
 			try {
 				SuspendOwnerNotification();
-				children.Clear();
+				ChildrenCollection.Clear();
 				boundingRectangleLoose = boundingRectangleTight = Geometry.InvalidRectangle;
-				if (children.Count == 0) children = null;
+				if (ChildrenCollection.Count == 0) ChildrenCollection = null;
 			} finally { ResumeOwnerNotification(); }
 			if (Owner != null && !SuspendingOwnerNotification) Owner.NotifyChildResized(this);
 		}
@@ -1557,27 +1538,27 @@ namespace Dataweb.NShape.Advanced {
 		/// <override></override>
 		bool IShapeCollection.Contains(Shape item) {
 			if (IsChildrenCollectionEmpty) return false;
-			else return children.Contains(item);
+			else return ChildrenCollection.Contains(item);
 		}
 
 
 		/// <override></override>
 		bool IShapeCollection.ContainsAll(IEnumerable<Shape> items) {
 			if (IsChildrenCollectionEmpty) return false;
-			else return children.ContainsAll(items);
+			else return ChildrenCollection.ContainsAll(items);
 		}
 
 
 		/// <override></override>
 		bool IShapeCollection.ContainsAny(IEnumerable<Shape> items) {
 			if (IsChildrenCollectionEmpty) return false;
-			else return children.ContainsAny(items);
+			else return ChildrenCollection.ContainsAny(items);
 		}
 
 
 		/// <override></override>
 		void IShapeCollection.CopyTo(Shape[] array, int arrayIndex) {
-			if (!IsChildrenCollectionEmpty) children.CopyTo(array, arrayIndex);
+			if (!IsChildrenCollectionEmpty) ChildrenCollection.CopyTo(array, arrayIndex);
 		}
 
 
@@ -1587,7 +1568,7 @@ namespace Dataweb.NShape.Advanced {
 			Boolean result = false;
 			if (!IsChildrenCollectionEmpty) {
 				if (Owner != null && !SuspendingOwnerNotification) Owner.NotifyChildResizing(this);
-				result = children.Remove(item);
+				result = ChildrenCollection.Remove(item);
 				boundingRectangleLoose = boundingRectangleTight = Geometry.InvalidRectangle;
 				if (Owner != null && !SuspendingOwnerNotification) Owner.NotifyChildResized(this);
 			};
@@ -1601,8 +1582,8 @@ namespace Dataweb.NShape.Advanced {
 			if (Owner != null && !SuspendingOwnerNotification) Owner.NotifyChildResizing(this);
 			try {
 				SuspendOwnerNotification();
-				if (IsChildrenCollectionEmpty) children = new CompositeShapeAggregation(this);
-				children.AddRange(shapes);
+				if (IsChildrenCollectionEmpty) ChildrenCollection = CreateChildrenCollection(DefaultCapacity);
+				ChildrenCollection.AddRange(shapes);
 				boundingRectangleLoose = boundingRectangleTight = Geometry.InvalidRectangle;
 			} finally { ResumeOwnerNotification(); }
 			if (Owner != null && !SuspendingOwnerNotification) Owner.NotifyChildResized(this);
@@ -1614,7 +1595,7 @@ namespace Dataweb.NShape.Advanced {
 			if (IsChildrenCollectionEmpty) throw new InvalidOperationException("The given shape does not exist in the collection.");
 
 			if (Owner != null && !SuspendingOwnerNotification) Owner.NotifyChildResizing(this);
-			children.Replace(oldShape, newShape);
+			ChildrenCollection.Replace(oldShape, newShape);
 			boundingRectangleLoose = boundingRectangleTight = Geometry.InvalidRectangle;
 			if (Owner != null && !SuspendingOwnerNotification) Owner.NotifyChildResized(this);
 		}
@@ -1627,7 +1608,7 @@ namespace Dataweb.NShape.Advanced {
 			if (Owner != null && !SuspendingOwnerNotification) Owner.NotifyChildResizing(this);
 			try {
 				SuspendOwnerNotification();
-				children.ReplaceRange(oldShapes, newShapes);
+				ChildrenCollection.ReplaceRange(oldShapes, newShapes);
 				boundingRectangleLoose = boundingRectangleTight = Geometry.InvalidRectangle;
 			} finally { ResumeOwnerNotification(); }
 			if (Owner != null && !SuspendingOwnerNotification) Owner.NotifyChildResized(this);
@@ -1642,9 +1623,9 @@ namespace Dataweb.NShape.Advanced {
 			if (Owner != null && !SuspendingOwnerNotification) Owner.NotifyChildResizing(this);
 			try {
 				SuspendOwnerNotification();
-				result = children.RemoveRange(shapes);
+				result = ChildrenCollection.RemoveRange(shapes);
 				boundingRectangleLoose = boundingRectangleTight = Geometry.InvalidRectangle;
-				if (children.Count == 0) children = null;
+				if (ChildrenCollection.Count == 0) ChildrenCollection = null;
 			} finally { ResumeOwnerNotification(); }
 			if (Owner != null && !SuspendingOwnerNotification) Owner.NotifyChildResized(this);
 			return result;
@@ -1654,14 +1635,14 @@ namespace Dataweb.NShape.Advanced {
 		/// <override></override>
 		int IShapeCollection.GetZOrder(Shape shape) {
 			if (IsChildrenCollectionEmpty) throw new InvalidOperationException("The given shape does not exist in the collection.");
-			return children.GetZOrder(shape);
+			return ChildrenCollection.GetZOrder(shape);
 		}
 
 
 		/// <override></override>
 		void IShapeCollection.SetZOrder(Shape shape, int zOrder) {
 			if (IsChildrenCollectionEmpty) throw new InvalidOperationException("The given shape does not exist in the collection.");
-			children.SetZOrder(shape, zOrder);
+			ChildrenCollection.SetZOrder(shape, zOrder);
 		}
 
 		#endregion
@@ -1671,7 +1652,7 @@ namespace Dataweb.NShape.Advanced {
 
 		IEnumerator<Shape> IEnumerable<Shape>.GetEnumerator() {
 			if (IsChildrenCollectionEmpty) return EmptyEnumerator<Shape>.Empty;
-			else return children.GetEnumerator();
+			else return ChildrenCollection.GetEnumerator();
 		}
 
 		#endregion
@@ -1681,7 +1662,7 @@ namespace Dataweb.NShape.Advanced {
 
 		IEnumerator IEnumerable.GetEnumerator() {
 			if (IsChildrenCollectionEmpty) return EmptyEnumerator<Shape>.Empty;
-			else return children.GetEnumerator();
+			else return ChildrenCollection.GetEnumerator();
 		}
 
 		#endregion
@@ -1807,9 +1788,6 @@ namespace Dataweb.NShape.Advanced {
 		/// <summary>Owning ShapeCollection</summary>
 		private ShapeCollection owner;
 
-		// Owned aggregation
-		//private ShapeAggregation children;
-
 		// The model object this shape displays
 		private IModelObject modelObject;
 
@@ -1828,6 +1806,8 @@ namespace Dataweb.NShape.Advanced {
 		private char securityDomainName;
 		private ILineStyle privateLineStyle = null;
 		private Matrix matrix = null;
+
+		private const int DefaultCapacity = 4;
 
 		#endregion
 	}

@@ -173,7 +173,7 @@ namespace Dataweb.NShape.Advanced {
 		#region IPlanarShape Members
 
 		/// <ToBeCompleted></ToBeCompleted>
-		[Category("Layout")]
+		[CategoryLayout()]
 		[Description("Rotation angle of the Shape in tenths of degree.")]
 		[PropertyMappingId(PropertyIdAngle)]
 		[RequiredPermission(Permission.Layout)]
@@ -184,7 +184,7 @@ namespace Dataweb.NShape.Advanced {
 
 
 		/// <ToBeCompleted></ToBeCompleted>
-		[Category("Appearance")]
+		[CategoryAppearance()]
 		[Description("Defines the appearence of the shape's interior.\nUse the template editor to modify all shapes of a template.\nUse the design editor to modify and create styles.")]
 		[PropertyMappingId(PropertyIdFillStyle)]
 		[RequiredPermission(Permission.Present)]
@@ -387,7 +387,7 @@ namespace Dataweb.NShape.Advanced {
 
 
 		/// <summary>
-		/// Resizes (or creates) the underlying control point array for ControlPoints property.
+		/// Resizes (creates if it does not exist) the underlying control point array for ControlPoints property.
 		/// </summary>
 		protected void ResizeControlPoints(int length) {
 			if (controlPoints == null)

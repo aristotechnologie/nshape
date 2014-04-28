@@ -751,6 +751,8 @@ namespace Dataweb.NShape.WinFormsUI {
 					if (context.Instance is Shape) {
 						showItemDefaultStyle = ((Shape)context.Instance).Template != null;
 						showItemOpenEditor = project.SecurityManager.IsGranted(Permission.Designs);
+					} else if (context.Instance is ICapStyle) {
+						showItemDefaultStyle = true;
 					} else if (context.Instance is object[]) {
 						object[] objArr = (object[])context.Instance;
 						int cnt = objArr.Length;

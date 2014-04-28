@@ -87,7 +87,7 @@ namespace Dataweb.NShape.Controllers {
 		/// <summary>
 		/// Specifies the version of the assembly containing the component.
 		/// </summary>
-		[Category("NShape")]
+		[CategoryNShape()]
 		public string ProductVersion {
 			get { return this.GetType().Assembly.GetName().Version.ToString(); }
 		}
@@ -97,7 +97,7 @@ namespace Dataweb.NShape.Controllers {
 		/// Provides access to a <see cref="T:Dataweb.NShape.Project" />.
 		/// </summary>
 		[ReadOnly(true)]
-		[Category("NShape")]
+		[CategoryNShape()]
 		public Project Project {
 			get { return (diagramSetController == null) ? project : diagramSetController.Project; }
 			set {
@@ -115,7 +115,7 @@ namespace Dataweb.NShape.Controllers {
 
 
 		/// <ToBeCompleted></ToBeCompleted>
-		[Category("NShape")]
+		[CategoryNShape()]
 		public DiagramSetController DiagramSetController {
 			get { return diagramSetController; }
 			set {
@@ -406,20 +406,21 @@ namespace Dataweb.NShape.Controllers {
 			bool isFeasible;
 			if (modelObjects != null && modelObjects.Count > 0) {
 				isFeasible = true;
-				description = string.Format("Delete {0} model object{1}.", modelObjects.Count, (modelObjects.Count > 0) ? "s" : string.Empty);
+				description = (modelObjects.Count > 0) ? string.Format(Properties.Resources.MessageFmt_Delete0ModelObjects, modelObjects.Count) 
+					: Properties.Resources.MessageFmt_DeleteModelObject;
 				foreach (IModelObject modelObject in modelObjects) {
 					foreach (IModelObject mo in Project.Repository.GetModelObjects(modelObject))
 						if (mo.ShapeCount > 0) {
 							isFeasible = false;
-							description = "One or more child model objects are attached to shapes.";
+							description = Properties.Resources.MessageTxt_OneOrMoreChildModelObjectsAreAttachedToShapes;
 						}
 				}
 			} else {
 				isFeasible = false;
-				description = "No model objects selected";
+				description = Properties.Resources.MessageTxt_NoModelObjectsSelected;
 			}
 
-			return new DelegateMenuItemDef("Delete", Properties.Resources.DeleteBtn, "DeleteModelObjectsAction",
+			return new DelegateMenuItemDef(Properties.Resources.CaptionTxt_Delete, Properties.Resources.DeleteBtn, "DeleteModelObjectsAction",
 				description, false, isFeasible, Permission.None,
 				(a, p) => DeleteModelObjects(modelObjects));
 		}
@@ -429,9 +430,9 @@ namespace Dataweb.NShape.Controllers {
 			bool isFeasible = (modelObjects != null && modelObjects.Count > 0);
 			string description;
 			if (isFeasible)
-				description = string.Format("Copy {0} model object{1}.", modelObjects.Count, (modelObjects.Count > 1) ? "s" : string.Empty);
-			else description = "No model objects selected";
-			return new DelegateMenuItemDef("Copy", Properties.Resources.CopyBtn, "CopyModelObjectsAction",
+				description = (modelObjects.Count > 1) ? string.Format(Properties.Resources.MessageFmt_Copy0ModelObjects, modelObjects.Count) : Properties.Resources.MessageTxt_CopyModelObject;
+			else description = Properties.Resources.MessageTxt_NoModelObjectsSelected;
+			return new DelegateMenuItemDef(Properties.Resources.CaptionTxt_Copy, Properties.Resources.CopyBtn, "CopyModelObjectsAction",
 				description, false, isFeasible, Permission.None,
 				(a, p) => Copy(modelObjects));
 		}
@@ -441,15 +442,15 @@ namespace Dataweb.NShape.Controllers {
 			bool isFeasible = (copyPasteBuffer.Count > 0 && modelObjects.Count <= 1);
 			string description;
 			if (isFeasible)
-				description = string.Format("Paste {0} model object{1}.", copyPasteBuffer.Count, (copyPasteBuffer.Count > 1) ? "s" : string.Empty);
-			else description = "No model objects copied.";
+				description = (copyPasteBuffer.Count > 1) ? string.Format(Properties.Resources.MessageFmt_Paste0ModelObjects, copyPasteBuffer.Count) : Properties.Resources.MessageTxt_PasteModelObject;
+			else description = Properties.Resources.MessageTxt_NoModelObjectsCopied;
 			
 			IModelObject parent = null;
 			foreach (IModelObject mo in modelObjects) {
 				parent = mo;
 				break;
 			}
-			return new DelegateMenuItemDef("Paste", Properties.Resources.PasteBtn, "PasteModelObjectsAction",
+			return new DelegateMenuItemDef(Properties.Resources.CaptionTxt_Paste, Properties.Resources.PasteBtn, "PasteModelObjectsAction",
 				description, false, isFeasible, Permission.None,
 				(a, p) => Paste(parent));
 		}
@@ -457,8 +458,8 @@ namespace Dataweb.NShape.Controllers {
 
 		private MenuItemDef CreateFindShapesAction(IReadOnlyCollection<IModelObject> modelObjects) {
 			bool isFeasible = (diagramSetController != null);
-			string description = "Find and select all assigned shapes.";
-			return new DelegateMenuItemDef("Find assigned shapes", Properties.Resources.FindShapes, "FindShapesAction",
+			string description = Properties.Resources.MessageTxt_FindAndSelectAllAssignedShapes;
+			return new DelegateMenuItemDef(Properties.Resources.MessageTxt_FindAssignedShapes, Properties.Resources.FindShapes, "FindShapesAction",
 				description, false, isFeasible, Permission.None,
 				(a, p) => FindShapes(modelObjects));
 		}

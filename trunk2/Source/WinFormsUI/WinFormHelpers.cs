@@ -33,16 +33,16 @@ namespace Dataweb.NShape.WinFormsUI {
 		/// <summary>
 		/// Extracts and returns NShapeMouseEventArgs from <see cref="T:Windows.Forms.MouseEventArgs" />.
 		/// </summary>
-		public static MouseEventArgsDg GetMouseEventArgs(MouseEventType eventType, MouseEventArgs e) {
-			return GetMouseEventArgs(eventType, e.Button, e.Clicks, e.X, e.Y, e.Delta);
+		public static MouseEventArgsDg GetMouseEventArgs(Control source, MouseEventType eventType, MouseEventArgs e) {
+			return GetMouseEventArgs(source, eventType, e.Button, e.Clicks, e.X, e.Y, e.Delta);
 		}
 
 
 		/// <summary>
 		/// Extracts and returns NShapeMouseEventArgs from <see cref="T:Windows.Forms.MouseEventArgs" />.
 		/// </summary>
-		public static MouseEventArgsDg GetMouseEventArgs(MouseEventType eventType, MouseEventArgs e, Rectangle controlBounds) {
-			return GetMouseEventArgs(eventType, e.Button, e.Clicks, e.X, e.Y, e.Delta, controlBounds);
+		public static MouseEventArgsDg GetMouseEventArgs(Control source, MouseEventType eventType, MouseEventArgs e, Rectangle controlBounds) {
+			return GetMouseEventArgs(source, eventType, e.Button, e.Clicks, e.X, e.Y, e.Delta, controlBounds);
 		}
 
 
@@ -51,22 +51,45 @@ namespace Dataweb.NShape.WinFormsUI {
 		/// </summary>
 		public static MouseEventArgsDg GetMouseEventArgs(Control control, MouseEventType eventType, int clicks, int delta) {
 			Point mousePos = control.PointToClient(Control.MousePosition);
-			return GetMouseEventArgs(eventType, Control.MouseButtons, clicks, mousePos.X, mousePos.Y, delta, control.Bounds);
+			return GetMouseEventArgs(control, eventType, Control.MouseButtons, clicks, mousePos.X, mousePos.Y, delta, control.Bounds);
 		}
 
 
 		/// <summary>
 		/// Returns NShapeMouseEventArgs buildt with the provided parameters
 		/// </summary>
-		public static MouseEventArgsDg GetMouseEventArgs(MouseEventType eventType, MouseButtons mouseButtons, int clicks, int x, int y, int delta) {
-			return GetMouseEventArgs(eventType, mouseButtons, clicks, x, y, delta, Geometry.InvalidRectangle);
+		public static MouseEventArgsDg GetMouseEventArgs(Control source, MouseEventType eventType, MouseButtons mouseButtons, int clicks, int x, int y, int delta) {
+			return GetMouseEventArgs(source, eventType, mouseButtons, clicks, x, y, delta, Geometry.InvalidRectangle);
 		}
 
 
 		/// <summary>
 		/// Returns NShapeMouseEventArgs buildt with the provided parameters
 		/// </summary>
-		public static MouseEventArgsDg GetMouseEventArgs(MouseEventType eventType, MouseButtons mouseButtons, int clicks, int x, int y, int delta, Rectangle controlBounds) {
+		public static MouseEventArgsDg GetMouseEventArgs(Control source, MouseEventType eventType, MouseButtons mouseButtons, int clicks, int x, int y, int delta, Rectangle controlBounds) {
+			if (source == null) throw new ArgumentNullException("source");
+			DateTime utcNow = DateTime.UtcNow;
+			if (lastClickEventSource == source && (int)lastClickEventArgs.Buttons == (int)mouseButtons) {
+				if (lastClickEventArgs.EventType == eventType
+					&& lastClickEventArgs.Modifiers == GetModifiers()
+					&& lastClickEventArgs.Position.X == x
+					&& lastClickEventArgs.Position.Y == y
+					&& lastClickEventArgs.WheelDelta == delta)
+					return lastClickEventArgs;
+				else if ((utcNow - lastClickEventTimestamp).TotalMilliseconds < SystemInformation.DoubleClickTime
+					&& Math.Abs(lastClickEventArgs.Position.X - x) <= SystemInformation.DoubleClickSize.Width
+					&& Math.Abs(lastClickEventArgs.Position.Y - y) <= SystemInformation.DoubleClickSize.Height) {
+					// Manually increase the number of clicks in case of valid multi-clicks
+					if (lastClickEventArgs.EventType == MouseEventType.MouseUp && eventType == MouseEventType.MouseDown
+						&& clicks <= lastClickEventArgs.Clicks)
+						// Increase clicks beyond 2 in order to enable multi click support in tools
+						++clicks;
+					else if (lastClickEventArgs.EventType == MouseEventType.MouseDown && eventType == MouseEventType.MouseUp)
+						// In MouseUp events, clicks is always 1 (no idea why).
+						clicks = lastClickEventArgs.Clicks;
+				}
+			}
+			
 			mouseEventArgs.SetButtons(mouseButtons);
 			mouseEventArgs.SetClicks(clicks);
 			mouseEventArgs.SetEventType(eventType);
@@ -78,6 +101,13 @@ namespace Dataweb.NShape.WinFormsUI {
 			else mouseEventArgs.SetPosition(x, y);
 			mouseEventArgs.SetWheelDelta(delta);
 			mouseEventArgs.SetModifiers(GetModifiers());
+
+			if (eventType != MouseEventType.MouseMove) {
+				lastClickEventSource = source;
+				lastClickEventArgs.Assign(mouseEventArgs);
+				lastClickEventTimestamp = utcNow;
+			}
+
 			return mouseEventArgs;
 		}
 
@@ -317,6 +347,16 @@ namespace Dataweb.NShape.WinFormsUI {
 			public void SetModifiers(KeysDg modifiers) {
 				this.modifiers = modifiers;
 			}
+
+
+			public void Assign(MouseEventArgsDg mouseEventArgs) {
+				this.buttons = mouseEventArgs.Buttons;
+				this.clicks = mouseEventArgs.Clicks;
+				this.eventType = mouseEventArgs.EventType;
+				this.modifiers = mouseEventArgs.Modifiers;
+				this.position = mouseEventArgs.Position;
+				this.wheelDelta = mouseEventArgs.WheelDelta;
+			}
 		}
 
 
@@ -349,6 +389,10 @@ namespace Dataweb.NShape.WinFormsUI {
 
 		private static HelperMouseEventArgs mouseEventArgs = new HelperMouseEventArgs();
 		private static HelperKeyEventArgs keyEventArgs = new HelperKeyEventArgs();
+
+		private static DateTime lastClickEventTimestamp = DateTime.MinValue;
+		private static HelperMouseEventArgs lastClickEventArgs = new HelperMouseEventArgs();
+		private static Control lastClickEventSource = null;
 		
 		#endregion
 	

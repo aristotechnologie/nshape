@@ -437,49 +437,64 @@ namespace Dataweb.NShape.Advanced {
 
 		/// <ToBeCompleted></ToBeCompleted>
 		public DelegateMenuItemDef(string title, Bitmap image, string description, bool isFeasible, Permission requiredPermission, ActionExecuteDelegate executeDelegate)
-			: this(title, image, Color.Empty, string.Format("{0} Action", title), description, false, isFeasible, requiredPermission, null, executeDelegate) {
+			: this(title, image, Color.Empty, string.Format("{0} Action", title), description, false, isFeasible, requiredPermission, null, NoSecurityDomain, executeDelegate) {
+		}
+
+
+		/// <ToBeCompleted></ToBeCompleted>
+		public DelegateMenuItemDef(string title, Bitmap image, string description, bool isFeasible, Permission requiredPermission, IEnumerable<ISecurityDomainObject> objects, ActionExecuteDelegate executeDelegate)
+			: this(title, image, Color.Empty, string.Format("{0} Action", title), description, false, isFeasible, requiredPermission, objects, NoSecurityDomain, executeDelegate) {
 		}
 
 
 		/// <ToBeCompleted></ToBeCompleted>
 		public DelegateMenuItemDef(string title, Bitmap image, string description, bool isFeasible, Permission requiredPermission, IEnumerable<Shape> shapes, ActionExecuteDelegate executeDelegate)
-			: this(title, image, Color.Empty, string.Format("{0} Action", title), description, false, isFeasible, requiredPermission, shapes, executeDelegate) {
+			: this(title, image, Color.Empty, string.Format("{0} Action", title), description, false, isFeasible, requiredPermission, ConvertEnumerator<ISecurityDomainObject>.Create(shapes), NoSecurityDomain, executeDelegate) {
 		}
 
 
 		/// <ToBeCompleted></ToBeCompleted>
 		public DelegateMenuItemDef(string title, Bitmap image, string description, bool isFeasible, Permission requiredPermission, char securityDomainName,  ActionExecuteDelegate executeDelegate)
-			: this(title, image, Color.Empty, string.Format("{0} Action", title), description, false, isFeasible, requiredPermission, securityDomainName, executeDelegate) {
+			: this(title, image, Color.Empty, string.Format("{0} Action", title), description, false, isFeasible, requiredPermission, null, securityDomainName, executeDelegate) {
 		}
 
 
 		/// <ToBeCompleted></ToBeCompleted>
 		public DelegateMenuItemDef(string title, Bitmap image, string name, string description, bool isChecked, bool isFeasible, Permission requiredPermission, ActionExecuteDelegate executeDelegate)
-			: this(title, image, Color.Empty, name, description, isChecked, isFeasible, requiredPermission, null, executeDelegate) {
+			: this(title, image, Color.Empty, name, description, isChecked, isFeasible, requiredPermission, null, NoSecurityDomain, executeDelegate) {
 		}
 
 
 		/// <ToBeCompleted></ToBeCompleted>
 		public DelegateMenuItemDef(string title, Bitmap image, Color transparentColor, string name, string description, bool isChecked, bool isFeasible, Permission requiredPermission, ActionExecuteDelegate executeDelegate)
-			: this(title, image, transparentColor, name, description, isChecked, isFeasible, requiredPermission, null, executeDelegate) {
+			: this(title, image, transparentColor, name, description, isChecked, isFeasible, requiredPermission, null, NoSecurityDomain, executeDelegate) {
 		}
 
 
 		/// <ToBeCompleted></ToBeCompleted>
-		protected DelegateMenuItemDef(string title, Bitmap image, Color transparentColor, string name, string description, bool isChecked, bool isFeasible, Permission requiredPermission, IEnumerable<Shape> shapes, ActionExecuteDelegate executeDelegate)
-			: base(title, image, transparentColor, name, description, isChecked, isFeasible) {
-			this.executeDelegate = executeDelegate;
-			this.requiredPermission = requiredPermission;
-			this.securityDomainObjects = shapes;
-			Debug.Assert(PermissionsAreValid());
+		public DelegateMenuItemDef(string title, Bitmap image, Color transparentColor, string name, string description, bool isChecked, bool isFeasible, Permission requiredPermission, IEnumerable<ISecurityDomainObject> objects, ActionExecuteDelegate executeDelegate)
+		    : this(title, image, transparentColor, name, description, isChecked, isFeasible, requiredPermission, objects, NoSecurityDomain, executeDelegate) {
 		}
 
 
 		/// <ToBeCompleted></ToBeCompleted>
-		protected DelegateMenuItemDef(string title, Bitmap image, Color transparentColor, string name, string description, bool isChecked, bool isFeasible, Permission requiredPermission, char securityDomainName, ActionExecuteDelegate executeDelegate)
+		public DelegateMenuItemDef(string title, Bitmap image, Color transparentColor, string name, string description, bool isChecked, bool isFeasible, Permission requiredPermission, IEnumerable<Shape> shapes, ActionExecuteDelegate executeDelegate)
+			: this(title, image, transparentColor, name, description, isChecked, isFeasible, requiredPermission, ConvertEnumerator<ISecurityDomainObject>.Create(shapes), NoSecurityDomain, executeDelegate) {
+		}
+
+
+		/// <ToBeCompleted></ToBeCompleted>
+		public DelegateMenuItemDef(string title, Bitmap image, Color transparentColor, string name, string description, bool isChecked, bool isFeasible, Permission requiredPermission, char securityDomainName, ActionExecuteDelegate executeDelegate)
+			: this(title, image, transparentColor, name, description, isChecked, isFeasible, requiredPermission, null, securityDomainName, executeDelegate) {
+		}
+
+
+		/// <ToBeCompleted></ToBeCompleted>
+		protected DelegateMenuItemDef(string title, Bitmap image, Color transparentColor, string name, string description, bool isChecked, bool isFeasible, Permission requiredPermission, IEnumerable<ISecurityDomainObject> objects, char securityDomainName, ActionExecuteDelegate executeDelegate)
 			: base(title, image, transparentColor, name, description, isChecked, isFeasible) {
 			this.executeDelegate = executeDelegate;
 			this.requiredPermission = requiredPermission;
+			this.securityDomainObjects = objects;
 			this.securityDomainName = securityDomainName;
 			Debug.Assert(PermissionsAreValid());
 		}
@@ -498,7 +513,7 @@ namespace Dataweb.NShape.Advanced {
 			if (securityManager == null) throw new ArgumentNullException("securityManager");
 			if (securityDomainObjects != null)
 				return securityManager.IsGranted(requiredPermission, securityDomainObjects);
-			else if (securityDomainName != '\0')
+			else if (securityDomainName != NoSecurityDomain)
 				return securityManager.IsGranted(requiredPermission, securityDomainName);
 			else return securityManager.IsGranted(requiredPermission);
 		}
@@ -542,7 +557,7 @@ namespace Dataweb.NShape.Advanced {
 		const char NoSecurityDomain = '\0';
 		private Permission requiredPermission = Permission.None;
 		private char securityDomainName = NoSecurityDomain;
-		private IEnumerable<Shape> securityDomainObjects = null;
+		private IEnumerable<ISecurityDomainObject> securityDomainObjects = null;
 		private ActionExecuteDelegate executeDelegate;
 	}
 

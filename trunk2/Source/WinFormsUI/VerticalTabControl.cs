@@ -18,6 +18,8 @@ using System.Drawing.Drawing2D;
 using System.Drawing.Text;
 using System.Windows.Forms;
 
+using Dataweb.NShape.Advanced;
+
 
 namespace Dataweb.NShape.WinFormsUI {
 
@@ -50,7 +52,7 @@ namespace Dataweb.NShape.WinFormsUI {
 		/// <summary>
 		/// Specifies the version of the assembly containing the component.
 		/// </summary>
-		[Category("NShape")]
+		[CategoryNShape()]
 		[Browsable(true)]
 		public new string ProductVersion {
 			get { return base.ProductVersion; }
@@ -62,7 +64,7 @@ namespace Dataweb.NShape.WinFormsUI {
 		/// <summary>
 		/// Specifies the background color for inactive items.
 		/// </summary>
-		[Category("Appearance")]
+		[CategoryAppearance()]
 		public Color InactiveItemBackgroundColor {
 			get { return BackColor; }
 			set {
@@ -78,7 +80,7 @@ namespace Dataweb.NShape.WinFormsUI {
 		/// <summary>
 		/// Specifies the fill color of highlighted items.
 		/// </summary>
-		[Category("Appearance")]
+		[CategoryAppearance()]
 		public Color HighlightedItemColor {
 			get { return highlightedItemColor; }
 			set {
@@ -94,7 +96,7 @@ namespace Dataweb.NShape.WinFormsUI {
 		/// <summary>
 		/// Specifies the fill color of selected items.
 		/// </summary>
-		[Category("Appearance")]
+		[CategoryAppearance()]
 		public Color SelectedItemColor {
 			get { return selectedItemColor; }
 			set {
@@ -110,7 +112,7 @@ namespace Dataweb.NShape.WinFormsUI {
 		/// <summary>
 		/// Specifies the border color of inactive items.
 		/// </summary>
-		[Category("Appearance")]
+		[CategoryAppearance()]
 		public Color InactiveItemBorderColor {
 			get { return itemBorderColor; }
 			set {
@@ -126,7 +128,7 @@ namespace Dataweb.NShape.WinFormsUI {
 		/// <summary>
 		/// Specifies the background color of focussed items.
 		/// </summary>
-		[Category("Appearance")]
+		[CategoryAppearance()]
 		public Color FocusedItemColor {
 			get { return focusBackgroundColor; }
 			set {
@@ -142,7 +144,7 @@ namespace Dataweb.NShape.WinFormsUI {
 		/// <summary>
 		/// Specifies the border color of focussed items.
 		/// </summary>
-		[Category("Appearance")]
+		[CategoryAppearance()]
 		public Color FocusBorderColor {
 			get { return focusBorderColor; }
 			set {
@@ -158,7 +160,7 @@ namespace Dataweb.NShape.WinFormsUI {
 		/// <summary>
 		/// Specifies the text color of selected items.
 		/// </summary>
-		[Category("Appearance")]
+		[CategoryAppearance()]
 		public Color SelectedItemTextColor {
 			get { return selectedTextColor; }
 			set {
@@ -174,7 +176,7 @@ namespace Dataweb.NShape.WinFormsUI {
 		/// <summary>
 		/// Specifies the text color of inactive items.
 		/// </summary>
-		[Category("Appearance")]
+		[CategoryAppearance()]
 		public Color InactiveItemTextColor {
 			get { return itemTextColor; }
 			set {

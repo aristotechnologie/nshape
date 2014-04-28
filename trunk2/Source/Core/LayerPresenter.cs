@@ -51,14 +51,14 @@ namespace Dataweb.NShape.Controllers {
 		/// <summary>
 		/// Specifies the version of the assembly containing the component.
 		/// </summary>
-		[Category("NShape")]
+		[CategoryNShape()]
 		public string ProductVersion {
 			get { return this.GetType().Assembly.GetName().Version.ToString(); }
 		}
 
 
 		/// <ToBeCompleted></ToBeCompleted>
-		[Category("NShape")]
+		[CategoryNShape()]
 		public LayerController LayerController {
 			get { return layerController; }
 			set {
@@ -70,7 +70,7 @@ namespace Dataweb.NShape.Controllers {
 
 
 		/// <ToBeCompleted></ToBeCompleted>
-		[Category("NShape")]
+		[CategoryNShape()]
 		public IDiagramPresenter DiagramPresenter {
 			get { return diagramPresenter; }
 			set {
@@ -91,14 +91,14 @@ namespace Dataweb.NShape.Controllers {
 		/// <summary>
 		/// Provides access to a <see cref="T:Dataweb.NShape.Project" />.
 		/// </summary>
-		[Category("NShape")]
+		[CategoryNShape()]
 		public Project Project {
 			get { return (layerController == null) ? null : layerController.Project; }
 		}
 
 
 		/// <ToBeCompleted></ToBeCompleted>
-		[Category("NShape")]
+		[CategoryNShape()]
 		public ILayerView LayerView {
 			get { return layerView; }
 			set {
@@ -120,7 +120,7 @@ namespace Dataweb.NShape.Controllers {
 		/// <summary>
 		/// Specifies if MenuItemDefs that are not granted should appear as MenuItems in the dynamic context menu.
 		/// </summary>
-		[Category("Behavior")]
+		[CategoryBehavior()]
 		public bool HideDeniedMenuItems {
 			get { return hideMenuItemsIfNotGranted; }
 			set { hideMenuItemsIfNotGranted = value; }
@@ -145,13 +145,13 @@ namespace Dataweb.NShape.Controllers {
 			if (layerController == null || diagramPresenter == null || diagramPresenter.Diagram == null)
 				yield break;
 
-			string pluralPostFix = (selectedLayers.Count > 1) ? "s" : string.Empty;
-
 			bool separatorNeeded = false;
 			foreach (MenuItemDef controllerAction in LayerController.GetMenuItemDefs(diagramPresenter.Diagram, selectedLayers)) {
 				if (!separatorNeeded) separatorNeeded = true;
 				yield return controllerAction;
 			}
+
+			string layersText = (selectedLayers.Count > 1) ? Properties.Resources.Text_Layers : Properties.Resources.Text_Layer;
 
 			if (separatorNeeded) yield return new SeparatorMenuItemDef();
 
@@ -161,39 +161,39 @@ namespace Dataweb.NShape.Controllers {
 
 			isFeasible = selectedLayers.Count == 1;
 			if (selectedLayers.Count == 0) description = string.Empty;
-			else if (selectedLayers.Count == 1) description = string.Format("Rename layer '{0}'", selectedLayers[0].Title);
-			else description = "Too many layers selected";
-			yield return new DelegateMenuItemDef("Rename Layer", Properties.Resources.RenameBtn,
+			else if (selectedLayers.Count == 1) description = string.Format(Properties.Resources.MessageFmt_RenameLayer0, selectedLayers[0].Title);
+			else description = Properties.Resources.MessageTxt_TooManyLayersSelected;
+			yield return new DelegateMenuItemDef(Properties.Resources.CaptionTxt_RenameLayer, Properties.Resources.RenameBtn,
 				description, isFeasible, Permission.Data, securityDomain, (a, p) => BeginRenameSelectedLayer());
 
 			isFeasible = selectedLayers.Count > 0;
 			if (isFeasible)
-				description = string.Format("Set {0} layer{1} as the active layer{1}", selectedLayers.Count, pluralPostFix);
-			else description = "No layers selected";
-			yield return new DelegateMenuItemDef(string.Format("Activate Layer{0}", pluralPostFix),
+				description = string.Format(Properties.Resources.MessageFmt_Activate01, selectedLayers.Count, layersText);
+			else description = Properties.Resources.MessageTxt_NoLayersSelected;
+			yield return new DelegateMenuItemDef(string.Format(Properties.Resources.CaptionFmt_Activate0, layersText),
 				Properties.Resources.Enabled, description, isFeasible, Permission.Data, securityDomain,
 				(a, p) => ActivateSelectedLayers());
 
 			isFeasible = selectedLayers.Count > 0;
-			description = isFeasible ? string.Format("Deactivate {0} layer{1}", selectedLayers.Count, pluralPostFix) :
-				"No layers selected";
-			yield return new DelegateMenuItemDef(string.Format("Deactivate Layer{0}", pluralPostFix),
+			description = isFeasible ? string.Format(Properties.Resources.MessageFmt_Deactivate01, selectedLayers.Count, layersText) 
+				: Properties.Resources.MessageTxt_NoLayersSelected;
+			yield return new DelegateMenuItemDef(string.Format(Properties.Resources.CaptionFmt_Deactivate0, layersText),
 				Properties.Resources.Disabled, description, isFeasible, Permission.Data, securityDomain,
 				(a, p) => DeactivateSelectedLayers());
 
 			yield return new SeparatorMenuItemDef();
 
 			isFeasible = selectedLayers.Count > 0;
-			description = isFeasible ? string.Format("Show {0} layer{1}", selectedLayers.Count, pluralPostFix) :
-				"No layers selected";
-			yield return new DelegateMenuItemDef(string.Format("Show Layer{0}", pluralPostFix),
+			description = isFeasible ? string.Format(Properties.Resources.MessageFmt_Show01, selectedLayers.Count, layersText) 
+				: Properties.Resources.MessageTxt_NoLayersSelected;
+			yield return new DelegateMenuItemDef(string.Format(Properties.Resources.CaptionFmt_Show0, layersText),
 				Properties.Resources.Visible, description, isFeasible, Permission.None,
 				(a, p) => ShowSelectedLayers());
 
 			isFeasible = selectedLayers.Count > 0;
-			description = isFeasible ? string.Format("Hide {0} layer{1}", selectedLayers.Count, pluralPostFix) :
-			"No layers selected";
-			yield return new DelegateMenuItemDef(string.Format("Hide Layer{0}", pluralPostFix),
+			description = isFeasible ? string.Format(Properties.Resources.MessageFmt_Hide01, selectedLayers.Count, layersText) 
+				: Properties.Resources.MessageTxt_NoLayersSelected;
+			yield return new DelegateMenuItemDef(string.Format(Properties.Resources.CaptionFmt_Hide0, layersText),
 			Properties.Resources.Invisible, description, isFeasible, Permission.None,
 			(a, p) => HideSelectedLayers());
 		}
@@ -258,6 +258,7 @@ namespace Dataweb.NShape.Controllers {
 		private void UnregisterDiagramPresenterEvents() {
 			diagramPresenter.ActiveLayersChanged -= diagramPresenter_ActiveLayersChanged;
 			diagramPresenter.LayerVisibilityChanged -= diagramPresenter_LayerVisibilityChanged;
+			diagramPresenter.DiagramChanged -= diagramPresenter_DiagramChanged;
 		}
 
 

@@ -135,7 +135,7 @@ namespace Dataweb.NShape.WinFormsUI {
 		/// <summary>
 		/// Specifies the version of the assembly containing the component.
 		/// </summary>
-		[Category("NShape")]
+		[CategoryNShape()]
 		[Browsable(true)]
 		public new string ProductVersion {
 			get { return base.ProductVersion; }
@@ -145,7 +145,7 @@ namespace Dataweb.NShape.WinFormsUI {
 		/// <summary>
 		/// Gets or sets the controller for tis presenter.
 		/// </summary>
-		[Category("NShape")]
+		[CategoryNShape()]
 		public TemplateController TemplateController {
 			get { return templateController; }
 			set {
@@ -296,7 +296,7 @@ namespace Dataweb.NShape.WinFormsUI {
 				templateController.TemplateModified -= templateController_TemplateModified;
 				templateController.TemplateShapeControlPointMappingChanged -= templateController_PointMappingChanged;
 				templateController.TemplateShapePropertyMappingSet -= templateController_PropertyMappingChanged;
-				templateController.TemplateShapePropertyMappingDeleted += templateController_PropertyMappingChanged;
+				templateController.TemplateShapePropertyMappingDeleted -= templateController_PropertyMappingChanged;
 				templateController.TemplateShapeChanged -= templateController_TemplateShapeChanged;
 			}
 		}

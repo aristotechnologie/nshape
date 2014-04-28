@@ -102,6 +102,9 @@ namespace Dataweb.NShape.Designer {
 			diagramPresenter.ShapeDoubleClick += new EventHandler<DiagramPresenterShapeClickEventArgs>(diagramPresenter_ShapeDoubleClick);
 			diagramPresenter.ShapesInserted += new EventHandler<DiagramPresenterShapesEventArgs>(diagramPresenter_ShapesInserted);
 			diagramPresenter.ShapesRemoved += new EventHandler<DiagramPresenterShapesEventArgs>(diagramPresenter_ShapesRemoved);
+			diagramPresenter.ShapeMoved += new EventHandler<DiagramPresenterShapeEventArgs>(diagramPresenter_ShapeMoved);
+			diagramPresenter.ShapeResized += new EventHandler<DiagramPresenterShapeEventArgs>(diagramPresenter_ShapeResized);
+			diagramPresenter.ShapeRotated += new EventHandler<DiagramPresenterShapeEventArgs>(diagramPresenter_ShapeRotated);
 			diagramPresenter.ShapesSelected += new EventHandler(diagramPresenter_ShapesSelected);
 		}
 
@@ -159,14 +162,17 @@ namespace Dataweb.NShape.Designer {
 
 		private void UnregisterEvents(IDiagramPresenter diagramPresenter) {
 			if (diagramPresenter == null) throw new ArgumentNullException();
-			diagramPresenter.DiagramChanged += new EventHandler(diagramPresenter_DiagramChanged);
-			diagramPresenter.DiagramChanging += new EventHandler(diagramPresenter_DiagramChanging);
-			diagramPresenter.LayerVisibilityChanged += new EventHandler<LayersEventArgs>(diagramPresenter_LayerVisibilityChanged);
-			diagramPresenter.ShapeClick += new EventHandler<DiagramPresenterShapeClickEventArgs>(diagramPresenter_ShapeClick);
-			diagramPresenter.ShapeDoubleClick += new EventHandler<DiagramPresenterShapeClickEventArgs>(diagramPresenter_ShapeDoubleClick);
-			diagramPresenter.ShapesInserted += new EventHandler<DiagramPresenterShapesEventArgs>(diagramPresenter_ShapesInserted);
-			diagramPresenter.ShapesRemoved += new EventHandler<DiagramPresenterShapesEventArgs>(diagramPresenter_ShapesRemoved);
-			diagramPresenter.ShapesSelected += new EventHandler(diagramPresenter_ShapesSelected);
+			diagramPresenter.DiagramChanged -= new EventHandler(diagramPresenter_DiagramChanged);
+			diagramPresenter.DiagramChanging -= new EventHandler(diagramPresenter_DiagramChanging);
+			diagramPresenter.LayerVisibilityChanged -= new EventHandler<LayersEventArgs>(diagramPresenter_LayerVisibilityChanged);
+			diagramPresenter.ShapeClick -= new EventHandler<DiagramPresenterShapeClickEventArgs>(diagramPresenter_ShapeClick);
+			diagramPresenter.ShapeDoubleClick -= new EventHandler<DiagramPresenterShapeClickEventArgs>(diagramPresenter_ShapeDoubleClick);
+			diagramPresenter.ShapesInserted -= new EventHandler<DiagramPresenterShapesEventArgs>(diagramPresenter_ShapesInserted);
+			diagramPresenter.ShapesRemoved -= new EventHandler<DiagramPresenterShapesEventArgs>(diagramPresenter_ShapesRemoved);
+			diagramPresenter.ShapesSelected -= new EventHandler(diagramPresenter_ShapesSelected);
+			diagramPresenter.ShapeMoved -= new EventHandler<DiagramPresenterShapeEventArgs>(diagramPresenter_ShapeMoved);
+			diagramPresenter.ShapeResized -= new EventHandler<DiagramPresenterShapeEventArgs>(diagramPresenter_ShapeResized);
+			diagramPresenter.ShapeRotated -= new EventHandler<DiagramPresenterShapeEventArgs>(diagramPresenter_ShapeRotated);
 		}
 
 
@@ -210,6 +216,21 @@ namespace Dataweb.NShape.Designer {
 
 		void diagramPresenter_DiagramChanged(object sender, EventArgs e) {
 			LogRaisedEvent(sender, e, "DiagramChanged");
+		}
+
+
+		private void diagramPresenter_ShapeRotated(object sender, DiagramPresenterShapeEventArgs e) {
+			LogRaisedEvent(sender, e, "ShapeRotated");
+		}
+
+
+		private void diagramPresenter_ShapeResized(object sender, DiagramPresenterShapeEventArgs e) {
+			LogRaisedEvent(sender, e, "ShapeResized");
+		}
+
+
+		private void diagramPresenter_ShapeMoved(object sender, DiagramPresenterShapeEventArgs e) {
+			LogRaisedEvent(sender, e, "ShapeMoved");
 		}
 
 		#endregion

@@ -84,7 +84,7 @@ namespace Dataweb.NShape.Controllers {
 	public class DiagramPresenterShapesEventArgs : EventArgs {
 
 		/// <summary>
-		/// Initializes a new instance of <see cref="T:Dataweb.NShape.Controllers.DiagramPresenterShapeEventArgs" />.
+		/// Initializes a new instance of <see cref="T:Dataweb.NShape.Controllers.DiagramPresenterShapesEventArgs" />.
 		/// </summary>
 		public DiagramPresenterShapesEventArgs(Shape shape) {
 			this.shapes = new ReadOnlyList<Shape>(1);
@@ -93,17 +93,25 @@ namespace Dataweb.NShape.Controllers {
 
 
 		/// <summary>
-		/// Initializes a new instance of <see cref="T:Dataweb.NShape.Controllers.DiagramPresenterShapeEventArgs" />.
+		/// Initializes a new instance of <see cref="T:Dataweb.NShape.Controllers.DiagramPresenterShapesEventArgs" />.
 		/// </summary>
 		public DiagramPresenterShapesEventArgs(IEnumerable<Shape> shapes) {
 			this.shapes = new ReadOnlyList<Shape>(shapes);
 		}
 
 
+		/// <summary>
+		/// Initializes a new instance of <see cref="T:Dataweb.NShape.Controllers.DiagramPresenterShapesEventArgs" />.
+		/// </summary>
+		protected DiagramPresenterShapesEventArgs() {
+			this.shapes = new ReadOnlyList<Shape>();
+		}
+
+
 		/// <ToBeCompleted></ToBeCompleted>
 		public IReadOnlyCollection<Shape> Shapes {
 			get { return shapes; }
-			set {
+			protected set {
 				shapes.Clear();
 				shapes.AddRange(value);
 			}
@@ -111,6 +119,36 @@ namespace Dataweb.NShape.Controllers {
 
 
 		private ReadOnlyList<Shape> shapes;
+	}
+
+
+	/// <ToBeCompleted></ToBeCompleted>
+	public class DiagramPresenterShapeEventArgs : EventArgs {
+
+		/// <summary>
+		/// Initializes a new instance of <see cref="T:Dataweb.NShape.Controllers.DiagramPresenterShapeEventArgs" />.
+		/// </summary>
+		public DiagramPresenterShapeEventArgs(Shape shape) {
+			this.shape = shape;
+		}
+
+
+		/// <summary>
+		/// Initializes a new instance of <see cref="T:Dataweb.NShape.Controllers.DiagramPresenterShapeEventArgs" />.
+		/// </summary>
+		protected DiagramPresenterShapeEventArgs() {
+			this.shape = null;
+		}
+
+
+		/// <ToBeCompleted></ToBeCompleted>
+		public Shape Shape {
+			get { return shape; }
+			protected set { shape = value;}
+		}
+
+
+		private Shape shape;
 	}
 
 
@@ -140,13 +178,11 @@ namespace Dataweb.NShape.Controllers {
 	#endregion
 
 
-	// IDiagramPresenter has to be a descendant of IDisplayService because Tools set their IDiagramPresenter as
-	// the preview shape's DisplayService
 	/// <summary>
 	/// Defines the interface between the tool and the diagram presenter.
 	/// </summary>
 	/// <status>reviewed</status>
-	public interface IDiagramPresenter {
+	public interface IDiagramPresenter : ISynchronizeInvoke {
 
 		#region Events
 
@@ -164,6 +200,15 @@ namespace Dataweb.NShape.Controllers {
 
 		/// <summary>Raised when a shape was removed from the diagram of this diagram presenter.</summary>
 		event EventHandler<DiagramPresenterShapesEventArgs> ShapesRemoved;
+
+		/// <summary>Raised when shapes belonging to the diagram of this diagram presenter were moved.</summary>
+		event EventHandler<DiagramPresenterShapeEventArgs> ShapeMoved;
+
+		/// <summary>Raised when shapes belonging to the diagram of this diagram presenter were resized.</summary>
+		event EventHandler<DiagramPresenterShapeEventArgs> ShapeResized;
+
+		/// <summary>Raised when shapes belonging to the diagram of this diagram presenter were rotated.</summary>
+		event EventHandler<DiagramPresenterShapeEventArgs> ShapeRotated;
 
 		/// <summary>Raised when the diagram is going to be changed.</summary>
 		event EventHandler DiagramChanging;
@@ -256,43 +301,43 @@ namespace Dataweb.NShape.Controllers {
 		/// <summary>
 		/// Specifies the distance for snapping shapes and control points to grid lines.
 		/// </summary>
-		[Category("Behavior")]
+		[CategoryBehavior()]
 		int SnapDistance { get; set; }
 
 		/// <summary>
 		/// Enables or disables snapping of shapes and control points to grid lines.
 		/// </summary>
-		[Category("Behavior")]
+		[CategoryBehavior()]
 		bool SnapToGrid { get; set; }
 
 		/// <summary>
 		/// The radius of a control point grip from the center to the outer handle bound.
 		/// </summary>
-		[Category("Appearance")]
+		[CategoryAppearance()]
 		int GridSize { get; set; }
 
 		/// <summary>
 		/// Specifies whether grid lines should be visible.
 		/// </summary>
-		[Category("Appearance")]
+		[CategoryAppearance()]
 		bool IsGridVisible { get; set; }
 
 		/// <summary>
 		/// Specifies the shape of grips used for resizing shapes.
 		/// </summary>
-		[Category("Appearance")]
+		[CategoryAppearance()]
 		ControlPointShape ResizeGripShape { get; set; }
 
 		/// <summary>
 		/// Specifies the shape of connection points provided by a shape.
 		/// </summary>
-		[Category("Appearance")]
+		[CategoryAppearance()]
 		ControlPointShape ConnectionPointShape { get; set; }
 
 		/// <summary>
 		/// The size of a ControlPoint handle from the center to the outer handle bound.
 		/// </summary>
-		[Category("Appearance")]
+		[CategoryAppearance()]
 		int GripSize { get; set; }
 
 		/// <summary>
@@ -627,6 +672,12 @@ namespace Dataweb.NShape.Controllers {
 		/// </summary>
 		void OpenCaptionEditor(ICaptionedShape shape, int labelIndex, string newText);
 
+		/// <summary>
+		/// Closes the currently open text editor. 
+		/// </summary>
+		/// <param name="applyChanges">If false, all changes made to the text of the <see cref="T:Dataweb.NShape.Advanced.ICaptionedShape" /> will be discarded.</param>
+		void CloseCaptionEditor(bool applyChanges);
+
 		///// <summary>
 		///// Notifies the DiagramPresenter that shapes have been inserted.
 		///// </summary>
@@ -698,6 +749,15 @@ namespace Dataweb.NShape.Controllers {
 
 	//   /// <ToBeCompleted></ToBeCompleted>
 	//   void NotifyShapesRemoved(IEnumerable<Shape> shapes);
+
+	//   /// <ToBeCompleted></ToBeCompleted>
+	//   void NotifyShapeResized(Shape shape);
+
+	//   /// <ToBeCompleted></ToBeCompleted>
+	//   void NotifyShapeMoved(Shape shape);
+
+	//   /// <ToBeCompleted></ToBeCompleted>
+	//   void NotifyShapeRotated(Shape shape);
 
 	//}
 }

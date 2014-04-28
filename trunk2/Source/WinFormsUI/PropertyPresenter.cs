@@ -51,7 +51,7 @@ namespace Dataweb.NShape.WinFormsUI {
 		/// <summary>
 		/// Specifies the version of the assembly containing the component.
 		/// </summary>
-		[Category("NShape")]
+		[CategoryNShape()]
 		public string ProductVersion {
 			get { return this.GetType().Assembly.GetName().Version.ToString(); }
 		}
@@ -60,7 +60,7 @@ namespace Dataweb.NShape.WinFormsUI {
 		/// <summary>
 		/// Specifies the controller for this presenter.
 		/// </summary>
-		[Category("NShape")]
+		[CategoryNShape()]
 		public IPropertyController PropertyController {
 			get { return propertyController; }
 			set {
@@ -231,10 +231,11 @@ namespace Dataweb.NShape.WinFormsUI {
 			StyleUITypeEditor.Project = propertyController.Project;
 			PropertyGrid grid = null;
 			GetPropertyGrid(e.PageIndex, out grid);
-			if (grid == null) throw new ArgumentOutOfRangeException(string.Format("Property page {0} does not exist.", e.PageIndex));
-			grid.SuspendLayout();
-			grid.Refresh();
-			grid.ResumeLayout();
+			if (grid != null) {
+				grid.SuspendLayout();
+				grid.Refresh();
+				grid.ResumeLayout();
+			}
 		}
 
 

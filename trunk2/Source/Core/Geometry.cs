@@ -224,6 +224,7 @@ namespace Dataweb.NShape.Advanced {
 
 		/// <summary>
 		/// Corrects deltaX and deltaY in order to preserve the aspect ratio of the sources bounds when inflating by deltaX and deltaY.
+		/// Return true if deltaX / deltaY were left unchanged or false if they were corrected.
 		/// </summary>
 		/// <param name="width">The current width</param>
 		/// <param name="height">The current height</param>
@@ -1128,7 +1129,8 @@ namespace Dataweb.NShape.Advanced {
 		/// <summary>
 		/// Calculates the cross product a x b
 		/// </summary>
-		/// <remarks>What we actually calculate here is the z coordinate of the cross product vector in R³
+		/// <remarks>
+		/// What we actually calculate here is the z coordinate of the cross product vector in R³
 		/// with aZ and bZ assumed to be zero. Result is the size of the area of the parallelogram A B A' B'
 		/// </remarks>
 		public static int VectorCrossProduct(int aX, int aY, int bX, int bY) {
@@ -5511,32 +5513,32 @@ namespace Dataweb.NShape.Advanced {
 		/// <summary>
 		/// Returns the sign of the given value: -1, 0 (if value is 0) or +1
 		/// </summary>
-		public static int Signum(int value) {
-			return (value > 0) ? 1 : (value < 0) ? -1 : 0;
+		public static sbyte Signum(int value) {
+			return (value > 0) ? signumPositive : (value < 0) ? signumNegative : signumZero;
 		}
 
 
 		/// <summary>
 		/// Returns the sign of the given value: -1, 0 (if value is 0) or +1
 		/// </summary>
-		public static int Signum(long value) {
-			return (value > 0) ? 1 : (value < 0) ? -1 : 0;
+		public static sbyte Signum(long value) {
+			return (value > 0) ? signumPositive : (value < 0) ? signumNegative : signumZero;
 		}
 
 
 		/// <summary>
 		/// Returns the sign of the given value: -1, 0 (if value is 0) or +1
 		/// </summary>
-		public static int Signum(float value) {
-			return (value > 0) ? 1 : (value < 0) ? -1 : 0;
+		public static sbyte Signum(float value) {
+			return (value > 0) ? signumPositive : (value < 0) ? signumNegative : signumZero;
 		}
 
 
 		/// <summary>
 		/// Returns the sign of the given value: -1, 0 (if value is 0) or +1
 		/// </summary>
-		public static int Signum(double value) {
-			return (value > 0) ? 1 : (value < 0) ? -1 : 0;
+		public static sbyte Signum(double value) {
+			return (value > 0) ? signumPositive : (value < 0) ? signumNegative : signumZero;
 		}
 
 
@@ -6248,6 +6250,9 @@ namespace Dataweb.NShape.Advanced {
 		private const double RadiansFactor = 0.017453292519943295769236907684886d;	// = Math.PI / 180
 		private const double EqualityDeltaDouble = 0.000001d;
 		private const float EqualityDeltaFloat = 0.000001f;
+		private const sbyte signumNegative = -1;
+		private const sbyte signumPositive = 1;
+		private const sbyte signumZero = 0;
 	}
 
 }

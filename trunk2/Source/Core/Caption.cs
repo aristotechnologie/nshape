@@ -64,6 +64,15 @@ namespace Dataweb.NShape.Advanced {
 
 
 		/// <summary>
+		/// Gets or sets whether this caption text is visible.
+		/// </summary>
+		public bool IsVisible {
+			get { return isTextVisible; }
+			set { isTextVisible = value; }
+		}
+
+
+		/// <summary>
 		/// Calculates the current text's area within the given caption bounds.
 		/// </summary>
 		public Rectangle CalculateTextBounds(Rectangle captionBounds, ICharacterStyle characterStyle, 
@@ -218,6 +227,7 @@ namespace Dataweb.NShape.Advanced {
 		private string captionTextSuffix = null;
 		// Graphics path of the text
 		private GraphicsPath textPath;
+		private bool isTextVisible = true;
 
 		#endregion
 	}
@@ -237,46 +247,10 @@ namespace Dataweb.NShape.Advanced {
 		int CaptionCount { get; }
 
 		/// <summary>
-		/// Retrieves the text of the indicated caption.
+		/// Finds a caption which contains the given point.
 		/// </summary>
-		/// <param name="index"></param>
-		/// <returns></returns>
-		string GetCaptionText(int index);
-
-		/// <summary>
-		/// Sets the text of the indicated caption.
-		/// </summary>
-		/// <param name="index"></param>
-		/// <param name="text"></param>
-		void SetCaptionText(int index, string text);
-
-		/// <summary>
-		/// Retrieves the character style of the indicated caption.
-		/// </summary>
-		/// <param name="index"></param>
-		/// <returns></returns>
-		ICharacterStyle GetCaptionCharacterStyle(int index);
-
-		/// <summary>
-		/// Sets the character style of the indicated caption.
-		/// </summary>
-		/// <param name="index"></param>
-		/// <param name="characterStyle"></param>
-		void SetCaptionCharacterStyle(int index, ICharacterStyle characterStyle);
-
-		/// <summary>
-		/// Retrieves the paragraph style of the indicated caption.
-		/// </summary>
-		/// <param name="index"></param>
-		/// <returns></returns>
-		IParagraphStyle GetCaptionParagraphStyle(int index);
-
-		/// <summary>
-		/// Sets the paragraph style of the indicated caption.
-		/// </summary>
-		/// <param name="index"></param>
-		/// <param name="paragraphStyle"></param>
-		void SetCaptionParagraphStyle(int index, IParagraphStyle paragraphStyle);
+		/// <returns>Caption index of -1 if none found.</returns>
+		int FindCaptionFromPoint(int x, int y);
 
 		/// <summary>
 		/// Retrieves the transformed bounds of the caption in diagram coordinates. These 
@@ -295,8 +269,29 @@ namespace Dataweb.NShape.Advanced {
 		/// True if a non-empty text exists for the specified caption, otherwise false. 
 		/// If the caption's text is empty, placeholder bounds are calculated.
 		/// </returns>
-		bool GetCaptionBounds(int index, out Point topLeft, out Point topRight, out Point bottomRight, 
+		bool GetCaptionBounds(int index, out Point topLeft, out Point topRight, out Point bottomRight,
 			out Point bottomLeft);
+
+		/// <summary>
+		/// Retrieves the character style of the indicated caption.
+		/// </summary>
+		/// <param name="index"></param>
+		/// <returns></returns>
+		ICharacterStyle GetCaptionCharacterStyle(int index);
+
+		/// <summary>
+		/// Retrieves the paragraph style of the indicated caption.
+		/// </summary>
+		/// <param name="index"></param>
+		/// <returns></returns>
+		IParagraphStyle GetCaptionParagraphStyle(int index);
+
+		/// <summary>
+		/// Retrieves the text of the indicated caption.
+		/// </summary>
+		/// <param name="index"></param>
+		/// <returns></returns>
+		string GetCaptionText(int index);
 
 		/// <summary>
 		/// Retrieves the transformed bounds of the caption's text in diagram coordinates. 
@@ -311,14 +306,42 @@ namespace Dataweb.NShape.Advanced {
 		/// defining the bounds of the caption</param>
 		/// <param name="bottomLeft">The top bottom left of the transformed rectangle 
 		/// defining the bounds of the caption</param>
-		bool GetCaptionTextBounds(int index, out Point topLeft, out Point topRight, 
+		bool GetCaptionTextBounds(int index, out Point topLeft, out Point topRight,
 			out Point bottomRight, out Point bottomLeft);
 
 		/// <summary>
-		/// Finds a caption which contains the given point.
+		/// Sets the character style of the indicated caption.
 		/// </summary>
-		/// <returns>Caption index of -1 if none found.</returns>
-		int FindCaptionFromPoint(int x, int y);
+		/// <param name="index"></param>
+		/// <param name="characterStyle"></param>
+		void SetCaptionCharacterStyle(int index, ICharacterStyle characterStyle);
+
+		/// <summary>
+		/// Sets the paragraph style of the indicated caption.
+		/// </summary>
+		/// <param name="index"></param>
+		/// <param name="paragraphStyle"></param>
+		void SetCaptionParagraphStyle(int index, IParagraphStyle paragraphStyle);
+
+		/// <summary>
+		/// Sets the text of the indicated caption.
+		/// </summary>
+		/// <param name="index"></param>
+		/// <param name="text"></param>
+		void SetCaptionText(int index, string text);
+
+		/// <summary>
+		/// Shows the specified caption text if hidden.
+		/// </summary>
+		/// <remarks>For internal use only.</remarks>
+		void ShowCaptionText(int index);
+
+		/// <summary>
+		/// Hides the specified caption text.
+		/// </summary>
+		/// <remarks>For internal use only.</remarks>
+		void HideCaptionText(int index);
+
 	}
 
 	#endregion
@@ -329,14 +352,13 @@ namespace Dataweb.NShape.Advanced {
 	/// <summary>
 	/// Shape having one caption.
 	/// </summary>
-	/// <remarks>RequiredPermissions set</remarks>
 	/// <status>reviewed</status>
 	public abstract class CaptionedShapeBase : PathBasedPlanarShape, ICaptionedShape {
 
 		/// <summary>
 		/// The text of the <see cref="T:Dataweb.NShape.Advanced.Shape" />.
 		/// </summary>
-		[Category("Data")]
+		[CategoryData()]
 		[Description("Text displayed inside the shape")]
 		[PropertyMappingId(PropertyIdText)]
 		[RequiredPermission(Permission.Data)]
@@ -347,19 +369,25 @@ namespace Dataweb.NShape.Advanced {
 				else return caption.Text;
 			}
 			set {
-				Invalidate();
-				if (caption == null) caption = new Caption(value);
-				else caption.Text = value;
-				if (string.IsNullOrEmpty(caption.Text)) caption = null;
-				InvalidateDrawCache();
-				Invalidate();
+				if (value != Text) {
+					Invalidate();
+
+					if (caption == null) caption = new Caption(value);
+					else caption.Text = value;
+					// Delete caption object for lower memory footprint if it does not contain any vital information
+					if (string.IsNullOrEmpty(caption.Text) && caption.IsVisible)
+						caption = null;
+
+					InvalidateDrawCache();
+					Invalidate();
+				}
 			}
 		}
 
 
-		/// <ToBeCompleted></ToBeCompleted>
-		[Category("Appearance")]
-		[Description("Determines the style of the shape's text.\nUse the template editor to modify all shapes of a template.\nUse the design editor to modify and create styles.")]
+		/// <summary>Gets or sets the <see cref="T:Dataweb.NShape.ICharacterStyle" /> that defines the visual appearance of the shape's text.</summary>
+		[CategoryAppearance()]
+		[Description("Defines the style of the shape's text.\nUse the template editor to modify all shapes of a template.\nUse the design editor to modify and create styles.")]
 		[PropertyMappingId(PropertyIdCharacterStyle)]
 		[RequiredPermission(Permission.Present)]
 		public ICharacterStyle CharacterStyle {
@@ -373,9 +401,9 @@ namespace Dataweb.NShape.Advanced {
 		}
 
 
-		/// <ToBeCompleted></ToBeCompleted>
-		[Category("Appearance")]
-		[Description("Determines the layout of the shape's text.\nUse the template editor to modify all shapes of a template.\nUse the design editor to modify and create styles.")]
+		/// <summary>Gets or sets the <see cref="T:Dataweb.NShape.IParagraphStyle" /> that defines the layout of the shape's text.</summary>
+		[CategoryAppearance()]
+		[Description("Defines the layout of the shape's text.\nUse the template editor to modify all shapes of a template.\nUse the design editor to modify and create styles.")]
 		[RequiredPermission(Permission.Present)]
 		[PropertyMappingId(PropertyIdParagraphStyle)]
 		public IParagraphStyle ParagraphStyle {
@@ -442,14 +470,16 @@ namespace Dataweb.NShape.Advanced {
 
 		#region ICaptionedShape Members
 
-		/// <ToBeCompleted></ToBeCompleted>
+		/// <summary>Gets the number of captions of this shape.</summary>
 		[Browsable(false)]
 		public virtual int CaptionCount {
 			get { return 1; }
 		}
 
 
-		/// <ToBeCompleted></ToBeCompleted>
+		/// <summary>
+		/// Calculates four points that define the (rotated) maximum area the specified caption's text may occupy.
+		/// </summary>
 		public virtual bool GetCaptionBounds(int index, out Point topLeft, out Point topRight, out Point bottomRight, out Point bottomLeft) {
 			if (index != 0) throw new ArgumentOutOfRangeException("index");
 			//if (caption == null) {
@@ -465,7 +495,10 @@ namespace Dataweb.NShape.Advanced {
 		}
 
 
-		/// <ToBeCompleted></ToBeCompleted>
+		/// <summary>
+		/// Calculates four points that define the (rotated) bounds the specified caption's text actually occupies.
+		/// If the caption's text is empty, place holder bounds will be calculated.
+		/// </summary>
 		public virtual bool GetCaptionTextBounds(int index, out Point topLeft, out Point topRight, out Point bottomRight, out Point bottomLeft) {
 			if (index != 0) throw new ArgumentOutOfRangeException("index");
 			bool result;
@@ -487,49 +520,49 @@ namespace Dataweb.NShape.Advanced {
 		}
 
 
-		/// <ToBeCompleted></ToBeCompleted>
+		/// <summary>Returns the text of the caption at the specified index.</summary>
 		public virtual string GetCaptionText(int index) {
 			if (index != 0) throw new NShapeException(string.Format("Invalid label index: {0}.", index));
 			else return Text;
 		}
 
 
-		/// <ToBeCompleted></ToBeCompleted>
+		/// <summary>Returns the <see cref="T:Dataweb.NShape.ICharacterStyle" /> of the caption at the specified index.</summary>
 		public virtual ICharacterStyle GetCaptionCharacterStyle(int index) {
 			if (index != 0) throw new NShapeException(string.Format("Invalid label index: {0}.", index));
 			return CharacterStyle;
 		}
 
 
-		/// <ToBeCompleted></ToBeCompleted>
+		/// <summary>Returns the <see cref="T:Dataweb.NShape.IParagraphStyle" /> of the caption at the specified index.</summary>
 		public virtual IParagraphStyle GetCaptionParagraphStyle(int index) {
 			if (index != 0) throw new NShapeException(string.Format("Invalid label index: {0}.", index));
 			return ParagraphStyle;
 		}
 
 
-		/// <ToBeCompleted></ToBeCompleted>
+		/// <summary>Sets the text of the caption at the specified index.</summary>
 		public virtual void SetCaptionText(int index, string text) {
 			if (index != 0) throw new NShapeException(string.Format("Invalid label index: {0}.", index));
 			else Text = text;
 		}
 
 
-		/// <ToBeCompleted></ToBeCompleted>
+		/// <summary>Returns the <see cref="T:Dataweb.NShape.ICharacterStyle" /> of the caption at the specified index.</summary>
 		public virtual void SetCaptionCharacterStyle(int index, ICharacterStyle characterStyle) {
 			if (index != 0) throw new NShapeException(string.Format("Invalid label index: {0}.", index));
 			CharacterStyle = characterStyle;
 		}
 
 
-		/// <ToBeCompleted></ToBeCompleted>
+		/// <summary>Returns the <see cref="T:Dataweb.NShape.IParagraphStyle" /> of the caption at the specified index.</summary>
 		public virtual void SetCaptionParagraphStyle(int index, IParagraphStyle paragraphStyle) {
 			if (index != 0) throw new NShapeException(string.Format("Invalid label index: {0}.", index));
 			ParagraphStyle = paragraphStyle;
 		}
 
 
-		/// <ToBeCompleted></ToBeCompleted>
+		/// <summary>Returns the index of the caption at the specified (diagram) coordinates.</summary>
 		public virtual int FindCaptionFromPoint(int x, int y) {
 			for (int i = CaptionCount - 1; i >= 0; --i) {
 				Point tl = Point.Empty, tr = Point.Empty, br = Point.Empty, bl = Point.Empty;
@@ -538,6 +571,27 @@ namespace Dataweb.NShape.Advanced {
 					return i;
 			}
 			return -1;
+		}
+
+
+		/// <override></override>
+		public virtual void HideCaptionText(int index) {
+			if (index != 0) throw new IndexOutOfRangeException();
+			if (caption == null) caption = new Caption();
+			caption.IsVisible = false;
+			Invalidate();
+		}
+
+
+		/// <override></override>
+		public virtual void ShowCaptionText(int index) {
+			if (index != 0) throw new IndexOutOfRangeException();
+			if (caption != null)
+				caption.IsVisible = true;
+			// Release caption object if it is no longer needed
+			if (string.IsNullOrEmpty(caption.Text))
+				caption = null;
+			Invalidate();
 		}
 
 		#endregion
@@ -623,9 +677,9 @@ namespace Dataweb.NShape.Advanced {
 
 
 		/// <summary>
-		/// Calculates the untransformed area in which the caption's text is layouted.GetCaptionBounds
+		/// Calculates the untransformed area in which the caption's text is layouted.
 		/// </summary>
-		/// <remarks> The caller has to rotate and offset the rectangle around/by X|Y before using it.</remarks>
+		/// <remarks>The caller has to rotate and offset the rectangle around/by X|Y before using it.</remarks>
 		protected abstract void CalcCaptionBounds(int index, out Rectangle captionBounds);
 
 
@@ -665,7 +719,8 @@ namespace Dataweb.NShape.Advanced {
 		/// Draws the <see cref="T:Dataweb.NShape.Advanced.Caption" /> of the <see cref="T:Dataweb.NShape.Advanced.CaptionShape" />.
 		/// </summary>
 		protected void DrawCaption(Graphics graphics) {
-			if (caption != null) caption.Draw(graphics, CharacterStyle, ParagraphStyle);
+			if (caption != null && caption.IsVisible) 
+				caption.Draw(graphics, CharacterStyle, ParagraphStyle);
 		}
 
 

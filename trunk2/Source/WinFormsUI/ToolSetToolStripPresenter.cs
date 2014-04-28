@@ -47,7 +47,7 @@ namespace Dataweb.NShape.WinFormsUI {
 		/// <summary>
 		/// Specifies the version of the assembly containing the component.
 		/// </summary>
-		[Category("NShape")]
+		[CategoryNShape()]
 		[Browsable(true)]
 		public new string ProductVersion {
 			get { return base.ProductVersion; }
@@ -57,7 +57,7 @@ namespace Dataweb.NShape.WinFormsUI {
 		/// <summary>
 		/// Specifies the controller for this presenter.
 		/// </summary>
-		[Category("NShape")]
+		[CategoryNShape()]
 		public ToolSetController ToolSetController {
 			get { return toolSetController; }
 			set {
@@ -71,7 +71,7 @@ namespace Dataweb.NShape.WinFormsUI {
 		/// <summary>
 		/// Specifies whether MenuItemDefs should not appear in the dynamic context menu if they are not granted.
 		/// </summary>
-		[Category("Behavior")]
+		[CategoryBehavior()]
 		public bool HideDeniedMenuItems {
 			get { return hideMenuItemsIfNotGranted; }
 			set { hideMenuItemsIfNotGranted = value; }

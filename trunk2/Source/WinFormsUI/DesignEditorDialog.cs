@@ -69,7 +69,7 @@ namespace Dataweb.NShape.WinFormsUI {
 		/// <summary>
 		/// Provides access to a <see cref="T:Dataweb.NShape.Project" />.
 		/// </summary>
-		[Category("NShape")]
+		[CategoryNShape()]
 		public Project Project {
 			get { return designController.Project; }
 			set { 

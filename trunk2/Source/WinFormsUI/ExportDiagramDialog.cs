@@ -210,7 +210,7 @@ namespace Dataweb.NShape.WinFormsUI {
 					case ImageFileFormat.EmfPlus:
 						if (exportToClipboard)
 							EmfHelper.PutEnhMetafileOnClipboard(this.Handle, (Metafile)image.Clone());
-						else GdiHelpers.SaveImageToFile(image, filePath, imageFormat, compressionQuality);
+						else GdiHelpers.SaveImage(image, filePath, imageFormat, compressionQuality);
 						break;
 					case ImageFileFormat.Bmp:
 					case ImageFileFormat.Gif:
@@ -219,7 +219,7 @@ namespace Dataweb.NShape.WinFormsUI {
 					case ImageFileFormat.Tiff:
 						if (exportToClipboard)
 							Clipboard.SetImage((Image)image.Clone());
-						else GdiHelpers.SaveImageToFile(image, filePath, imageFormat, compressionQuality);
+						else GdiHelpers.SaveImage(image, filePath, imageFormat, compressionQuality);
 						break;
 					case ImageFileFormat.Svg:
 						throw new NotImplementedException();

@@ -91,6 +91,7 @@ namespace Dataweb.NShape.WinFormsUI {
 			invalidateDelta = handleRadius;
 
 			// used for fixed refresh rate rendering
+			autoScrollTimer.Enabled = false;
 			autoScrollTimer.Interval = 10;
 			autoScrollTimer.Tick += autoScrollTimer_Tick;
 		}
@@ -120,23 +121,7 @@ namespace Dataweb.NShape.WinFormsUI {
 
 		/// <override></override>
 		void IDisplayService.NotifyBoundsChanged() {
-			if (suspendUpdateCounter > 0)
-				boundsChanged = true;
-			else {
-				// Store current display position
-				int origPosX, origPosY;
-				ControlToDiagram(DrawBounds.X, DrawBounds.Y, out origPosX, out origPosY);
-
-				ResetBounds();
-				UpdateScrollBars();
-
-				int newPosX, newPosY;
-				ControlToDiagram(DrawBounds.X, DrawBounds.Y, out newPosX, out newPosY);
-
-				// Scroll to original position
-				ScrollBy(-(newPosX - origPosX), -(newPosY - origPosY));
-				Invalidate();
-			}
+			// Nothing to do. Will be removed soon...
 		}
 
 
@@ -289,8 +274,8 @@ namespace Dataweb.NShape.WinFormsUI {
 		/// <override></override>
 		void IDiagramPresenter.DrawShape(Shape shape) {
 			if (shape == null) throw new ArgumentNullException("shape");
-			if (currentGraphics == null) throw new InvalidOperationException("Calling this method is only allowed while painting.");
-			if (!graphicsIsTransformed) throw new InvalidOperationException("RestoreTransformation has to be called before calling this method.");
+			if (currentGraphics == null) throw new InvalidOperationException(ErrMessageOnlyAllowedWhilePaining);
+			if (!graphicsIsTransformed) throw new InvalidOperationException(ErrMessageRestoreTransformationHasNotBeenCalled);
 			shape.Draw(currentGraphics);
 		}
 
@@ -298,8 +283,8 @@ namespace Dataweb.NShape.WinFormsUI {
 		/// <override></override>
 		void IDiagramPresenter.DrawShapes(IEnumerable<Shape> shapes) {
 			if (shapes == null) throw new ArgumentNullException("shapes");
-			if (currentGraphics == null) throw new InvalidOperationException("Calling this method is only allowed while painting.");
-			if (!graphicsIsTransformed) throw new InvalidOperationException("RestoreTransformation has to be called before calling this method.");
+			if (currentGraphics == null) throw new InvalidOperationException(ErrMessageOnlyAllowedWhilePaining);
+			if (!graphicsIsTransformed) throw new InvalidOperationException(ErrMessageRestoreTransformationHasNotBeenCalled);
 			foreach (Shape shape in shapes)
 				shape.Draw(currentGraphics);
 		}
@@ -347,8 +332,8 @@ namespace Dataweb.NShape.WinFormsUI {
 		/// <override></override>
 		void IDiagramPresenter.DrawShapeOutline(IndicatorDrawMode drawMode, Shape shape) {
 			if (shape == null) throw new ArgumentNullException("shape");
-			if (currentGraphics == null) throw new InvalidOperationException("Calling this method is only allowed while painting.");
-			if (!graphicsIsTransformed) throw new NShapeException("RestoreTransformation has to be called before calling this method.");
+			if (currentGraphics == null) throw new InvalidOperationException(ErrMessageOnlyAllowedWhilePaining);
+			if (!graphicsIsTransformed) throw new NShapeException(ErrMessageRestoreTransformationHasNotBeenCalled);
 			DoDrawShapeOutline(drawMode, shape);
 		}
 
@@ -356,7 +341,7 @@ namespace Dataweb.NShape.WinFormsUI {
 		/// <override></override>
 		void IDiagramPresenter.DrawSnapIndicators(Shape shape) {
 			if (shape == null) throw new ArgumentNullException("shape");
-			if (currentGraphics == null) throw new InvalidOperationException("Calling this method is only allowed while painting.");
+			if (currentGraphics == null) throw new InvalidOperationException(ErrMessageOnlyAllowedWhilePaining);
 			int left = int.MaxValue;
 			int top = int.MaxValue;
 			int right = int.MinValue;
@@ -416,8 +401,8 @@ namespace Dataweb.NShape.WinFormsUI {
 
 		/// <override></override>
 		void IDiagramPresenter.DrawSelectionFrame(Rectangle frameRect) {
-			if (currentGraphics == null) throw new InvalidOperationException("Calling this method is only allowed while painting.");
-			if (graphicsIsTransformed) throw new NShapeException("ResetTransformation has to be called before calling this method.");
+			if (currentGraphics == null) throw new InvalidOperationException(ErrMessageOnlyAllowedWhilePaining);
+			if (graphicsIsTransformed) throw new NShapeException(ErrMessageResetTransformHasNotBeenCalled);
 			DiagramToControl(frameRect, out rectBuffer);
 			if (HighQualityRendering) {
 				currentGraphics.FillRectangle(ToolPreviewBackBrush, rectBuffer);
@@ -431,8 +416,8 @@ namespace Dataweb.NShape.WinFormsUI {
 
 		/// <override></override>
 		void IDiagramPresenter.DrawAnglePreview(Point center, Point mousePos, int cursorId, int startAngle, int sweepAngle) {
-			if (currentGraphics == null) throw new InvalidOperationException("Calling this method is only allowed while painting.");
-			if (graphicsIsTransformed) throw new NShapeException("ResetTransformation has to be called before calling this method.");
+			if (currentGraphics == null) throw new InvalidOperationException(ErrMessageOnlyAllowedWhilePaining);
+			if (graphicsIsTransformed) throw new NShapeException(ErrMessageResetTransformHasNotBeenCalled);
 			// Get cursor size
 			Size cursorSize = registeredCursors[cursorId].Size;
 			// transform diagram coordinates to control coordinates
@@ -523,8 +508,8 @@ namespace Dataweb.NShape.WinFormsUI {
 
 		/// <override></override>
 		void IDiagramPresenter.DrawLine(Point a, Point b) {
-			if (currentGraphics == null) throw new InvalidOperationException("Calling this method is only allowed while painting.");
-			if (graphicsIsTransformed) throw new NShapeException("ResetTransformation has to be called before calling this method.");
+			if (currentGraphics == null) throw new InvalidOperationException(ErrMessageOnlyAllowedWhilePaining);
+			if (graphicsIsTransformed) throw new NShapeException(ErrMessageResetTransformHasNotBeenCalled);
 			DiagramToControl(a, out a);
 			DiagramToControl(b, out b);
 			currentGraphics.DrawLine(outerSnapPen, a, b);
@@ -547,6 +532,12 @@ namespace Dataweb.NShape.WinFormsUI {
 		/// <override></override>
 		void IDiagramPresenter.OpenCaptionEditor(ICaptionedShape shape, int labelIndex, string newText) {
 			DoOpenCaptionEditor(shape, labelIndex, newText);
+		}
+
+
+		/// <override></override>
+		void IDiagramPresenter.CloseCaptionEditor(bool applyChanges) {
+			DoCloseCaptionEditor(applyChanges);
 		}
 
 
@@ -580,6 +571,15 @@ namespace Dataweb.NShape.WinFormsUI {
 		public event EventHandler<DiagramPresenterShapesEventArgs> ShapesRemoved;
 
 		/// <override></override>
+		public event EventHandler<DiagramPresenterShapeEventArgs> ShapeMoved;
+
+		/// <override></override>
+		public event EventHandler<DiagramPresenterShapeEventArgs> ShapeResized;
+
+		/// <override></override>
+		public event EventHandler<DiagramPresenterShapeEventArgs> ShapeRotated;
+
+		/// <override></override>
 		public event EventHandler<LayersEventArgs> LayerVisibilityChanged;
 
 		/// <override></override>
@@ -603,7 +603,7 @@ namespace Dataweb.NShape.WinFormsUI {
 		#region [Public] IDiagramPresenter Properties
 
 		/// <override></override>
-		[Category("NShape")]
+		[CategoryNShape]
 		public DiagramSetController DiagramSetController {
 			get { return diagramSetController; }
 			set {
@@ -624,7 +624,7 @@ namespace Dataweb.NShape.WinFormsUI {
 		/// <override></override>
 		[ReadOnly(true)]
 		[Browsable(false)]
-		[Category("NShape")]
+		[CategoryNShape]
 		public Diagram Diagram {
 			get { return diagramController == null ? null : diagramController.Diagram; }
 			set {
@@ -676,7 +676,7 @@ namespace Dataweb.NShape.WinFormsUI {
 		/// <summary>
 		/// Specifies the version of the assembly containing the component.
 		/// </summary>
-		[Category("NShape")]
+		[CategoryNShape()]
 		[Browsable(true)]
 		public new string ProductVersion {
 			get { return base.ProductVersion; }
@@ -686,7 +686,7 @@ namespace Dataweb.NShape.WinFormsUI {
 		/// <summary>
 		/// The PropertyController for editing shapes, model objects and diagrams.
 		/// </summary>
-		[Category("NShape")]
+		[CategoryNShape()]
 		public PropertyController PropertyController {
 			get { return propertyController; }
 			set { propertyController = value; }
@@ -698,7 +698,7 @@ namespace Dataweb.NShape.WinFormsUI {
 		/// </summary>
 		[ReadOnly(true)]
 		[Browsable(false)]
-		[Category("NShape")]
+		[CategoryNShape()]
 		public Tool ActiveTool {
 			get { return (diagramSetController == null) ? privateTool : diagramSetController.ActiveTool; }
 			set {
@@ -706,6 +706,8 @@ namespace Dataweb.NShape.WinFormsUI {
 				else privateTool = value;
 				if (ActiveTool.MinimumDragDistance != SystemInformation.DoubleClickSize)
 					ActiveTool.MinimumDragDistance = SystemInformation.DoubleClickSize;
+				if (ActiveTool.DoubleClickTime != SystemInformation.DoubleClickTime)
+					ActiveTool.DoubleClickTime = SystemInformation.DoubleClickTime;
 			}
 		}
 
@@ -761,7 +763,7 @@ namespace Dataweb.NShape.WinFormsUI {
 		/// <summary>
 		/// Specifies if MenuItemDefs that are not granted should appear as MenuItems in the dynamic context menu.
 		/// </summary>
-		[Category("Behavior")]
+		[CategoryBehavior()]
 		[DefaultValue(Display.DefaultValueHideMenuItemsIfNotGranted)]
 		public bool HideDeniedMenuItems {
 			get { return hideMenuItemsIfNotGranted; }
@@ -772,7 +774,7 @@ namespace Dataweb.NShape.WinFormsUI {
 		/// <summary>
 		/// Enables or disables zooming with mouse wheel.
 		/// </summary>
-		[Category("Behavior")]
+		[CategoryBehavior()]
 		[DefaultValue(Display.DefaultValueZoomWithMouseWheel)]
 		public bool ZoomWithMouseWheel {
 			get { return zoomWithMouseWheel; }
@@ -783,7 +785,7 @@ namespace Dataweb.NShape.WinFormsUI {
 		/// <summary>
 		/// Shows or hides scroll bars.
 		/// </summary>
-		[Category("Behavior")]
+		[CategoryBehavior()]
 		[DefaultValue(Display.DefaultValueShowScrollBars)]
 		public bool ShowScrollBars {
 			get { return showScrollBars; }
@@ -794,10 +796,10 @@ namespace Dataweb.NShape.WinFormsUI {
 		/// <summary>
 		/// Enables or disables snapping of shapes and control points to grid lines.
 		/// </summary>
-		[Category("Behavior")]
+		[CategoryBehavior()]
 		[DefaultValue(Display.DefaultValueSnapToGrid)]
 		public bool SnapToGrid {
-			get { return (snapToGrid && (Control.ModifierKeys & (Keys.Control | Keys.ControlKey)) == 0); }
+			get { return ((Control.ModifierKeys & (Keys.Control | Keys.ControlKey)) == 0) ? snapToGrid : !snapToGrid; }
 			set { snapToGrid = value; }
 		}
 
@@ -805,7 +807,7 @@ namespace Dataweb.NShape.WinFormsUI {
 		/// <summary>
 		/// Specifies the distance for snapping shapes and control points to grid lines.
 		/// </summary>
-		[Category("Behavior")]
+		[CategoryBehavior()]
 		[DefaultValue(Display.DefaultValueSnapDistance)]
 		public int SnapDistance {
 			get { return snapDistance; }
@@ -817,7 +819,7 @@ namespace Dataweb.NShape.WinFormsUI {
 		/// If true, the standard context menu is created from MenuItemDefs. 
 		/// If false, a user defined context menu is shown without creating additional menu items.
 		/// </summary>
-		[Category("Behavior")]
+		[CategoryBehavior()]
 		[DefaultValue(Display.DefaultValueShowDefaultContextMenu)]
 		public bool ShowDefaultContextMenu {
 			get { return showDefaultContextMenu; }
@@ -828,7 +830,7 @@ namespace Dataweb.NShape.WinFormsUI {
 		/// <summary>
 		/// Specifies the minimum distance of the mouse cursor from the shape's rotate point while rotating.
 		/// </summary>
-		[Category("Behavior")]
+		[CategoryBehavior()]
 		[DefaultValue(Display.DefaultValueMinRotateDistance)]
 		public int MinRotateRange {
 			get { return minRotateDistance; }
@@ -843,12 +845,12 @@ namespace Dataweb.NShape.WinFormsUI {
 		/// <summary>
 		/// Zoom in percentage.
 		/// </summary>
-		[Category("Appearance")]
+		[CategoryAppearance()]
 		[DefaultValue(Display.DefaultValueZoomLevel)]
 		public int ZoomLevel {
 			get { return zoomLevel; }
 			set {
-				if (value < 0) throw new NShapeException("NotSupported value: Value has to be greater than 0.");
+				if (value < 0) throw new NShapeException("Unsupported value: Value has to be greater than 0.");
 				if (zoomLevel != value) {
 					zoomLevel = value;
 					zoomfactor = Math.Max(value / 100f, 0.001f);
@@ -869,7 +871,7 @@ namespace Dataweb.NShape.WinFormsUI {
 		/// <summary>
 		/// Specifies the distance between the grid lines.
 		/// </summary>
-		[Category("Appearance")]
+		[CategoryAppearance()]
 		[DefaultValue(Display.DefaultValueGridSize)]
 		public int GridSize {
 			get { return this.gridSpace; }
@@ -886,7 +888,7 @@ namespace Dataweb.NShape.WinFormsUI {
 		/// <summary>
 		/// The radius of a control point grip from the center to the outer handle bound.
 		/// </summary>
-		[Category("Appearance")]
+		[CategoryAppearance()]
 		[DefaultValue(Display.DefaultValueGripSize)]
 		public int GripSize {
 			get { return handleRadius; }
@@ -918,7 +920,7 @@ namespace Dataweb.NShape.WinFormsUI {
 		/// <summary>
 		/// Specifies whether grid lines should be visible.
 		/// </summary>
-		[Category("Appearance")]
+		[CategoryAppearance()]
 		[DefaultValue(Display.DefaultValueShowGrid)]
 		public bool IsGridVisible {
 			get { return gridVisible; }
@@ -930,7 +932,7 @@ namespace Dataweb.NShape.WinFormsUI {
 
 
 		/// <summary>Specifies whether the diagram sheet (including its shadow) is visible or not.</summary>
-		[Category("Appearance")]
+		[CategoryAppearance()]
 		[DefaultValue(true)]
 		public bool IsSheetVisible {
 			get { return drawDiagramSheet; }
@@ -956,7 +958,7 @@ namespace Dataweb.NShape.WinFormsUI {
 		/// <summary>
 		/// Specifies whether grid lines should be visible.
 		/// </summary>
-		[Category("Appearance")]
+		[CategoryAppearance()]
 		[Browsable(false)]
 		[ReadOnly(true)]
 		public bool IsDebugInfoInvalidateVisible {
@@ -999,7 +1001,7 @@ namespace Dataweb.NShape.WinFormsUI {
 		/// <summary>
 		/// Specifies whether grid lines should be visible.
 		/// </summary>
-		[Category("Appearance")]
+		[CategoryAppearance()]
 		[Browsable(false)]
 		[ReadOnly(true)]
 		public bool IsDebugInfoCellOccupationVisible {
@@ -1016,7 +1018,7 @@ namespace Dataweb.NShape.WinFormsUI {
 		/// <summary>
 		/// Specifies whether high quality rendering settings should be allpied.
 		/// </summary>
-		[Category("Appearance")]
+		[CategoryAppearance()]
 		[DefaultValue(Display.DefaultValueHighQualityRendering)]
 		public bool HighQualityRendering {
 			get { return highQualityRendering; }
@@ -1033,7 +1035,7 @@ namespace Dataweb.NShape.WinFormsUI {
 		/// <summary>
 		/// Specifies whether the control's background should bew rendered in high quality.
 		/// </summary>
-		[Category("Appearance")]
+		[CategoryAppearance()]
 		[DefaultValue(Display.DefaultValueHighQualityBackground)]
 		public bool HighQualityBackground {
 			get { return highQualityBackground; }
@@ -1051,7 +1053,7 @@ namespace Dataweb.NShape.WinFormsUI {
 		/// <summary>
 		/// Specifies the shape of grips used for resizing shapes.
 		/// </summary>
-		[Category("Appearance")]
+		[CategoryAppearance()]
 		[DefaultValue(Display.DefaultValueResizePointShape)]
 		public ControlPointShape ResizeGripShape {
 			get { return resizePointShape; }
@@ -1066,7 +1068,7 @@ namespace Dataweb.NShape.WinFormsUI {
 		/// <summary>
 		/// Specifies the shape of connection points provided by a shape.
 		/// </summary>
-		[Category("Appearance")]
+		[CategoryAppearance()]
 		[DefaultValue(Display.DefaultValueConnectionPointShape)]
 		public ControlPointShape ConnectionPointShape {
 			get { return connectionPointShape; }
@@ -1081,7 +1083,7 @@ namespace Dataweb.NShape.WinFormsUI {
 		/// <summary>
 		/// Specifies the angle of the background color gradient.
 		/// </summary>
-		[Category("Appearance")]
+		[CategoryAppearance()]
 		[DefaultValue(Display.DefaultValueBackgroundGradientAngle)]
 		public int BackgroundGradientAngle {
 			get { return controlBrushGradientAngle; }
@@ -1099,7 +1101,7 @@ namespace Dataweb.NShape.WinFormsUI {
 		/// <summary>
 		/// Specifies the control's background color. This defines also the base color of the color gradient.
 		/// </summary>
-		[Category("Appearance")]
+		[CategoryAppearance()]
 		//[DefaultValue(Display.DefaultValueBackColor)]
 		public override Color BackColor {
 			get { return base.BackColor; }
@@ -1115,7 +1117,7 @@ namespace Dataweb.NShape.WinFormsUI {
 		/// <summary>
 		/// Specifies the gradient color of the background color gradient.
 		/// </summary>
-		[Category("Appearance")]
+		[CategoryAppearance()]
 		//[DefaultValue(Display.DefaultValueBackColorGradient)]
 		public Color BackColorGradient {
 			get { return gradientBackColor; }
@@ -1130,7 +1132,7 @@ namespace Dataweb.NShape.WinFormsUI {
 		/// <summary>
 		/// Specifies the transparency of the grid lines.
 		/// </summary>
-		[Category("Appearance")]
+		[CategoryAppearance()]
 		[DefaultValue(Display.DefaultValueGridAlpha)]
 		public byte GridAlpha {
 			get { return gridAlpha; }
@@ -1145,7 +1147,7 @@ namespace Dataweb.NShape.WinFormsUI {
 		/// <summary>
 		/// Specifies the transparenc of control point grips.
 		/// </summary>
-		[Category("Appearance")]
+		[CategoryAppearance()]
 		[DefaultValue(Display.DefaultValueSelectionAlpha)]
 		public byte ControlPointAlpha {
 			get { return selectionAlpha; }
@@ -1164,7 +1166,7 @@ namespace Dataweb.NShape.WinFormsUI {
 		/// <summary>
 		/// Specifies the color of the grid lines.
 		/// </summary>
-		[Category("Appearance")]
+		[CategoryAppearance()]
 		public Color GridColor {
 			get { return gridColor; }
 			set {
@@ -1178,7 +1180,7 @@ namespace Dataweb.NShape.WinFormsUI {
 		/// <summary>
 		/// Specifies the inner color of the selection indicator.
 		/// </summary>
-		[Category("Appearance")]
+		[CategoryAppearance()]
 		public Color SelectionInteriorColor {
 			get { return selectionInteriorColor; }
 			set {
@@ -1198,7 +1200,7 @@ namespace Dataweb.NShape.WinFormsUI {
 		/// <summary>
 		/// Specifies the color of the selection indicator.
 		/// </summary>
-		[Category("Appearance")]
+		[CategoryAppearance()]
 		public Color SelectionNormalColor {
 			get { return selectionNormalColor; }
 			set {
@@ -1212,7 +1214,7 @@ namespace Dataweb.NShape.WinFormsUI {
 		/// <summary>
 		/// Specifies the color of a highlighted selection.
 		/// </summary>
-		[Category("Appearance")]
+		[CategoryAppearance()]
 		public Color SelectionHilightColor {
 			get { return selectionHilightColor; }
 			set {
@@ -1226,7 +1228,7 @@ namespace Dataweb.NShape.WinFormsUI {
 		/// <summary>
 		/// Specifies the color of an inactive/deactivated selection.
 		/// </summary>
-		[Category("Appearance")]
+		[CategoryAppearance()]
 		public Color SelectionInactiveColor {
 			get { return selectionInactiveColor; }
 			set {
@@ -1240,7 +1242,7 @@ namespace Dataweb.NShape.WinFormsUI {
 		/// <summary>
 		/// Specifies the color of tool preview hints.
 		/// </summary>
-		[Category("Appearance")]
+		[CategoryAppearance()]
 		public Color ToolPreviewColor {
 			get { return toolPreviewColor; }
 			set {
@@ -1258,7 +1260,7 @@ namespace Dataweb.NShape.WinFormsUI {
 		/// <summary>
 		/// Specifies the color the background color of tool preview hints.
 		/// </summary>
-		[Category("Appearance")]
+		[CategoryAppearance()]
 		public Color ToolPreviewBackColor {
 			get { return toolPreviewBackColor; }
 			set {
@@ -1272,7 +1274,7 @@ namespace Dataweb.NShape.WinFormsUI {
 		/// <summary>
 		/// Specifies the rendering quality in high quality mode
 		/// </summary>
-		[Category("Appearance")]
+		[CategoryAppearance()]
 		[DefaultValue(Display.DefaultValueRenderingQualityHigh)]
 		public RenderingQuality RenderingQualityHighQuality {
 			get { return renderingQualityHigh; }
@@ -1289,7 +1291,7 @@ namespace Dataweb.NShape.WinFormsUI {
 		/// <summary>
 		/// Specifies the rendering quality in low quality mode
 		/// </summary>
-		[Category("Appearance")]
+		[CategoryAppearance()]
 		[DefaultValue(Display.DefaultValueRenderingQualityLow)]
 		public RenderingQuality RenderingQualityLowQuality {
 			get { return renderingQualityLow; }
@@ -1671,7 +1673,7 @@ namespace Dataweb.NShape.WinFormsUI {
 				Shape shapeUnderCursor = Diagram.Shapes.FindShape(mousePos.X, mousePos.Y, ControlPointCapabilities.None, 0, null);
 				bool modelObjectsAssigned = ModelObjectsAssigned(selectedShapes);
 
-				#region Context menu structure
+				#region Context menu structure of the display specific context menu
 				// Select...
 				// Bring to front
 				// Send to bottom
@@ -1698,7 +1700,8 @@ namespace Dataweb.NShape.WinFormsUI {
 				#endregion
 
 				// Create a action group
-				yield return new GroupMenuItemDef("Select...", null, "Select or unselect Shapes", true,
+				yield return new GroupMenuItemDef(Properties.Resources.CaptionTxt_GroupSelect, null, 
+					Properties.Resources.TooltipTxt_GroupSelect, true,
 					new MenuItemDef[] {
 						CreateSelectAllMenuItemDef(),
 						CreateSelectByTemplateMenuItemDef(shapeUnderCursor),
@@ -1752,7 +1755,7 @@ namespace Dataweb.NShape.WinFormsUI {
 		public void InsertShapes(IEnumerable<Shape> shapes) {
 			if (Diagram != null) {
 				DiagramSetController.InsertShapes(Diagram, shapes, ActiveLayers, true);
-				OnShapesInserted(new DiagramPresenterShapesEventArgs(shapes));
+				OnShapesInserted(GetShapesEventArgs(shapes));
 				SelectShapes(shapes, false);
 			}
 		}
@@ -1804,7 +1807,7 @@ namespace Dataweb.NShape.WinFormsUI {
 		public void DeleteShapes(IEnumerable<Shape> shapes, bool withModelObejcts) {
 			if (Diagram != null) {
 				DiagramSetController.DeleteShapes(Diagram, shapes, withModelObejcts);
-				OnShapesRemoved(new DiagramPresenterShapesEventArgs(shapes));
+				OnShapesRemoved(GetShapesEventArgs(shapes));
 				UnselectShapes(shapes);
 			}
 		}
@@ -2124,7 +2127,10 @@ namespace Dataweb.NShape.WinFormsUI {
 					UnregisterDiagramControllerEvents();
 					if (diagramController.Diagram != null) {
 						diagramSetController.CloseDiagram(diagramController.Diagram);
-						if (diagramController.Diagram != null) diagramController.Diagram = null;
+						if (diagramController.Diagram != null) {
+							UnregisterDiagramEvents();
+							diagramController.Diagram = null;
+						}
 						diagramController = null;
 						Clear();
 					}
@@ -2132,7 +2138,10 @@ namespace Dataweb.NShape.WinFormsUI {
 				diagramController = value;
 				if (diagramController != null) {
 					RegisterDiagramControllerEvents();
-					if (diagramController.Diagram != null) DisplayDiagram();
+					if (diagramController.Diagram != null) {
+						RegisterDiagramEvents();
+						DisplayDiagram();
+					}
 				}
 			}
 		}
@@ -2197,15 +2206,11 @@ namespace Dataweb.NShape.WinFormsUI {
 
 		/// <ToBeCompleted></ToBeCompleted>
 		protected virtual void OnUserMessage(UserMessageEventArgs eventArgs) {
-			if (UserMessage != null) UserMessage(this, eventArgs);
-			else {
+			if (UserMessage == null) {
 				string msgFormatStr = "{0}{1}{1}In order to show this message in the correct context, handle the {2}.UserMessage event.";
-				throw new WarningException(string.Format(
-														msgFormatStr,
-														eventArgs.MessageText,
-														Environment.NewLine,
-														GetType().FullName));
-			}
+				throw new WarningException(string.Format(msgFormatStr, eventArgs.MessageText, Environment.NewLine, GetType().FullName));
+			} else 
+				UserMessage(this, eventArgs);
 		}
 
 		#endregion
@@ -2280,7 +2285,7 @@ namespace Dataweb.NShape.WinFormsUI {
 			else {
 				if (ActiveTool != null) {
 					try {
-						if (ActiveTool.ProcessMouseEvent(this, WinFormHelpers.GetMouseEventArgs(MouseEventType.MouseDown, e, DrawBounds)))
+						if (ActiveTool.ProcessMouseEvent(this, WinFormHelpers.GetMouseEventArgs(this, MouseEventType.MouseDown, e, DrawBounds)))
 							mouseEventWasHandled = true;
 					} catch (Exception exc) {
 						ActiveTool.Cancel();
@@ -2335,7 +2340,7 @@ namespace Dataweb.NShape.WinFormsUI {
 				if (ActiveTool != null && !ScrollBarContainsPoint(e.Location)) {
 					try {
 						//Console.WriteLine("[{0}]\t Tool.ProcessMouseEvent calling", DateTime.Now.ToString("HH:mm:ss.ffff"));
-						if (ActiveTool.ProcessMouseEvent(this, WinFormHelpers.GetMouseEventArgs(MouseEventType.MouseMove, e, DrawBounds)))
+						if (ActiveTool.ProcessMouseEvent(this, WinFormHelpers.GetMouseEventArgs(this, MouseEventType.MouseMove, e, DrawBounds)))
 							mouseEventWasHandled = true;
 						//Console.WriteLine("[{0}]\t Tool.ProcessMouseEvent finished", DateTime.Now.ToString("HH:mm:ss.ffff"));
 
@@ -2362,10 +2367,11 @@ namespace Dataweb.NShape.WinFormsUI {
 		/// <override></override>
 		protected override void OnMouseUp(MouseEventArgs e) {
 			base.OnMouseUp(e);
-			this.Focus();
+			if (!this.Focused)
+				this.Focus();
 			if (ActiveTool != null && !ScrollBarContainsPoint(e.Location)) {
 				try {
-					if (ActiveTool.ProcessMouseEvent(this, WinFormHelpers.GetMouseEventArgs(MouseEventType.MouseUp, e, DrawBounds)))
+					if (ActiveTool.ProcessMouseEvent(this, WinFormHelpers.GetMouseEventArgs(this, MouseEventType.MouseUp, e, DrawBounds)))
 						mouseEventWasHandled = true;
 				} catch (Exception exc) {
 					ActiveTool.Cancel();
@@ -2896,8 +2902,8 @@ namespace Dataweb.NShape.WinFormsUI {
 		/// Draws a resize grip at the given position.
 		/// </summary>
 		protected virtual void DrawResizeGripCore(int x, int y, IndicatorDrawMode drawMode) {
-			if (currentGraphics == null) throw new InvalidOperationException("Calling this method is only allowed while painting.");
-			if (graphicsIsTransformed) throw new NShapeException("ResetTransformation has to be called before calling this method.");
+			if (currentGraphics == null) throw new InvalidOperationException(ErrMessageOnlyAllowedWhilePaining);
+			if (graphicsIsTransformed) throw new NShapeException(ErrMessageResetTransformHasNotBeenCalled);
 			if (HighQualityRendering) {
 				Pen handlePen = null;
 				Brush handleBrush = null;
@@ -2931,8 +2937,8 @@ namespace Dataweb.NShape.WinFormsUI {
 		/// Draws a resize grip at the given position.
 		/// </summary>
 		protected virtual void DrawRotateGripCore(int x, int y, IndicatorDrawMode drawMode) {
-			if (currentGraphics == null) throw new InvalidOperationException("Calling this method is only allowed while painting.");
-			if (graphicsIsTransformed) throw new NShapeException("ResetTransformation has to be called before calling this method.");
+			if (currentGraphics == null) throw new InvalidOperationException(ErrMessageOnlyAllowedWhilePaining);
+			if (graphicsIsTransformed) throw new NShapeException(ErrMessageResetTransformHasNotBeenCalled);
 			if (HighQualityRendering) {
 				Pen handlePen = null;
 				Brush handleBrush = null;
@@ -2979,8 +2985,8 @@ namespace Dataweb.NShape.WinFormsUI {
 		/// If the connection point is a is point-to-shape connected glue point, the outline of the connected shape will be highlighted.
 		/// </summary>
 		protected virtual void DrawConnectionPointCore(int x, int y, IndicatorDrawMode drawMode, bool isResizeGrip, ShapeConnectionInfo connection) {
-			if (currentGraphics == null) throw new InvalidOperationException("Calling this method is only allowed while painting.");
-			if (graphicsIsTransformed) throw new NShapeException("ResetTransformation has to be called before calling this method.");
+			if (currentGraphics == null) throw new InvalidOperationException(ErrMessageOnlyAllowedWhilePaining);
+			if (graphicsIsTransformed) throw new NShapeException(ErrMessageResetTransformHasNotBeenCalled);
 			if (HighQualityRendering) {
 				int hdlRad;
 				Pen handlePen = null;
@@ -3055,7 +3061,7 @@ namespace Dataweb.NShape.WinFormsUI {
 			set {
 				if (currentGraphics != null) {
 					if (value != null) 
-						throw new InvalidOperationException("currentGraphics is not null. " +
+						throw new InvalidOperationException("Current graphics is not null. " +
 							"If this happens in the WinForms Designer, make sure your application's target framework is not a 'Client Profile' framework version.");
 					graphicsIsTransformed = false;
 				}
@@ -3341,7 +3347,7 @@ namespace Dataweb.NShape.WinFormsUI {
 
 
 		private void DoRestoreTransformation() {
-			if (currentGraphics == null) throw new InvalidOperationException("Calling this method is only allowed while painting.");
+			if (currentGraphics == null) throw new InvalidOperationException(ErrMessageOnlyAllowedWhilePaining);
 			if (graphicsIsTransformed) throw new InvalidOperationException("Graphics context is already transformed.");
 			// transform graphics object
 			currentGraphics.ScaleTransform(zoomfactor, zoomfactor, MatrixOrder.Prepend);
@@ -3352,7 +3358,7 @@ namespace Dataweb.NShape.WinFormsUI {
 
 
 		private void DoResetTransformation() {
-			if (currentGraphics == null) throw new InvalidOperationException("Calling this method is only allowed while painting.");
+			if (currentGraphics == null) throw new InvalidOperationException(ErrMessageOnlyAllowedWhilePaining);
 			if (!graphicsIsTransformed) throw new InvalidOperationException("Graphics context is not transformed.");
 			Debug.Assert(graphicsIsTransformed);
 			currentGraphics.ResetTransform();
@@ -3369,7 +3375,7 @@ namespace Dataweb.NShape.WinFormsUI {
 		/// </summary>
 		private void DoDrawCaptionBounds(IndicatorDrawMode drawMode, ICaptionedShape shape) {
 			if (shape == null) throw new ArgumentNullException("shape");
-			if (graphicsIsTransformed) throw new NShapeException("ResetTransformation has to be called before calling this method.");
+			if (graphicsIsTransformed) throw new NShapeException(ErrMessageResetTransformHasNotBeenCalled);
 			if (Project.SecurityManager.IsGranted(Permission.Data, (Shape)shape)) {
 				for (int i = shape.CaptionCount - 1; i >= 0; --i)
 					DoDrawCaptionBounds(drawMode, shape, i);
@@ -3379,8 +3385,8 @@ namespace Dataweb.NShape.WinFormsUI {
 
 		private void DoDrawCaptionBounds(IndicatorDrawMode drawMode, ICaptionedShape shape, int captionIndex) {
 			if (shape == null) throw new ArgumentNullException("shape");
-			if (currentGraphics == null) throw new InvalidOperationException("Calling this method is only allowed while painting.");
-			if (graphicsIsTransformed) throw new NShapeException("ResetTransformation has to be called before calling this method.");
+			if (currentGraphics == null) throw new InvalidOperationException(ErrMessageOnlyAllowedWhilePaining);
+			if (graphicsIsTransformed) throw new NShapeException(ErrMessageResetTransformHasNotBeenCalled);
 			// Skip shapes that are not visible
 			if (!IsLayerVisible(((Shape)shape).Layers))
 				return;
@@ -3421,11 +3427,11 @@ namespace Dataweb.NShape.WinFormsUI {
 
 		private void DoDrawControlPoints(Shape shape, ControlPointCapabilities capabilities, IndicatorDrawMode drawMode) {
 			if (shape == null) throw new ArgumentNullException("shape");
-			if (graphicsIsTransformed) throw new NShapeException("ResetTransformation has to be called before calling this method.");
+			if (graphicsIsTransformed) throw new NShapeException(ErrMessageResetTransformHasNotBeenCalled);
 			Point p = Point.Empty;
 			if (!IsLayerVisible(((Shape)shape).Layers))
 				return;
-			// first, draw Resize- and ConnectionPoints
+			// First, draw Resize- and ConnectionPoints
 			foreach (ControlPointId id in shape.GetControlPointIds(capabilities)) {
 				if (id == ControlPointId.Reference) continue;
 
@@ -3441,10 +3447,12 @@ namespace Dataweb.NShape.WinFormsUI {
 				} else if (isResizeGrip)
 					DrawResizeGripCore(p.X, p.Y, drawMode);
 			}
-			// draw the roation point on top of all other points
-			foreach (ControlPointId id in shape.GetControlPointIds(ControlPointCapabilities.Rotate)) {
-				p = shape.GetControlPointPosition(id);
-				DrawRotateGripCore(p.X, p.Y, drawMode);
+			// Draw the roation point on top of all other points
+			if ((capabilities & ControlPointCapabilities.Rotate) != 0) {
+				foreach (ControlPointId id in shape.GetControlPointIds(ControlPointCapabilities.Rotate)) {
+					p = shape.GetControlPointPosition(id);
+					DrawRotateGripCore(p.X, p.Y, drawMode);
+				}
 			}
 		}
 
@@ -3495,7 +3503,7 @@ namespace Dataweb.NShape.WinFormsUI {
 		/// Translates and draws the given ControlPoint path at the given position (diagram coordinates).
 		/// </summary>
 		private void DoDrawControlPointPath(GraphicsPath path, int x, int y, Pen pen, Brush brush) {
-			if (currentGraphics == null) throw new InvalidOperationException("Calling this method is only allowed while painting.");
+			if (currentGraphics == null) throw new InvalidOperationException(ErrMessageOnlyAllowedWhilePaining);
 			// transform the given 
 			DiagramToControl(x, y, out x, out y);
 
@@ -3732,7 +3740,7 @@ namespace Dataweb.NShape.WinFormsUI {
 				if (Geometry.RectangleIntersectsWithRectangle(shapeBounds, clipRectBuffer)) {
 					// ToDo:  (not sure if we want these features)
 					// * Should DrawShapeOutline(...) draw LinearShapes with LineCaps? (It doesn't at the moment)
-					// * If the selected shape implements ILinearShape, try to get it's LineCaps
+					// * If the selected shape implements ILinearShape, try to get its LineCaps
 					// * Find a way how to obtain the CustomLineCaps from the ToolCache without knowing if a line has CapStyles properties...
 
 					// Draw Shape's Outline
@@ -3740,20 +3748,41 @@ namespace Dataweb.NShape.WinFormsUI {
 				} //else Debug.Print("{0} does not intersect with clipping rectangle {1}", shape.Type.Name, clipRectBuffer);
 			}
 
-			// Now draw Handles, caption bounds, etc
+			// Determine the type of handles to draw
 			ControlPointCapabilities capabilities = ControlPointCapabilities.None;
 			if (selectedShapes.Count == 1) capabilities = ControlPointCapabilities.All; //ControlPointCapabilities.Rotate | ControlPointCapabilities.Glue | ControlPointCapabilities.Resize | ControlPointCapabilities.Movable | ControlPointCapabilities.Connect;
-			else if (selectedShapes.Count > 1) capabilities = ControlPointCapabilities.Rotate;
-			if (selectedShapes.Count > 0) {
-				DoResetTransformation();
-				foreach (Shape shape in SelectedShapes.BottomUp) {
-					if (shape.DisplayService != this) {
-						Debug.Fail("Invalid display service!");
-						continue;
+			else if (selectedShapes.Count > 1) {
+				// Determine the common control points
+				capabilities = ControlPointCapabilities.None;
+				if (selectedShapes.TopMost is IPlanarShape) {
+					capabilities = ControlPointCapabilities.Rotate | ControlPointCapabilities.Resize;
+					// If all selected shapes are of the same type, highlight all handles.
+					// Otherwise only the rotate handle
+					ShapeType shapeType = selectedShapes.TopMost.Type;
+					foreach (Shape s in selectedShapes) {
+						// Clear all capabilities and break is a linear shape was found
+						if (s is ILinearShape) {
+							capabilities = ControlPointCapabilities.None;
+							break;
+						}
+						// Remove the resize capability if shape type does not match
+						if (s.Type != shapeType && (capabilities & ControlPointCapabilities.Resize) != 0)
+							capabilities ^= ControlPointCapabilities.Resize;
 					}
-					if (shape.Layers != LayerIds.None && (shape.Layers & visibleLayers) == 0) continue;
-					Rectangle shapeBounds = shape.GetBoundingRectangle(false);
-					if (Geometry.RectangleIntersectsWithRectangle(shapeBounds, clipRectBuffer)) {
+				}
+			}
+
+			// Now draw Handles, caption bounds, etc
+			if (selectedShapes.Count > 0) {
+			    DoResetTransformation();
+			    foreach (Shape shape in SelectedShapes.BottomUp) {
+			        if (shape.DisplayService != this) {
+						Debug.Fail("Invalid display service!");
+			            continue;
+			        }
+			        if (shape.Layers != LayerIds.None && (shape.Layers & visibleLayers) == 0) continue;
+			        Rectangle shapeBounds = shape.GetBoundingRectangle(false);
+			        if (Geometry.RectangleIntersectsWithRectangle(shapeBounds, clipRectBuffer)) {
 						// Draw ControlPoints
 						DoDrawControlPoints(shape, capabilities);
 						// Draw CaptionTextBounds / InPlaceTextBox
@@ -4055,34 +4084,21 @@ namespace Dataweb.NShape.WinFormsUI {
 		}
 
 
-		private void DoOpenCaptionEditor(ICaptionedShape shape, int captionIndex, string newText) {
-			if (shape == null) throw new ArgumentNullException("shape");
+		private void DoOpenCaptionEditor(ICaptionedShape captionedShape, int captionIndex, string newText) {
+			if (captionedShape == null) throw new ArgumentNullException("captionedShape");
 			if (captionIndex < 0) throw new ArgumentOutOfRangeException("labelIndex");
-			inplaceShape = shape;
+			inplaceShape = captionedShape;
 			inplaceCaptionIndex = captionIndex;
-			inplaceCharacterStyle = shape.GetCaptionCharacterStyle(captionIndex);
 
-			// Store caption's current text
-			string currentText = shape.GetCaptionText(inplaceCaptionIndex);
+			// Store (and hide) caption's current text
+			string currentText = captionedShape.GetCaptionText(inplaceCaptionIndex);
+			captionedShape.HideCaptionText(inplaceCaptionIndex);
 
 			// Create and show inplace text editor
 			inplaceTextbox = new InPlaceTextBox(this, inplaceShape, inplaceCaptionIndex, currentText, newText);
 			inplaceTextbox.KeyDown += inPlaceTextBox_KeyDown;
 			inplaceTextbox.Leave += inPlaceTextBox_Leave;
 			inplaceTextbox.ShortcutsEnabled = true;
-
-			// Copy the shape's character style and make it transparent
-			if (invisibleCharStyle == null)
-				invisibleCharStyle = new CharacterStyle(Guid.NewGuid().ToString());
-			else ToolCache.NotifyStyleChanged(invisibleCharStyle);
-			invisibleCharStyle.Title = inplaceCharacterStyle.Title;
-			invisibleCharStyle.ColorStyle = transparentColorStyle;
-			invisibleCharStyle.FontName = inplaceCharacterStyle.FontName;
-			invisibleCharStyle.SizeInPoints = inplaceCharacterStyle.SizeInPoints;
-			invisibleCharStyle.Style = inplaceCharacterStyle.Style;
-
-			// Assign transparent character style
-			shape.SetCaptionCharacterStyle(inplaceCaptionIndex, invisibleCharStyle);
 
 			// Show caption editor
 			this.Controls.Add(inplaceTextbox);
@@ -4096,6 +4112,9 @@ namespace Dataweb.NShape.WinFormsUI {
 		/// </summary>
 		private void DoCloseCaptionEditor(bool saveChanges) {
 			if (inplaceTextbox != null) {
+				// Hide text editor
+				inplaceTextbox.Hide();
+
 				// End editing
 				if (saveChanges) {
 					if (inplaceTextbox.Text != inplaceTextbox.OriginalText) {
@@ -4105,8 +4124,8 @@ namespace Dataweb.NShape.WinFormsUI {
 						inplaceShape.SetCaptionText(inplaceCaptionIndex, inplaceTextbox.Text);
 				} else 
 					inplaceShape.SetCaptionText(inplaceCaptionIndex, inplaceTextbox.OriginalText);
-				inplaceShape.SetCaptionCharacterStyle(inplaceCaptionIndex, inplaceCharacterStyle);
-				inplaceCharacterStyle = null;
+				// Show hidden caption text
+				inplaceShape.ShowCaptionText(inplaceCaptionIndex);
 
 				// Clean up
 				inplaceTextbox.KeyDown -= inPlaceTextBox_KeyDown;
@@ -4615,8 +4634,8 @@ namespace Dataweb.NShape.WinFormsUI {
 				// Raise event (if a clicked shape was found)
 				if (clickedShape != null) {
 					if (isDoubleClickEvent)
-						OnShapeDoubleClick(new DiagramPresenterShapeClickEventArgs(clickedShape, WinFormHelpers.GetMouseEventArgs(MouseEventType.MouseUp, eventArgs)));
-					else OnShapeClick(new DiagramPresenterShapeClickEventArgs(clickedShape, WinFormHelpers.GetMouseEventArgs(MouseEventType.MouseUp, eventArgs)));
+						OnShapeDoubleClick(new DiagramPresenterShapeClickEventArgs(clickedShape, WinFormHelpers.GetMouseEventArgs(this, MouseEventType.MouseUp, eventArgs)));
+					else OnShapeClick(new DiagramPresenterShapeClickEventArgs(clickedShape, WinFormHelpers.GetMouseEventArgs(this, MouseEventType.MouseUp, eventArgs)));
 				}
 			}
 		}
@@ -4704,21 +4723,27 @@ namespace Dataweb.NShape.WinFormsUI {
 
 		#region [Private] Methods: Creating MenuItemDefs
 
+		private string GetShapeDisplayName(Shape shape) {
+			if (shape == null) throw new ArgumentNullException("shape");
+			return (shape.Template != null) ? string.Format("'{0}'", shape.Template.Title) : shape.Type.Name;
+		}
+
+
 		private MenuItemDef CreateSelectAllMenuItemDef() {
 			bool isFeasible = selectedShapes.Count != Diagram.Shapes.Count;
-			string description = isFeasible ? "Select all shapes of the diagram"
-				: "All shapes of the diagram are selected";
+			string description = isFeasible ? Properties.Resources.TooltipTxt_SelectAllShapesOfTheDiagram
+				: Properties.Resources.TooltipTxt_AllShapesOfTheDiagramAreSelected;
 
-			return new DelegateMenuItemDef("Select all", null, description, isFeasible, Permission.None,
+			return new DelegateMenuItemDef(Properties.Resources.CaptionTxt_SelectAll, null, description, isFeasible, Permission.None,
 					(action, project) => SelectAll());
 		}
 
 
 		private MenuItemDef CreateUnselectAllMenuItemDef() {
 			bool isFeasible = selectedShapes.Count > 0;
-			string description = isFeasible ? "Unselect all selected shapes" : "No shapes selected";
+			string description = isFeasible ? Properties.Resources.TooltipTxt_UnselectAllSelectedShapes : Properties.Resources.TooltipTxt_NoShapesSelected;
 
-			return new DelegateMenuItemDef("Unselect all", null, description, isFeasible, Permission.None,
+			return new DelegateMenuItemDef(Properties.Resources.CaptionTxt_UnselectAll, null, description, isFeasible, Permission.None,
 				(action, project) => UnselectAll());
 		}
 
@@ -4727,12 +4752,12 @@ namespace Dataweb.NShape.WinFormsUI {
 			bool isFeasible = shapeUnderCursor != null;
 			string description;
 			if (isFeasible)
-				description = string.Format("Select all shapes of type '{0}' in the diagram", shapeUnderCursor.Type.Name);
-			else description = noShapeUnderCursor;
+				description = string.Format(Properties.Resources.TooltipFmt_SelectAllShapesOfType0InTheDiagram, shapeUnderCursor.Type.Name);
+			else description = Properties.Resources.TooltipTxt_NoShapeUnderTheMouseCursor;
 
 			return new DelegateMenuItemDef(
-				(shapeUnderCursor == null) ? "Select all shapes of a type"
-				: string.Format("Select all shapes of type '{0}'", shapeUnderCursor.Type.Name),
+				(shapeUnderCursor == null) ? Properties.Resources.CaptionTxt_SelectAllShapesOfAType
+				: string.Format(Properties.Resources.CaptionFmt_SelectAllShapesOfType0, shapeUnderCursor.Type.Name),
 				null, description, isFeasible, Permission.None,
 				(action, project) => SelectShapes(shapeUnderCursor.Type, MultiSelect));
 		}
@@ -4744,18 +4769,18 @@ namespace Dataweb.NShape.WinFormsUI {
 			string title;
 			if (shapeUnderCursor == null) {
 				isFeasible = false;
-				title = "Select all shapes based on a template";
-				description = noShapeUnderCursor;
+				title = Properties.Resources.CaptionTxt_SelectAllShapesBasedOnATemplate;
+				description = Properties.Resources.TooltipTxt_NoShapeUnderTheMouseCursor;
 			} else if (shapeUnderCursor.Template == null) {
 				isFeasible = false;
-				title = "Select all shapes based on a template";
-				description = "The shape under the cursor is not based on any template";
+				title = Properties.Resources.CaptionTxt_SelectAllShapesBasedOnATemplate;
+				description = Properties.Resources.TooltipTxt_TheShapeUnderTheCursorIsNotBasedOnAnyTemplate;
 			} else {
 				isFeasible = true;
 				string templateTitle = string.IsNullOrEmpty(shapeUnderCursor.Template.Title) ?
 					shapeUnderCursor.Template.Name : shapeUnderCursor.Template.Title;
-				title = string.Format("Select all shapes based on template '{0}'", templateTitle);
-				description = string.Format("Select all shapes of the diagram based on template '{0}'", templateTitle);
+				title = string.Format(Properties.Resources.CaptionFmt_SelectAllShapesBasedOnTemplate0, templateTitle);
+				description = string.Format(Properties.Resources.TooltipFmt_SelectAllShapesOfTheDiagramBasedOnTemplate0, templateTitle);
 			}
 
 			return new DelegateMenuItemDef(title, null, description, isFeasible, Permission.None,
@@ -4767,10 +4792,10 @@ namespace Dataweb.NShape.WinFormsUI {
 			bool isFeasible = shapes.Count == 1;
 			string description;
 			if (isFeasible)
-				description = string.Format("Show information for {0} '{1}' ", shapes.TopMost.Type.Name, shapes.TopMost.Template);
-			else description = shapes.Count > 0 ? "More than 1 shape selected" : noShapesSelectedText;
+				description = string.Format(Properties.Resources.TooltipFmt_ShowInformationFor01, shapes.TopMost.Type.Name, shapes.TopMost.Template);
+			else description = shapes.Count > 0 ? Properties.Resources.TooltipFmt_MoreThan1ShapeSelected : Properties.Resources.TooltipTxt_NoShapesSelected;
 
-			return new DelegateMenuItemDef("Shape Info", Properties.Resources.Information, description,
+			return new DelegateMenuItemDef(Properties.Resources.CaptionTxt_ShapeInfo, Properties.Resources.Information, description,
 				isFeasible, Permission.None, shapes, (a, p) => {
 					using (ShapeInfoDialog dlg = new ShapeInfoDialog(Project, shapes.TopMost))
 						dlg.ShowDialog();
@@ -4783,11 +4808,12 @@ namespace Dataweb.NShape.WinFormsUI {
 			bool isFeasible = diagramSetController.CanLiftShapes(diagram, shapes);
 			string description;
 			if (isFeasible) {
-				if (shapes.Count == 1) description = string.Format("Bring '{0}' to front", shapes.TopMost.Type.Name);
-				else description = string.Format("Bring {0} shapes to foreground", shapes.Count);
-			} else description = noShapesSelectedText;
+				if (shapes.Count == 1) 
+					description = string.Format(Properties.Resources.TooltipFmt_Bring0ToFront, GetShapeDisplayName(shapes.TopMost));
+				else description = string.Format(Properties.Resources.TooltipFmt_Bring0ShapesToFront, shapes.Count);
+			} else description = Properties.Resources.TooltipTxt_NoShapesSelected;
 
-			return new DelegateMenuItemDef("Bring to Front", Properties.Resources.ToForeground, description,
+			return new DelegateMenuItemDef(Properties.Resources.CaptionTxt_BringToFront, Properties.Resources.ToForeground, description,
 				isFeasible, Permission.Layout, shapes, (a, p) => diagramSetController.LiftShapes(diagram, shapes, ZOrderDestination.ToTop));
 		}
 
@@ -4796,11 +4822,12 @@ namespace Dataweb.NShape.WinFormsUI {
 			bool isFeasible = diagramSetController.CanLiftShapes(diagram, shapes);
 			string description;
 			if (isFeasible) {
-				if (shapes.Count == 1) description = string.Format("Send '{0}' to background", shapes.TopMost.Type.Name);
-				else description = string.Format("Send {0} shapes to background", shapes.Count);
-			} else description = noShapesSelectedText;
+				if (shapes.Count == 1)
+					description = string.Format(Properties.Resources.TooltipFmt_Send0ToBackground, GetShapeDisplayName(shapes.TopMost));
+				else description = string.Format(Properties.Resources.TooltipFmt_Send0ShapesToBackground, shapes.Count);
+			} else description = Properties.Resources.TooltipTxt_NoShapesSelected;
 
-			return new DelegateMenuItemDef("Send to Back", Properties.Resources.ToBackground,
+			return new DelegateMenuItemDef(Properties.Resources.CaptionTxt_SendToBack, Properties.Resources.ToBackground,
 				description, isFeasible, Permission.Layout, shapes,
 				(a, p) => diagramSetController.LiftShapes(diagram, shapes, ZOrderDestination.ToBottom));
 		}
@@ -4809,7 +4836,6 @@ namespace Dataweb.NShape.WinFormsUI {
 		private MenuItemDef CreateAddShapesToLayersMenuItemDef(Diagram diagram, IShapeCollection shapes, LayerIds layers, bool replaceLayers) {
 			bool isFeasible = shapes.Count > 0 && layers != LayerIds.None;
 			string description;
-			string actionTxt = replaceLayers ? "Assign" : "Add";
 			if (isFeasible) {
 				// Build layer description text
 				int layerCnt = 0;
@@ -4818,23 +4844,28 @@ namespace Dataweb.NShape.WinFormsUI {
 					++layerCnt;
 					if (layerCnt <= 3) layerNames += string.Format("{0}{1}{2}{1}", (layerCnt > 1) ? ", " : "", "'", layer.Name);
 				}
-				if (layerCnt > 3) layerNames = string.Format("{0} layers", layerCnt);
-				else layerNames = string.Format("layer{0} {1}", (layerCnt > 1) ? "s" : "", layerNames);
+				if (layerCnt > 3) 
+					layerNames = string.Format(Properties.Resources.TooltipFmt_NumberOfLayers, layerCnt);
+				else if (layerCnt > 1)
+					layerNames = string.Format(Properties.Resources.TooltipFmt_LayersByName, layerNames);
+				else 
+					layerNames = string.Format(Properties.Resources.TooltipFmt_LayerByName, layerNames);
 
 				// Build menu item description text
-				if (shapes.Count == 1)
-					description = string.Format("{0} '{1}' to {2}", actionTxt, shapes.TopMost.Type.Name, layerNames);
-				else description = string.Format(
-											"{0} {1} shape{2} to {3}.",
-											actionTxt,
-											shapes.Count,
-											(shapes.Count > 0) ? "s" : "",
-											layerNames);
+				if (shapes.Count == 1) {
+					if (replaceLayers)
+						description = string.Format(Properties.Resources.TooltipFmt_AssignShape0ToLayer1, GetShapeDisplayName(shapes.TopMost), layerNames);
+					else description = string.Format(Properties.Resources.TooltipFmt_AddShape0ToLayer1, GetShapeDisplayName(shapes.TopMost), layerNames);
+				} else {
+					if (replaceLayers)
+						description = string.Format(Properties.Resources.TooltipFmt_Assign0ShapesToLayer1, shapes.Count, layerNames);
+					else description = string.Format(Properties.Resources.TooltipFmt_Add0ShapesToLayer1, shapes.Count, layerNames);
+				}
 			} else {
-				if (layers == LayerIds.None) description = "No layers active.";
-				else description = noShapesSelectedText;
+				if (layers == LayerIds.None) description = Properties.Resources.TooltipTxt_NoLayersActive;
+				else description = Properties.Resources.TooltipTxt_NoShapesSelected;
 			}
-			string label = string.Format("{0} Shapes to active Layers", actionTxt);
+			string label = replaceLayers ? Properties.Resources.CaptionTxt_AssignShapesToActiveLayers : Properties.Resources.CaptionTxt_AddShapesToActiveLayers;
 			Bitmap image = replaceLayers ? Properties.Resources.AssignToLayer : Properties.Resources.AddToLayer;
 			DelegateMenuItemDef.ActionExecuteDelegate execDelegate;
 			if (replaceLayers)
@@ -4856,23 +4887,23 @@ namespace Dataweb.NShape.WinFormsUI {
 			string description;
 			if (isFeasible) {
 				if (shapes.Count == 1)
-					description = string.Format("Remove '{0}' from all layers.", shapes.TopMost.Type.Name);
-				else description = string.Format("Remove {0} shapes from all layers.", shapes.Count);
+					description = string.Format(Properties.Resources.TooltipFmt_RemoveShape0FromAllLayers, GetShapeDisplayName(shapes.TopMost));
+				else description = string.Format(Properties.Resources.TooltipFmt_Remove0ShapesFromAllLayers, shapes.Count);
 			} else {
-				if (shapes.Count <= 0) description = noShapesSelectedText;
-				else description = string.Format("Shape{0} not assigned to any layer.", (shapes.Count > 1) ? "s" : "");
+				if (shapes.Count <= 0) description = Properties.Resources.TooltipTxt_NoShapesSelected;
+				else description = Properties.Resources.TooltipFmt_ShapesNotAssignedToLayers;
 			}
 
-			return new DelegateMenuItemDef("Remove Shapes from all Layers", Properties.Resources.RemoveFromAllLayers, description,
+			return new DelegateMenuItemDef(Properties.Resources.CaptionTxt_RemoveShapesFromAllLayers, Properties.Resources.RemoveFromAllLayers, description,
 				isFeasible, Permission.Layout, shapes, (a, p) => diagramSetController.RemoveShapesFromLayers(diagram, shapes));
 		}
 
 
 		private MenuItemDef CreateGroupShapesMenuItemDef(Diagram diagram, IShapeCollection shapes, LayerIds activeLayers) {
 			bool isFeasible = diagramSetController.CanGroupShapes(shapes);
-			string description = isFeasible ? string.Format("Group {0} shapes", shapes.Count) : notEnoughShapesSelectedText;
+			string description = isFeasible ? string.Format(Properties.Resources.TooltipFmt_Group0Shapes, shapes.Count) : Properties.Resources.TooltipTxt_NotEnoughShapesSelected;
 
-			return new DelegateMenuItemDef("Group Shapes", Properties.Resources.GroupBtn,
+			return new DelegateMenuItemDef(Properties.Resources.CaptionTxt_GroupShapes, Properties.Resources.GroupBtn,
 				description, isFeasible, Permission.Insert, shapes,
 				(a, p) => PerformGroupShapes(diagram, shapes, activeLayers));
 		}
@@ -4882,14 +4913,14 @@ namespace Dataweb.NShape.WinFormsUI {
 			bool isFeasible = diagramSetController.CanUngroupShape(diagram, shapes);
 			string description;
 			if (isFeasible)
-				description = string.Format("Ungroup {0} shapes", shapes.TopMost.Children.Count);
+				description = string.Format(Properties.Resources.TooltipFmt_Ungroup0Shapes, shapes.TopMost.Children.Count);
 			else {
 				if (shapes.TopMost is IShapeGroup && shapes.TopMost.Parent is IShapeGroup)
-					description = "The selected group is member of another group.";
-				else description = noGroupSelectedText;
+					description = Properties.Resources.TooltipTxt_TheSelectedGroupIsMemberOfAnotherGroup;
+				else description = Properties.Resources.TooltipTxt_NoGroupSelected;
 			}
 
-			return new DelegateMenuItemDef("Ungroup Shapes", Properties.Resources.UngroupBtn,
+			return new DelegateMenuItemDef(Properties.Resources.CaptionTxt_UngroupShapes, Properties.Resources.UngroupBtn,
 				description, isFeasible, Permission.Insert, shapes,
 				(a, p) => PerformUngroupShapes(diagram, shapes.TopMost));
 		}
@@ -4898,14 +4929,14 @@ namespace Dataweb.NShape.WinFormsUI {
 		private MenuItemDef CreateAggregateMenuItemDef(Diagram diagram, IShapeCollection shapes, LayerIds activeLayers, Point position) {
 			string reason;
 			bool isFeasible = diagramSetController.CanAggregateShapes(diagram, shapes, out reason);
-			string description = isFeasible ? string.Format("Aggregate {0} shapes into composite shape", shapes.Count - 1) : reason;
+			string description = isFeasible ? string.Format(Properties.Resources.TooltipFmt_Aggregate0ShapesAsCompositeShape, shapes.Count) : reason;
 			// Get host for aggregated child shapes
 			Shape compositeShape = shapes.Bottom;
 			if (compositeShape is ILinearShape) {
 				isFeasible = false;
-				description = "Linear shapes may not be the base for a composite shape.";
+				description = Properties.Resources.TooltipTxt_LinearShapesMayNotBeTheBaseForACompositeShape;
 			}
-			return new DelegateMenuItemDef("Aggregate Shapes", Properties.Resources.AggregateShapeBtn,
+			return new DelegateMenuItemDef(Properties.Resources.CaptionTxt_AggregateShapes, Properties.Resources.AggregateShapeBtn,
 				description, isFeasible, Permission.Delete, shapes,
 				(a, p) => PerformAggregateCompositeShape(diagram, compositeShape, shapes, activeLayers));
 		}
@@ -4914,33 +4945,34 @@ namespace Dataweb.NShape.WinFormsUI {
 		private MenuItemDef CreateUnaggregateMenuItemDef(Diagram diagram, IShapeCollection shapes) {
 			string reason = null;
 			bool isFeasible = diagramSetController.CanSplitShapeAggregation(diagram, shapes, out reason);
-			string description = isFeasible ? "Disaggregate the selected shape aggregation" : reason;
+			string description = isFeasible ? Properties.Resources.TooltipTxt_DisaggregateTheSelectedShapeAggregation : reason;
 			if (!isFeasible) {
 				if (shapes.Count <= 0)
-					description = noShapesSelectedText;
+					description = Properties.Resources.TooltipTxt_NoShapesSelected;
 				else if (shapes.Count == 1)
-					description = "Selected shape is not a composite shape.";
-				else description = "Too many shapes selected";
+					description = Properties.Resources.TooltipTxt_SelectedShapeIsNotACompositeShape;
+				else description = Properties.Resources.TooltipTxt_TooManyShapesSelected;
 			}
-			return new DelegateMenuItemDef("Disaggregate Shapes", Properties.Resources.SplitShapeAggregationBtn,
+			return new DelegateMenuItemDef(Properties.Resources.CaptionTxt_DisaggregateShapes, Properties.Resources.SplitShapeAggregationBtn,
 				description, isFeasible, Permission.Insert, shapes,
 				(a, p) => PerformSplitCompositeShape(diagram, shapes.Bottom));
 		}
 
 
 		private MenuItemDef CreateCutMenuItemDef(Diagram diagram, IShapeCollection shapes, bool modelObjectsAssigned, Point position) {
-			string title = "Cut";
+			string title = Properties.Resources.CaptionTxt_Cut;
 			Bitmap icon = Properties.Resources.CutBtn; ;
 			Permission permission = Permission.Delete; ;
 			string description;
 			bool isFeasible = false;
 			if (!IsActionGranted(permission, shapes))
-				description = string.Format(permissionNotGrantedFmt, permission);
+				description = string.Format(Properties.Resources.TooltipFmt_Permission0IsNotGranted, permission);
 			else if (!diagramSetController.CanCut(diagram, shapes))
-				description = noShapesSelectedText;
+				description = Properties.Resources.TooltipTxt_NoShapesSelected;
 			else {
 				isFeasible = true;
-				description = string.Format("Cut {0} shape{1}", shapes.Count, shapes.Count > 1 ? "s" : "");
+				description = (shapes.Count == 1) ? string.Format(Properties.Resources.TooltipFmt_CutShape0, GetShapeDisplayName(shapes.TopMost)) 
+					: string.Format(Properties.Resources.TooltipFmt_Cut0Shapes, shapes.Count);
 			}
 
 			if (!modelObjectsAssigned)
@@ -4953,18 +4985,20 @@ namespace Dataweb.NShape.WinFormsUI {
 						new DelegateMenuItemDef(title, icon, description, isFeasible, permission, shapes, 
 							(a, p) => PerformCut(diagram, shapes, false, position)),
 						// Cut shapes with models
-						new DelegateMenuItemDef(title + withModelsPostFix, icon, description + withModelsPostFix,
+						new DelegateMenuItemDef(string.Format("{0} {1}", title, Properties.Resources.TooltipTxt_WithModelsPostfix), icon, 
+							string.Format("{0} {1}", description, Properties.Resources.TooltipTxt_WithModelsPostfix),
 							isFeasible, permission, shapes, (a, p) => PerformCut(diagram, shapes, true, position))
 					}, 1);
 		}
 
 
 		private MenuItemDef CreateCopyImageMenuItemDef(Diagram diagram, IShapeCollection selectedShapes) {
-			string title = "Copy as Image";
+			string title = Properties.Resources.CaptionTxt_CopyAsImage;
 			Bitmap icon = Properties.Resources.CopyAsImage;
 			Permission permission = Permission.None;
 			bool isFeasible = true;
-			string description = string.Format("Copy {0}{1} as PNG and EMF image to clipboard.", (selectedShapes.Count > 0) ? "selected Shape" : "Diagram", selectedShapes.Count > 1 ? "s" : "");
+			string description = (selectedShapes.Count > 0) ? Properties.Resources.TooltipTxt_CopySelectionAsPNGAndEMFImageToClipboard
+				: Properties.Resources.TooltipTxt_CopyDiagramAsPNGAndEMFImageToClipboard;
 
 			return new DelegateMenuItemDef(title, icon, description, isFeasible, permission,
 				(a, p) => {
@@ -4984,13 +5018,15 @@ namespace Dataweb.NShape.WinFormsUI {
 
 
 		private MenuItemDef CreateCopyMenuItemDef(Diagram diagram, IShapeCollection shapes, bool modelObjectsAssigned, Point position) {
-			string title = "Copy";
+			string title = Properties.Resources.CaptionTxt_Copy;
 			Bitmap icon = Properties.Resources.CopyBtn;
 			Permission permission = Permission.None;
 			bool isFeasible = diagramSetController.CanCopy(shapes);
-			string description = isFeasible ?
-				string.Format("Copy {0} shape{1}", shapes.Count, shapes.Count > 1 ? "s" : "")
-				: noShapesSelectedText;
+			string description = null;
+			if (isFeasible) {
+				description = (shapes.Count == 1) ? string.Format(Properties.Resources.TooltipFmt_CopyShape0, GetShapeDisplayName(shapes.TopMost))
+					: string.Format(Properties.Resources.TooltipFmt_Copy0Shapes, shapes.Count);
+			} else description = Properties.Resources.TooltipTxt_NoShapesSelected;
 
 			if (!modelObjectsAssigned)
 				return new DelegateMenuItemDef(title, icon, description, isFeasible, permission, shapes,
@@ -5002,7 +5038,8 @@ namespace Dataweb.NShape.WinFormsUI {
 						new DelegateMenuItemDef(title, icon, description, isFeasible, permission, shapes, 
 						(a, p) => PerformCopy(diagram, shapes, false, position)),
 						// Cut shapes with models
-						new DelegateMenuItemDef(title + withModelsPostFix, icon, description + withModelsPostFix,
+						new DelegateMenuItemDef(string.Format("{0} {1}", title, Properties.Resources.TooltipTxt_WithModelsPostfix), icon, 
+							string.Format("{0} {1}", description, Properties.Resources.TooltipTxt_WithModelsPostfix),
 							isFeasible, permission, shapes, (a, p) => PerformCopy(diagram, shapes, true, position)) 
 					}, 1);
 		}
@@ -5015,28 +5052,31 @@ namespace Dataweb.NShape.WinFormsUI {
 			//    description = string.Format("Paste {0} shape{1}", shapes.Count, shapes.Count > 1 ? "s" : "");
 
 			bool isFeasible = diagramSetController.CanPaste(diagram);
-			string description = isFeasible ?
-				string.Format("Paste {0} shape{1}", shapes.Count, shapes.Count > 1 ? "s" : "")
-				: "No shapes cut/copied yet";
+			string description = null;
+			if (isFeasible)
+				description = (shapes.Count == 1) ? string.Format(Properties.Resources.TooltipFmt_PasteShape0, GetShapeDisplayName(shapes.TopMost))
+					: string.Format(Properties.Resources.TooltipFmt_Paste0Shapes, shapes.Count);
+			else description = Properties.Resources.TooltipTxt_NoShapesCutCopiedYet;
 
-			return new DelegateMenuItemDef("Paste", Properties.Resources.PasteBtn, description,
+			return new DelegateMenuItemDef(Properties.Resources.CaptionTxt_Paste, Properties.Resources.PasteBtn, description,
 				isFeasible, Permission.Insert, diagram.SecurityDomainName, (a, p) => Paste(position));
 		}
 
 
 		private MenuItemDef CreateDeleteMenuItemDef(Diagram diagram, IShapeCollection shapes, bool modelObjectsAssigned) {
-			string title = "Delete";
+			string title = Properties.Resources.CaptionTxt_Delete;
 			Bitmap icon = Properties.Resources.DeleteBtn;
 			Permission permission = Permission.Delete;
 			string description;
 			bool isFeasible = false;
 			if (!IsActionGranted(permission, shapes))
-				description = string.Format(permissionNotGrantedFmt, permission);
+				description = string.Format(Properties.Resources.TooltipFmt_Permission0IsNotGranted, permission);
 			else if (!diagramSetController.CanDeleteShapes(diagram, shapes))
-				description = noShapesSelectedText;
+				description = Properties.Resources.TooltipTxt_NoShapesSelected;
 			else {
 				isFeasible = true;
-				description = string.Format("Delete {0} shape{1}", shapes.Count, shapes.Count > 1 ? "s" : "");
+				description = (shapes.Count == 1) ? string.Format(Properties.Resources.TooltipFmt_DeleteShape0, GetShapeDisplayName(shapes.TopMost)) 
+					: string.Format(Properties.Resources.TooltipFmt_Delete0Shapes, shapes.Count);
 			}
 
 			if (!modelObjectsAssigned)
@@ -5046,16 +5086,16 @@ namespace Dataweb.NShape.WinFormsUI {
 				bool otherShapesAssignedToModels = OtherShapesAssignedToModels(shapes);
 				string deleteWithModelsDesc;
 				if (otherShapesAssignedToModels)
-					deleteWithModelsDesc = "There are shapes assigned to the model(s)";
-				else deleteWithModelsDesc = description + withModelsPostFix;
+					deleteWithModelsDesc = Properties.Resources.TooltipTxt_ThereAreShapesAssignedToTheModelObjects;
+				else deleteWithModelsDesc = string.Format("{0} {1}", description, Properties.Resources.TooltipTxt_WithModelsPostfix);
 
 				return new GroupMenuItemDef(title, icon, description, isFeasible,
 					new MenuItemDef[] {
 						// Cut shapes only
 						new DelegateMenuItemDef(title, icon, description, isFeasible, permission, shapes, 
 							(a, p) => PerformDelete(diagram, shapes, false)),
-						new DelegateMenuItemDef(title + withModelsPostFix, icon, deleteWithModelsDesc,
-							!otherShapesAssignedToModels, permission, shapes, (a, p) => PerformDelete(diagram, shapes, true))
+						new DelegateMenuItemDef(string.Format("{0} {1}", title, Properties.Resources.TooltipTxt_WithModelsPostfix), icon, 
+							deleteWithModelsDesc, !otherShapesAssignedToModels, permission, shapes, (a, p) => PerformDelete(diagram, shapes, true))
 					}, 1);
 			}
 		}
@@ -5065,22 +5105,20 @@ namespace Dataweb.NShape.WinFormsUI {
 			bool isFeasible = (Diagram != null && PropertyController != null);
 			string description;
 			object obj = null;
-			if (!isFeasible) description = "Properties are not available.";
+			if (!isFeasible) description = Properties.Resources.TooltipTxt_PropertiesAreNotAvailable;
 			else {
-				string descriptionFormat = "Show properties of {0} {2}{1}{2}";
 				Shape s = shapes.FindShape(position.X, position.Y, ControlPointCapabilities.None, 0, null);
 				if (s != null) {
-					if (shapes.Count == 1)
-						description = string.Format(descriptionFormat, "Shape", s.Type.Name, "'");
-					else description = string.Format(descriptionFormat, shapes.Count, "Shapes", "");
+					description = (shapes.Count == 1) ? string.Format(Properties.Resources.TooltipFmt_ShowPropertiesOfShape0, GetShapeDisplayName(s))
+						: description = string.Format(Properties.Resources.TooltipFmt_ShowPropertiesOf0Shapes, shapes.Count);
 					obj = s;
 				} else {
-					description = string.Format(descriptionFormat, typeof(Diagram).Name, Diagram.Title, "'");
+					description = string.Format(Properties.Resources.TooltipFmt_ShowPropertiesOfDiagram0, Diagram.Title);
 					obj = diagram;
 				}
 			}
 
-			return new DelegateMenuItemDef("Properties", Properties.Resources.DiagramPropertiesBtn3,
+			return new DelegateMenuItemDef(Properties.Resources.CaptionTxt_Properties, Properties.Resources.DiagramPropertiesBtn3,
 				description, isFeasible, Permission.Data, shapes,
 				(a, p) => PropertyController.SetObjects(0, shapes));
 		}
@@ -5088,18 +5126,18 @@ namespace Dataweb.NShape.WinFormsUI {
 
 		private MenuItemDef CreateUndoMenuItemDef() {
 			bool isFeasible = Project.History.UndoCommandCount > 0;
-			string description = isFeasible ? Project.History.GetUndoCommandDescription() : "No undo commands left";
+			string description = isFeasible ? Project.History.GetUndoCommandDescription() : Properties.Resources.TooltipTxt_NoUndoCommandsLeft;
 
-			return new DelegateMenuItemDef("Undo", Properties.Resources.UndoBtn, description, isFeasible,
+			return new DelegateMenuItemDef(Properties.Resources.CaptionTxt_Undo, Properties.Resources.UndoBtn, description, isFeasible,
 				Permission.None, (a, p) => PerformUndo());
 		}
 
 
 		private MenuItemDef CreateRedoMenuItemDef() {
 			bool isFeasible = Project.History.RedoCommandCount > 0;
-			string description = isFeasible ? Project.History.GetRedoCommandDescription() : "No redo commands left";
+			string description = isFeasible ? Project.History.GetRedoCommandDescription() : Properties.Resources.TooltipTxt_NoRedoCommandsLeft;
 
-			return new DelegateMenuItemDef("Redo", Properties.Resources.RedoBtn, description, isFeasible,
+			return new DelegateMenuItemDef(Properties.Resources.CaptionTxt_Redo, Properties.Resources.RedoBtn, description, isFeasible,
 				Permission.None, (a, p) => PerformRedo());
 		}
 
@@ -5123,8 +5161,8 @@ namespace Dataweb.NShape.WinFormsUI {
 
 			diagramSetController.GroupShapes(diagram, shapeBuffer, activeLayers);
 
-			OnShapesRemoved(new DiagramPresenterShapesEventArgs(shapeBuffer));
-			OnShapesInserted(new DiagramPresenterShapesEventArgs(shapeBuffer[0].Parent));
+			OnShapesRemoved(GetShapesEventArgs(shapes));
+			OnShapesInserted(GetShapesEventArgs(shapeBuffer[0].Parent));
 			SelectShape(shapeBuffer[0].Parent, false);
 		}
 
@@ -5136,8 +5174,8 @@ namespace Dataweb.NShape.WinFormsUI {
 
 			diagramSetController.UngroupShapes(diagram, shape);
 
-			OnShapesRemoved(new DiagramPresenterShapesEventArgs(shape));
-			OnShapesInserted(new DiagramPresenterShapesEventArgs(shapeBuffer));
+			OnShapesRemoved(GetShapesEventArgs(shape));
+			OnShapesInserted(GetShapesEventArgs(shapeBuffer));
 			SelectShapes(shapeBuffer, false);
 		}
 
@@ -5149,7 +5187,7 @@ namespace Dataweb.NShape.WinFormsUI {
 
 			diagramSetController.AggregateCompositeShape(diagram, compositeShape, shapeBuffer, activeLayers);
 
-			OnShapesRemoved(new DiagramPresenterShapesEventArgs(compositeShape.Children));
+			OnShapesRemoved(GetShapesEventArgs(compositeShape.Children));
 			SelectShape(compositeShape, false);
 		}
 
@@ -5161,14 +5199,14 @@ namespace Dataweb.NShape.WinFormsUI {
 			// Set DiagramPresenter in "Listen for repository changes" mode
 			diagramSetController.SplitCompositeShape(diagram, shape);
 
-			OnShapesInserted(new DiagramPresenterShapesEventArgs(shapeBuffer));
+			OnShapesInserted(GetShapesEventArgs(shapeBuffer));
 			SelectShape(shape);
 			SelectShapes(shapeBuffer, true);
 		}
 
 
 		private void PerformCut(Diagram diagram, IEnumerable<Shape> shapes, bool withModelObjects, Point position) {
-			DiagramPresenterShapesEventArgs e = new DiagramPresenterShapesEventArgs(shapes);
+			DiagramPresenterShapesEventArgs e = GetShapesEventArgs(shapes);
 			UnselectShapes(shapes);
 
 			if (Geometry.IsValid(position))
@@ -5193,7 +5231,7 @@ namespace Dataweb.NShape.WinFormsUI {
 					diagramSetController.Paste(diagram, layerIds, GridSize, GridSize);
 				else diagramSetController.Paste(diagram, layerIds, position);
 			} finally {
-				OnShapesInserted(new DiagramPresenterShapesEventArgs(selectedShapes));
+				OnShapesInserted(GetShapesEventArgs(selectedShapes));
 				EndSelectingChangedShapes();
 			}
 		}
@@ -5206,14 +5244,14 @@ namespace Dataweb.NShape.WinFormsUI {
 					diagramSetController.Paste(diagram, layerIds, GridSize, GridSize);
 				else diagramSetController.Paste(diagram, layerIds, offsetX, offsetY);
 			} finally {
-				OnShapesInserted(new DiagramPresenterShapesEventArgs(selectedShapes));
+				OnShapesInserted(GetShapesEventArgs(selectedShapes));
 				EndSelectingChangedShapes();
 			}
 		}
 
 
 		private void PerformDelete(Diagram diagram, IEnumerable<Shape> shapes, bool withModelObjects) {
-			DiagramPresenterShapesEventArgs e = new DiagramPresenterShapesEventArgs(shapes);
+			DiagramPresenterShapesEventArgs e = GetShapesEventArgs(shapes);
 			
 			UnselectShapes(e.Shapes);
 			diagramSetController.DeleteShapes(diagram, e.Shapes, withModelObjects);
@@ -5279,20 +5317,6 @@ namespace Dataweb.NShape.WinFormsUI {
 
 		#region [Private] Methods: (Un)Registering events
 
-		private void RegisterDiagramSetControllerEvents() {
-			diagramSetController.ProjectChanging += diagramSetController_ProjectChanging;
-			diagramSetController.ProjectChanged += diagramSetController_ProjectChanged;
-			diagramSetController.SelectModelObjectsRequested += diagramSetController_SelectModelObjectRequested;
-			if (diagramSetController.Project != null) RegisterProjectEvents();
-		}
-
-
-		private void UnregisterDiagramSetControllerEvents() {
-			if (diagramSetController.Project != null) UnregisterProjectEvents();
-			diagramSetController.SelectModelObjectsRequested -= diagramSetController_SelectModelObjectRequested;
-		}
-
-
 		private void RegisterProjectEvents() {
 			if (!projectIsRegistered) {
 				Debug.Assert(Project != null);
@@ -5336,15 +5360,31 @@ namespace Dataweb.NShape.WinFormsUI {
 		private void UnregisterRepositoryEvents() {
 			if (repositoryIsRegistered) {
 				Debug.Assert(Project.Repository != null);
+				Project.Repository.TemplateShapeReplaced -= Repository_TemplateShapeReplaced;
 				Project.Repository.DiagramUpdated -= Repository_DiagramUpdated;
 				Project.Repository.ShapesInserted -= Repository_ShapesInserted;
 				Project.Repository.ShapesUpdated -= Repository_ShapesUpdated;
 				Project.Repository.ShapesDeleted -= Repository_ShapesDeleted;
 				Project.Repository.ConnectionInserted -= Repository_ShapeConnectionInsertedOrDeleted;
 				Project.Repository.ConnectionDeleted -= Repository_ShapeConnectionInsertedOrDeleted;
-				Project.Repository.TemplateShapeReplaced -= Repository_TemplateShapeReplaced;
 				repositoryIsRegistered = false;
 			}
+		}
+
+
+		private void RegisterDiagramEvents() {
+			Diagram.Resized += diagram_Resized;
+			Diagram.ShapeMoved += diagram_ShapeMoved;
+			Diagram.ShapeResized += diagram_ShapeResized;
+			Diagram.ShapeRotated += diagram_ShapeRotated;
+		}
+
+
+		private void UnregisterDiagramEvents() {
+			Diagram.ShapeMoved -= diagram_ShapeMoved;
+			Diagram.ShapeResized -= diagram_ShapeResized;
+			Diagram.ShapeRotated -= diagram_ShapeRotated;
+			Diagram.Resized -= diagram_Resized;
 		}
 
 
@@ -5359,10 +5399,44 @@ namespace Dataweb.NShape.WinFormsUI {
 			diagramController.DiagramChanging -= Controller_DiagramChanging;
 		}
 
+
+		private void RegisterDiagramSetControllerEvents() {
+			diagramSetController.ProjectChanging += diagramSetController_ProjectChanging;
+			diagramSetController.ProjectChanged += diagramSetController_ProjectChanged;
+			diagramSetController.SelectModelObjectsRequested += diagramSetController_SelectModelObjectRequested;
+			if (diagramSetController.Project != null) RegisterProjectEvents();
+		}
+
+
+		private void UnregisterDiagramSetControllerEvents() {
+			if (diagramSetController.Project != null) UnregisterProjectEvents();
+			diagramSetController.SelectModelObjectsRequested -= diagramSetController_SelectModelObjectRequested;
+			diagramSetController.ProjectChanging -= diagramSetController_ProjectChanging;
+			diagramSetController.ProjectChanged -= diagramSetController_ProjectChanged;
+		}
+
 		#endregion
 
 
 		#region [Private] Methods: EventHandler implementations
+
+		private DiagramPresenterShapesEventArgs GetShapesEventArgs(Shape shape) {
+			shapesEventArgs.SetShapes(shape);
+			return shapesEventArgs;
+		}
+
+
+		private DiagramPresenterShapesEventArgs GetShapesEventArgs(IEnumerable<Shape> shapes) {
+			shapesEventArgs.SetShapes(shapes);
+			return shapesEventArgs;
+		}
+
+
+		private DiagramPresenterShapeEventArgs GetShapeEventArgs(Shape shape) {
+			shapeEventArgs.SetShape(shape);
+			return shapeEventArgs;
+		}
+
 
 		private void diagramSetController_SelectModelObjectRequested(object sender, ModelObjectsEventArgs e) {
 			if (Diagram != null) {
@@ -5394,6 +5468,42 @@ namespace Dataweb.NShape.WinFormsUI {
 		}
 
 
+		private void diagram_Resized(object sender, EventArgs e) {
+			if (suspendUpdateCounter > 0)
+				boundsChanged = true;
+			else {
+				// Store current display position
+				int origPosX, origPosY;
+				ControlToDiagram(DrawBounds.X, DrawBounds.Y, out origPosX, out origPosY);
+
+				ResetBounds();
+				UpdateScrollBars();
+
+				int newPosX, newPosY;
+				ControlToDiagram(DrawBounds.X, DrawBounds.Y, out newPosX, out newPosY);
+
+				// Scroll to original position
+				ScrollBy(-(newPosX - origPosX), -(newPosY - origPosY));
+				Invalidate();
+			}
+		}
+
+
+		private void diagram_ShapeMoved(object sender, ShapeEventArgs e) {
+			if (ShapeMoved != null) ShapeMoved(this, GetShapeEventArgs(e.Shape));
+		}
+
+
+		private void diagram_ShapeResized(object sender, ShapeEventArgs e) {
+			if (ShapeResized != null) ShapeResized(this, GetShapeEventArgs(e.Shape));
+		}
+
+
+		private void diagram_ShapeRotated(object sender, ShapeEventArgs e) {
+			if (ShapeRotated != null) ShapeRotated(this, GetShapeEventArgs(e.Shape));
+		}
+
+		
 		private void inPlaceTextBox_Leave(object sender, EventArgs e) {
 			DoCloseCaptionEditor(true);
 		}
@@ -5488,6 +5598,11 @@ namespace Dataweb.NShape.WinFormsUI {
 				}
 			}
 			ResumeLayout();
+		}
+
+
+		private void Repository_SavedChanges(object sender, EventArgs e) {
+			// Nothing to do here
 		}
 
 
@@ -5652,6 +5767,61 @@ namespace Dataweb.NShape.WinFormsUI {
 			private Rectangle r = Rectangle.Empty;
 		}
 
+
+		private class DisplayShapesEventArgs : DiagramPresenterShapesEventArgs {
+
+			public DisplayShapesEventArgs(Shape shape)
+				: base(shape) {
+			}
+
+
+			public DisplayShapesEventArgs(IEnumerable<Shape> shapes)
+				: base(shapes) {
+			}
+
+
+			internal DisplayShapesEventArgs()
+				: base() {
+			}
+
+
+			internal ReadOnlyList<Shape> ShapesList {
+				get { return (ReadOnlyList<Shape>)Shapes; }
+			}
+
+
+			internal void SetShapes(IEnumerable<Shape> shapes) {
+				ShapesList.Clear();
+				ShapesList.AddRange(shapes);
+			}
+
+
+			internal void SetShapes(Shape shape) {
+				ShapesList.Clear();
+				ShapesList.Add(shape);
+			}
+
+		}
+
+
+		private class DisplayShapeEventArgs : DiagramPresenterShapeEventArgs {
+
+			public DisplayShapeEventArgs(Shape shape)
+				: base(shape) {
+			}
+
+
+			internal DisplayShapeEventArgs()
+				: base() {
+			}
+
+
+			internal void SetShape(Shape shape) {
+				Shape = shape;
+			}
+
+		}
+
 		#endregion
 
 
@@ -5708,13 +5878,10 @@ namespace Dataweb.NShape.WinFormsUI {
 
 		private const double mmToInchFactor = 0.039370078740157477;
 
-		// String constants for action titles and descriptions
-		private const string permissionNotGrantedFmt = "Permission '{0}' is not granted.";
-		private const string noShapesSelectedText = "No shapes selected";
-		private const string notEnoughShapesSelectedText = "Not enough shapes selected";
-		private const string noGroupSelectedText = "No group selected";
-		private const string withModelsPostFix = " with Model";
-		private const string noShapeUnderCursor = "No shape under the mouse cursor.";
+		// String constants for exception messages
+		private const string ErrMessageOnlyAllowedWhilePaining = "Calling this method is only allowed while painting.";
+		private const string ErrMessageResetTransformHasNotBeenCalled = "ResetTransformation has to be called before calling this method.";
+		private const string ErrMessageRestoreTransformationHasNotBeenCalled = "RestoreTransformation has to be called before calling this method.";
 
 		#endregion
 
@@ -5734,13 +5901,13 @@ namespace Dataweb.NShape.WinFormsUI {
 		private int minRotateDistance = DefaultValueMinRotateDistance;
 		private bool mouseEventWasHandled = false;
 		private bool zoomWithMouseWheel = false;
+		private ScrollEventArgs scrollEventArgsH = new ScrollEventArgs(ScrollEventType.ThumbTrack, 0);
+		private ScrollEventArgs scrollEventArgsV = new ScrollEventArgs(ScrollEventType.ThumbTrack, 0);
 		private Point universalScrollStartPos = Geometry.InvalidPoint;
 		private Rectangle universalScrollFixPointBounds = Geometry.InvalidRectangle;
 		private Cursor universalScrollCursor = Cursors.NoMove2D;
 		private bool universalScrollEnabled = false;
 		private Timer autoScrollTimer = new Timer();
-		private ScrollEventArgs scrollEventArgsH = new ScrollEventArgs(ScrollEventType.ThumbTrack, 0);
-		private ScrollEventArgs scrollEventArgsV = new ScrollEventArgs(ScrollEventType.ThumbTrack, 0);
 
 		private bool showScrollBars = DefaultValueShowScrollBars;
 		private bool hideMenuItemsIfNotGranted = DefaultValueHideMenuItemsIfNotGranted;
@@ -5797,13 +5964,13 @@ namespace Dataweb.NShape.WinFormsUI {
 		private Color toolPreviewBackColor = defaultToolPreviewBackColor;
 
 		// Pens
-		private Pen gridPen;								// pen for drawing the grid
+		private Pen gridPen;						// pen for drawing the grid
 		private Pen outlineInteriorPen;				// pen for the interior of thick outlines
-		private Pen outlineNormalPen;					// pen for drawing thick shape outlines (normal)
+		private Pen outlineNormalPen;				// pen for drawing thick shape outlines (normal)
 		private Pen outlineHilightPen;				// pen for drawing thick shape outlines (highlighted)
 		private Pen outlineInactivePen;				// pen for drawing thick shape outlines (inactive)
-		private Pen handleNormalPen;					// pen for drawing shape handles (normal)
-		private Pen handleHilightPen;					// pen for drawing connection point indicators
+		private Pen handleNormalPen;				// pen for drawing shape handles (normal)
+		private Pen handleHilightPen;				// pen for drawing connection point indicators
 		private Pen handleInactivePen;				// pen for drawing inactive handles
 		private Pen toolPreviewPen;					// Pen for drawing tool preview infos (rotation preview, selection frame, etc)
 		private Pen outerSnapPen = new Pen(Color.FromArgb(196, Color.WhiteSmoke), 2);
@@ -5849,9 +6016,6 @@ namespace Dataweb.NShape.WinFormsUI {
 		private ICaptionedShape inplaceShape;
 		// index of caption within shape
 		private int inplaceCaptionIndex;
-		private ICharacterStyle inplaceCharacterStyle = null;
-		private CharacterStyle invisibleCharStyle = null;
-		private ColorStyle transparentColorStyle = new ColorStyle("InplaceTextEditorTransparentColorStyle" + Guid.NewGuid().ToString(), Color.Transparent);
 
 		// Lists and Collections
 		private ShapeCollection selectedShapes = new ShapeCollection();
@@ -5863,15 +6027,18 @@ namespace Dataweb.NShape.WinFormsUI {
 		private List<IModelObject> modelBuffer = new List<IModelObject>();
 
 		// Buffers
-		private Rectangle rectBuffer;						// buffer for rectangles
-		private Point[] pointBuffer = new Point[4];	// point array buffer
+		private Rectangle rectBuffer;					// buffer for rectangles
+		private Point[] pointBuffer = new Point[4];		// point array buffer
 		private Rectangle clipRectBuffer;				// buffer for clipRectangle transformation
-		private Rectangle drawBounds;						// drawing area of the display (ClientRectangle - scrollbars)
+		private Rectangle drawBounds;					// drawing area of the display (ClientRectangle - scrollbars)
 		private Rectangle scrollAreaBounds;				// Scrollable area (Diagram sheet incl. off-sheet shapes and margin)
 		//private GraphicsPath selectionPath = new GraphicsPath();	// Path used for highlighting all selected selectedShapes
 
 		// Temporary Buffer for last Mouse position (for MouseCursor sensitive context menu actions, e.g. Paste)
 		private Point lastMousePos;
+
+		DisplayShapesEventArgs shapesEventArgs = new DisplayShapesEventArgs();
+		DisplayShapeEventArgs shapeEventArgs = new DisplayShapeEventArgs();
 
 #if DEBUG_UI
 		// Debugging stuff

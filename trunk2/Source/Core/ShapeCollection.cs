@@ -276,7 +276,7 @@ namespace Dataweb.NShape {
 		/// Gets all shapes from the topmost to the bottom shape sorted by z-order values.
 		/// </summary>
 		public IEnumerable<Shape> TopDown {
-			get { return Enumerator.CreateTopDown(shapes); }
+			get { return ShapeEnumerator.CreateTopDown(shapes); }
 		}
 
 
@@ -284,7 +284,7 @@ namespace Dataweb.NShape {
 		/// Gets all shapes from the bottom to the topmost shape sorted by z-order values.
 		/// </summary>
 		public IEnumerable<Shape> BottomUp {
-			get { return Enumerator.CreateBottomUp(shapes); }
+			get { return ShapeEnumerator.CreateBottomUp(shapes); }
 		}
 
 
@@ -528,7 +528,7 @@ namespace Dataweb.NShape {
 
 		/// <override></override>
 		public IEnumerator<Shape> GetEnumerator() {
-			return Enumerator.CreateTopDown(shapes);
+			return ShapeEnumerator.CreateTopDown(shapes);
 		}
 
 		#endregion
@@ -537,7 +537,7 @@ namespace Dataweb.NShape {
 		#region IEnumerable Members
 
 		IEnumerator IEnumerable.GetEnumerator() {
-			return Enumerator.CreateTopDown(shapes);
+			return ShapeEnumerator.CreateTopDown(shapes);
 		}
 
 		#endregion
@@ -1197,10 +1197,10 @@ namespace Dataweb.NShape {
 		/// Enumerates the elements of a shape collection.
 		/// </summary>
 		/// <status>reviewed</status>
-		private struct Enumerator : IEnumerable<Shape>, IEnumerator<Shape>, IEnumerator {
+		private struct ShapeEnumerator : IEnumerable<Shape>, IEnumerator<Shape>, IEnumerator {
 
-			public static Enumerator CreateBottomUp(ReadOnlyList<Shape> shapeList) {
-				Enumerator result;
+			public static ShapeEnumerator CreateBottomUp(ReadOnlyList<Shape> shapeList) {
+				ShapeEnumerator result;
 				result.shapeList = shapeList;
 				result.count = shapeList.Count;
 				result.startIdx = result.currIdx = -1;
@@ -1209,8 +1209,8 @@ namespace Dataweb.NShape {
 			}
 
 
-			public static Enumerator CreateTopDown(ReadOnlyList<Shape> shapeList) {
-				Enumerator result;
+			public static ShapeEnumerator CreateTopDown(ReadOnlyList<Shape> shapeList) {
+				ShapeEnumerator result;
 				result.shapeList = shapeList;
 				result.count = shapeList.Count;
 				result.startIdx = result.currIdx = shapeList.Count;
@@ -1275,7 +1275,7 @@ namespace Dataweb.NShape {
 			#endregion
 
 
-			static Enumerator() {
+			static ShapeEnumerator() {
 				Empty.shapeList = null;
 				Empty.count = 0;
 				Empty.startIdx = -1;
@@ -1285,7 +1285,7 @@ namespace Dataweb.NShape {
 
 			#region Fields
 
-			public static readonly Enumerator Empty;
+			public static readonly ShapeEnumerator Empty;
 
 			private sbyte step;
 			private int currIdx;

@@ -336,42 +336,45 @@ namespace Dataweb.NShape.Layouters {
 		}
 
 
-		/// <ToBeCompleted></ToBeCompleted>
-		public int SpringRate {
-			get { return springRate; }
-			set { springRate = value; }
-		}
-
-
-		/// <ToBeCompleted></ToBeCompleted>
-		public int Repulsion {
-			get { return repulsion; }
-			set { repulsion = value; }
-		}
-
-
-		/// <ToBeCompleted></ToBeCompleted>
-		public int RepulsionRange {
-			get { return repulsionRange; }
-			set { repulsionRange = value; }
-		}
-
-
-		/// <ToBeCompleted></ToBeCompleted>
+		/// <summary>Gets or sets the friction as constant force that slows down the movement of the shapes.</summary>
 		public int Friction {
 			get { return friction; }
 			set { friction = value; }
 		}
 
 
-		/// <ToBeCompleted></ToBeCompleted>
+		/// <summary>
+		/// Gets or sets the mass of the shapes in kg. 
+		/// Higher mass means that the shapes move shorter distances per time step.
+		/// </summary>
 		public int Mass {
 			get { return mass; }
 			set { mass = value; }
 		}
 
 
-		/// <ToBeCompleted></ToBeCompleted>
+		/// <summary>Gets or sets the repulsion between shapes as constant force.</summary>
+		public int Repulsion {
+			get { return repulsion; }
+			set { repulsion = value; }
+		}
+
+
+		/// <summary>Gets or sets the range of the repulsion force in diagram coordinates.</summary>
+		public int RepulsionRange {
+			get { return repulsionRange; }
+			set { repulsionRange = value; }
+		}
+
+
+		/// <summary>Gets or sets the spring rate of the spring that keeps connected shapes together as constant force.</summary>
+		public int SpringRate {
+			get { return springRate; }
+			set { springRate = value; }
+		}
+
+
+		/// <summary>Gets or sets the time interval for the layout process in seconds.</summary>
 		public int TimeInterval {
 			get { return timeInterval; }
 			set { timeInterval = value; }
@@ -495,7 +498,9 @@ namespace Dataweb.NShape.Layouters {
 	}
 
 
-	/// <ToBeCompleted></ToBeCompleted>
+	/// <summary>
+	/// Expands (or shrinks) the space occupied by the specified shapes while maintaining their distribution proportionally.
+	/// </summary>
 	public class ExpansionLayouter : LayouterBase, ILayouter {
 
 		/// <ToBeCompleted></ToBeCompleted>
@@ -504,16 +509,20 @@ namespace Dataweb.NShape.Layouters {
 		}
 
 
-		// Factor -10 to 10
-		/// <ToBeCompleted></ToBeCompleted>
+		/// <summary>
+		/// Gets or sets the factor for expanding/compacting the shapes in horizontal direction. 
+		/// Accepts values between -10 and 10.
+		/// </summary>
 		public int HorizontalCompression {
 			get { return horizontalCompression; }
 			set { horizontalCompression = value; }
 		}
 
 
-		// Factor -10 to 10
-		/// <ToBeCompleted></ToBeCompleted>
+		/// <summary>
+		/// Gets or sets the factor for expanding/compacting the shapes in vertical direction. 
+		/// Accepts values between -10 and 10.
+		/// </summary>
 		public int VerticalCompression {
 			get { return verticalCompression; }
 			set { verticalCompression = value; }

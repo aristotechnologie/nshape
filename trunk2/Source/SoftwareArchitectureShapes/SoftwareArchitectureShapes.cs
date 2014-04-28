@@ -464,12 +464,32 @@ namespace Dataweb.NShape.SoftwareArchitectureShapes {
 			}
 		}
 
+
+		/// <override></override>
+		public override void ShowCaptionText(int index) {
+			if (index < base.CaptionCount)
+				base.ShowCaptionText(index);
+			else
+				columnCaptions[index - 1].IsVisible = true;
+		}
+
+
+		/// <override></override>
+		public override void HideCaptionText(int index) {
+			if (index < base.CaptionCount)
+				base.HideCaptionText(index);
+			else {
+				columnCaptions[index - 1].IsVisible = false;
+				Invalidate();
+			}
+		}
+
 		#endregion
 
 
 		#region [Public] Properties
 
-		[Category("Appearance")]
+		[CategoryAppearance()]
 		[Description("Defines the appearence of the shape's interior.\nUse the template editor to modify all shapes of a template.\nUse the design editor to modify and create styles.")]
 		[PropertyMappingId(PropertyIdColumnBackgroundColorStyle)]
 		[RequiredPermission(Permission.Present)]
@@ -647,15 +667,19 @@ namespace Dataweb.NShape.SoftwareArchitectureShapes {
 				}
 			}
 
-			yield return new CommandMenuItemDef("Append Column", null, string.Empty, true,
+			yield return new CommandMenuItemDef(Properties.Resources.CaptionTxt__AppendColumn, null, string.Empty, true,
 				new AddColumnCommand(this, newColumnTxt));
 
-			bool isFeasible = captionIdx > 0;
-			string description = "No caption clicked.";
-			string columnName = (captionIdx > 0) ? GetCaptionText(captionIdx) : null;
-			yield return new CommandMenuItemDef(string.Format("Insert Column{0}", (captionIdx > 0) ? string.Format(" before '{0}'", columnName) : ""),
+			bool isFeasible = captionIdx >= 0;
+			string description = Properties.Resources.MessageTxt_NoCaptionClicked;
+			if (isFeasible)
+				description = string.Format(Properties.Resources.MessageFmt_InsertNewColumnBeforeColumn0, columnNames[captionIdx]);
+			yield return new CommandMenuItemDef(Properties.Resources.CaptionTxt_InsertColumn,
 				null, description, isFeasible, isFeasible ? new InsertColumnCommand(this, captionIdx, newColumnTxt) : null);
-			yield return new CommandMenuItemDef(string.Format("Remove Column{0}", (captionIdx > 0) ? string.Format(" '{0}'", GetCaptionText(captionIdx)) : ""),
+			
+			if (isFeasible)
+				description = string.Format(Properties.Resources.MessageFmt_RemoveColumn0, columnNames[captionIdx]);
+			yield return new CommandMenuItemDef(Properties.Resources.CaptionTxt_RemoveColumn,
 				null, description, isFeasible, isFeasible ? new RemoveColumnCommand(this, captionIdx, columnCaptions[captionIdx - 1].Text) : null);
 		}
 
@@ -767,10 +791,10 @@ namespace Dataweb.NShape.SoftwareArchitectureShapes {
 				int top = (int)Math.Round(Y - (Height / 2f));
 				int bottom = (int)Math.Round(Y + (Height / 2f));
 				int captionCnt = columnCaptions.Count;
-				if (captionCnt > 0) {
-					for (int i = 0; i < captionCnt; ++i) {
-						// draw all captions that fit into the text area. 
-						if (top + headerHeight + (i * columnHeight) + columnHeight <= bottom - cornerRadius) {
+				for (int i = 0; i < captionCnt; ++i) {
+					// draw all captions that fit into the text area. 
+					if (top + headerHeight + (i * columnHeight) + columnHeight <= bottom - cornerRadius) {
+						if (columnCaptions[i].IsVisible) {
 							// If there are private styles for a single caption, use these
 							if (columnCharacterStyles != null || columnParagraphStyles != null) {
 								ICharacterStyle characterStyle = null;
@@ -780,14 +804,14 @@ namespace Dataweb.NShape.SoftwareArchitectureShapes {
 								if (columnParagraphStyles != null)
 									columnParagraphStyles.TryGetValue(i, out paragraphStyle);
 								columnCaptions[i].Draw(graphics, characterStyle ?? ColumnCharacterStyle, paragraphStyle ?? ColumnParagraphStyle);
-							} else 
+							} else
 								columnCaptions[i].Draw(graphics, ColumnCharacterStyle, ColumnParagraphStyle);
-						} else {
-							// draw ellipsis indicators
-							graphics.DrawLines(pen, upperScrollArrow);
-							graphics.DrawLines(pen, lowerScrollArrow);
-							break;
 						}
+					} else {
+						// draw ellipsis indicators
+						graphics.DrawLines(pen, upperScrollArrow);
+						graphics.DrawLines(pen, lowerScrollArrow);
+						break;
 					}
 				}
 			}

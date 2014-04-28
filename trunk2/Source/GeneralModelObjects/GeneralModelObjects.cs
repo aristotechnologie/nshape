@@ -118,9 +118,12 @@ namespace Dataweb.NShape.GeneralModelObjects {
 	public static class NShapeLibraryInitializer {
 
 		public static void Initialize(IRegistrar registrar) {
+			// Register library
 			registrar.RegisterLibrary(namespaceName, preferredRepositoryVersion);
+			// Register model object types
+			TerminalId maxTerminalId = 2;
 			registrar.RegisterModelObjectType(new GenericModelObjectType("ValueDevice", namespaceName, categoryTitle,
-				ValueDevice.CreateInstance, ValueDevice.GetPropertyDefinitions, 2));
+				ValueDevice.CreateInstance, ValueDevice.GetPropertyDefinitions, maxTerminalId));
 		}
 
 

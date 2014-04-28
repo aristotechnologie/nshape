@@ -233,12 +233,31 @@ namespace Dataweb.NShape.Advanced {
 			UpdateDrawCache();
 			int lastIdx = shapePoints.Length - 1;
 			if (lastIdx > 0) {
-				// Draw background of line caps
-				DrawStartCapBackground(graphics, shapePoints[0].X, shapePoints[0].Y);
-				DrawEndCapBackground(graphics, shapePoints[lastIdx].X, shapePoints[lastIdx].Y);
-				// Draw Line
+				// GDI+ behaviour:
+				// If the two end caps of a line intersect within the range of the insets and the whole 
+				// line is covered by caps, GDI+ seems to have trouble finding the intersection point 
+				// and throws an out of memory exception.
+				// Workaround:
+				// We detect that condition and move the end points of the line farther away from each other such that 
+				// the caps do not intersect anymore.
+				Point startPoint = shapePoints[0];
+				Point endPoint = shapePoints[lastIdx];
 				Pen pen = ToolCache.GetPen(LineStyle, StartCapStyleInternal, EndCapStyleInternal);
-				DrawOutline(graphics, pen);
+				try {
+					Point safeStartPoint, safeEndPoint;
+					if (ShapeUtils.LineHasInvalidCapIntersection(shapePoints, pen, out safeStartPoint, out safeEndPoint)) {
+						shapePoints[0] = safeStartPoint;
+						shapePoints[lastIdx] = safeEndPoint;
+					}
+					// Draw interior of line caps
+					DrawStartCapBackground(graphics, safeStartPoint.X, safeStartPoint.Y);
+					DrawEndCapBackground(graphics, safeEndPoint.X, safeEndPoint.Y);
+					// Draw line
+					DrawOutline(graphics, pen);
+				} finally {
+					shapePoints[0] = startPoint;
+					shapePoints[lastIdx] = endPoint;
+				}
 				// ToDo: If the line is connected to another line, draw a connection indicator (ein Bommel oder so)
 				// ToDo: Add a property for enabling/disabling this feature
 			}
@@ -250,24 +269,7 @@ namespace Dataweb.NShape.Advanced {
 		public override void DrawOutline(Graphics graphics, Pen pen) {
 			if (graphics == null) throw new ArgumentNullException("graphics");
 			if (pen == null) throw new ArgumentNullException("pen");
-			// Workaround for a very strange problem:
-			// If a 1-segment line with custom line caps is drawn and the line has exactly the same 
-			// length as the sum of both cap's BaseInset, an OutOfMemoryException is thrown sometimes 
-			// (not always). The exception is thrown in DrawLines and all efforts to trace down the 
-			// cause of this issue came to nothing.
-			if (shapePoints.Length == 2 && pen.StartCap == LineCap.Custom && pen.EndCap == LineCap.Custom
-				&& (pen.Width * pen.CustomStartCap.BaseInset + pen.Width * pen.CustomEndCap.BaseInset) == Geometry.DistancePointPoint(shapePoints[0], shapePoints[1])) {
-				// Draw line a little bit longer in order to avoid the issue described above
-				const float delta = 0.001f;
-				PointF p1 = shapePoints[0];
-				PointF p2 = shapePoints[1];
-				if (p1.X == p2.X) p2.Y += delta;
-				else p2.X += delta;
-				graphics.DrawLine(pen, p1, p2);
-			} else {
-				// Draw line
-				graphics.DrawLines(pen, shapePoints);
-			}
+			ShapeUtils.DrawLinesSafe(graphics, pen, shapePoints);
 			base.DrawOutline(graphics, pen);
 		}
 

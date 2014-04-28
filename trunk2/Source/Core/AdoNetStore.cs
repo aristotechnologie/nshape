@@ -14,7 +14,6 @@
 
 using System;
 using System.Collections.Generic;
-using System.ComponentModel;
 using System.Data;
 using System.Data.Common;
 using System.Diagnostics;
@@ -140,7 +139,7 @@ namespace Dataweb.NShape {
 		/// Initializes a new instance of <see cref="T:Dataweb.NShape.MissingCommandException" />.
 		/// </summary>
 		internal protected MissingCommandException(string entityTypeName)
-			: base("Not all required commands exist for loading and/or saving entities of type '{0}'.", entityTypeName) {
+			: base(MessageFmt_NotAllRequiredCommandsExist, entityTypeName) {
 		}
 
 
@@ -148,13 +147,13 @@ namespace Dataweb.NShape {
 		/// Initializes a new instance of <see cref="T:Dataweb.NShape.MissingCommandException" />.
 		/// </summary>
 		internal protected MissingCommandException(RepositoryCommandType commandType, string entityTypeName)
-			: base("Command for {0} entities of type '{1}' does not exist.",
-				commandType == RepositoryCommandType.Delete ? "deleting" :
-				commandType == RepositoryCommandType.Insert ? "inserting" :
-				commandType == RepositoryCommandType.SelectById ? "loading single" :
+			: base(MessageFmt_CommandFor0EntitiesOfType1DoesNotExist,
+				commandType == RepositoryCommandType.Delete ? Text_Deleting :
+				commandType == RepositoryCommandType.Insert ? Text_Inserting :
+				commandType == RepositoryCommandType.SelectById ? Text_LoadingSingle :
 				//commandType == RepositoryCommandType.SelectByName ? "loading named single " :
-				commandType == RepositoryCommandType.SelectAll ? "loading multiple" :
-				commandType == RepositoryCommandType.Update ? "updating" : "loading and/or saving", entityTypeName) {
+				commandType == RepositoryCommandType.SelectAll ? Text_LoadingMultiple :
+				commandType == RepositoryCommandType.Update ? Text_Updating : Text_LoadingAndOrSaving, entityTypeName) {
 		}
 
 
@@ -162,8 +161,20 @@ namespace Dataweb.NShape {
 		/// Initializes a new instance of <see cref="T:Dataweb.NShape.MissingCommandException" />.
 		/// </summary>
 		internal protected MissingCommandException(string entityTypeName, string filterEntityTypeName)
-			: base("Command for loading entities of type '{1}' filtered by Id of '{1}' does not exist.", entityTypeName, filterEntityTypeName) {
+			: base(MessageFmt_CommandForLoadingEntitiesDoesNotExist, entityTypeName, filterEntityTypeName) {
 		}
+
+		
+		private const string MessageFmt_NotAllRequiredCommandsExist = "Not all required commands exist for loading and/or saving entities of type '{0}'.";
+		private const string MessageFmt_CommandFor0EntitiesOfType1DoesNotExist = "Command for {0} entities of type '{1}' does not exist.";
+		private const string MessageFmt_CommandForLoadingEntitiesDoesNotExist = "Command for loading entities of type '{1}' filtered by Id of '{1}' does not exist.";
+		private const string Text_Deleting = "deleting";
+		private const string Text_Inserting = "inserting";
+		private const string Text_LoadingAndOrSaving = "loading and/or saving";
+		private const string Text_LoadingMultiple = "loading multiple";
+		private const string Text_LoadingSingle = "loading single";
+		private const string Text_Updating = "updating";
+
 	}
 
 
@@ -228,6 +239,12 @@ namespace Dataweb.NShape {
 				if (closeConnection) EnsureDataSourceClosed();
 			}
 			return result;
+		}
+
+
+		/// <override></override>
+		public override bool CanModifyVersion {
+			get { return false; }
 		}
 
 
@@ -459,7 +476,7 @@ namespace Dataweb.NShape {
 						foreach (EntityBucket<Shape> sb in LoadEntities<Shape>(cache, et, id => true, id => cache.LoadedTemplates.GetEntity(id),
 							RepositoryCommandType.SelectTemplateShapes, cache.ProjectId)) {
 							Template t = (Template)sb.Owner;
-							if (t.Shape != null) throw new AdoNetStoreException("Template {0} has more than one shape.", t.Id);
+							if (t.Shape != null) throw new AdoNetStoreException(ResourceStrings.MessageFmt_Template0HasMoreThanOneShape, t.Id);
 							((Template)sb.Owner).Shape = sb.ObjectRef;
 							LoadChildShapes(cache, sb.ObjectRef);
 							cache.LoadedShapes.Add(sb);
@@ -469,7 +486,7 @@ namespace Dataweb.NShape {
 				// Load and assign all ModelMappings of the template.
 				// Model mappings have to be assigned after shape and model object
 				foreach (EntityBucket<Template> tb in cache.LoadedTemplates) {
-					if (tb.ObjectRef.Shape == null) throw new AdoNetStoreException("Template {0} has no shape.", tb.ObjectRef.Id);
+					if (tb.ObjectRef.Shape == null) throw new AdoNetStoreException(ResourceStrings.MessageFmt_Template0HasNoShape, tb.ObjectRef.Id);
 					foreach (EntityType et in cache.EntityTypes) {
 						if (et.Category == EntityCategory.ModelMapping) {
 							foreach (EntityBucket<IModelMapping> eb in LoadEntities<IModelMapping>(cache, et,
@@ -802,7 +819,7 @@ namespace Dataweb.NShape {
 		/// <summary>
 		/// Specifies the version of the assembly containing the component.
 		/// </summary>
-		[Category("NShape")]
+		[CategoryNShape()]
 		public string ProductVersion {
 			get { return this.GetType().Assembly.GetName().Version.ToString(); }
 		}
@@ -863,7 +880,7 @@ namespace Dataweb.NShape {
 
 
 		/// <summary>
-		/// Retrieves a command for reading the specified command.
+		/// Creates and returns a command for reading the specified command.
 		/// </summary>
 		public IDbCommand GetSelectSysCommandsCommand() {
 			IDbCommand result = CreateCommand("SELECT * FROM SysCommand");
@@ -873,10 +890,12 @@ namespace Dataweb.NShape {
 
 
 		/// <summary>
-		/// Retrieves a command for reading the specified command parameter.
+		/// Creates and returns a command for reading the specified command parameter.
 		/// </summary>
 		public IDbCommand GetSelectSysParameterCommand() {
-			IDbCommand result = CreateCommand("SELECT Name, Type FROM SysParameter WHERE Command = @Command ORDER BY No",
+			// The column 'No', which defines the parameter sequence, was introduced with version 3.
+			IDbCommand result = CreateCommand(
+				string.Format("SELECT Name, Type FROM SysParameter WHERE Command = @Command {0}", version <= 2 ? "" : "ORDER BY No"),
 				CreateParameter("Command", DbType.Int32));
 			result.Connection = Connection;
 			return result;
@@ -887,7 +906,7 @@ namespace Dataweb.NShape {
 		/// Retrieves a command that creates all tables of the database schema.
 		/// </summary>
 		public IDbCommand GetCreateTablesCommand() {
-			if (createTablesCommand == null) throw new AdoNetStoreException("Command for creating the schema is not defined.");
+			if (createTablesCommand == null) throw new AdoNetStoreException(ResourceStrings.MessageTxt_CommandForCreatingTheSchemaIsNotDefined);
 			if (createTablesCommand.Connection != Connection) createTablesCommand.Connection = Connection;
 			return createTablesCommand;
 		}
@@ -913,7 +932,7 @@ namespace Dataweb.NShape {
 			commandKey.Kind = cmdType;
 			commandKey.EntityTypeName = entityTypeName;
 			if (!commands.TryGetValue(commandKey, out result))
-				throw new InvalidOperationException(string.Format("ADO.NET command '{0}' for entity type '{1}' has not been defined.", cmdType, entityTypeName));
+				throw new InvalidOperationException(string.Format(ResourceStrings.MessageFmt_ADONETCommand0ForEntityType1HasNotBeenDefined, cmdType, entityTypeName));
 			if (result.Connection != Connection) result.Connection = Connection;
 			return result;
 		}
@@ -976,7 +995,7 @@ namespace Dataweb.NShape {
 		/// </summary>
 		protected IDbCommand CreateCommand() {
 			if (factory == null)
-				throw new AdoNetStoreException("No valid ADO.NET provider specified.");
+				throw new AdoNetStoreException(ResourceStrings.MessageTxt_NoValidADONETProviderSpecified);
 			return factory.CreateCommand();
 		}
 
@@ -987,7 +1006,8 @@ namespace Dataweb.NShape {
 		protected IDbCommand CreateCommand(string cmdText, params IDataParameter[] parameters) {
 			IDbCommand result = CreateCommand();
 			result.CommandText = cmdText;
-			foreach (IDataParameter p in parameters) result.Parameters.Add(p);
+			foreach (IDataParameter p in parameters)
+				if (p != null) result.Parameters.Add(p);
 			return result;
 		}
 
@@ -1010,11 +1030,6 @@ namespace Dataweb.NShape {
 		/// <override></override>
 		protected override void Dispose(bool disposing) {
 			if (disposing) {
-				// Close and dispose connection
-				if (connection != null) {
-					if (connection.State != ConnectionState.Closed) connection.Close();
-					connection.Dispose();
-				}
 				// Dispose and delete commands
 				if (commands != null) {
 					foreach (KeyValuePair<CommandKey, IDbCommand> item in commands)
@@ -1023,6 +1038,11 @@ namespace Dataweb.NShape {
 				}
 				if (createTablesCommand != null) createTablesCommand.Dispose();
 				if (transaction != null) transaction.Dispose();
+				// Close and dispose connection
+				if (connection != null) {
+					if (connection.State != ConnectionState.Closed) connection.Close();
+					connection.Dispose();
+				}
 			}
 			base.Dispose(disposing);
 		}
@@ -1109,7 +1129,9 @@ namespace Dataweb.NShape {
 				IDbCommand dropCommand = GetCommand("All", RepositoryCommandType.Delete);
 				dropCommand.Connection = connection;
 				dropCommand.ExecuteNonQuery();
+
 			} finally {
+				ClearCommands();
 				if (dataSourceOpened) EnsureDataSourceClosed();
 			}
 		}
@@ -1120,24 +1142,31 @@ namespace Dataweb.NShape {
 		/// </summary>
 		protected virtual void LoadSysCommands() {
 			ClearCommands();
-			IDbCommand cmdCmd = GetSelectSysCommandsCommand();
-			IDbCommand paramCmd = GetSelectSysParameterCommand();
-			CommandKey ck;
-			using (IDataReader reader = cmdCmd.ExecuteReader()) {
-				while (reader.Read()) {
-					ck.Kind = (RepositoryCommandType)Enum.Parse(typeof(RepositoryCommandType), reader.GetString(1));
-					ck.EntityTypeName = reader.GetString(2);
-					IDbCommand command = CreateCommand(reader.GetString(3));
-					// Read parameters
-					((IDataParameter)paramCmd.Parameters[0]).Value = reader.GetInt32(0);
-					using (IDataReader paramReader = paramCmd.ExecuteReader()) {
-						while (paramReader.Read()) {
-							command.Parameters.Add(CreateParameter(paramReader.GetString(0),
-								(DbType)Enum.Parse(typeof(DbType), paramReader.GetString(1))));
+			IDbCommand commandCmd = null;
+			IDbCommand paramCmd = null;
+			try {
+				commandCmd = GetSelectSysCommandsCommand();
+				paramCmd = GetSelectSysParameterCommand();
+				CommandKey ck;
+				using (IDataReader commandReader = commandCmd.ExecuteReader()) {
+					while (commandReader.Read()) {
+						ck.Kind = (RepositoryCommandType)Enum.Parse(typeof(RepositoryCommandType), commandReader.GetString(1));
+						ck.EntityTypeName = commandReader.GetString(2);
+						IDbCommand command = CreateCommand(commandReader.GetString(3));
+						// Read parameters
+						((IDataParameter)paramCmd.Parameters[0]).Value = commandReader.GetInt32(0);
+						using (IDataReader paramReader = paramCmd.ExecuteReader()) {
+							while (paramReader.Read()) {
+								command.Parameters.Add(CreateParameter(paramReader.GetString(0),
+									(DbType)Enum.Parse(typeof(DbType), paramReader.GetString(1))));
+							}
 						}
-					}
-					commands.Add(ck, command);
-				}
+						commands.Add(ck, command);
+					} // while loop
+				} // using commandReader
+			} finally {
+				if (commandCmd != null) commandCmd.Dispose();
+				if (paramCmd != null) paramCmd.Dispose();
 			}
 		}
 
@@ -1151,7 +1180,7 @@ namespace Dataweb.NShape {
 			//
 			bool dataSourceOpened = EnsureDataSourceOpen();
 			try {
-				IDbCommand cmd = GetCommand("Core.ShapeConnection", RepositoryCommandType.SelectByOwnerId);
+				IDbCommand cmd = GetCommand(connectionEntityTypeName, RepositoryCommandType.SelectByOwnerId);
 				((IDbDataParameter)cmd.Parameters[0]).Value = ((IEntity)diagram).Id;
 				using (IDataReader dataReader = cmd.ExecuteReader()) {
 					ShapeConnection sc;
@@ -1193,7 +1222,7 @@ namespace Dataweb.NShape {
 		/// <ToBeCompleted></ToBeCompleted>
 		protected void OpenCore(IStoreCache cache, bool create) {
 			// Check if store is already open
-			if (commands.Count > 0) throw new InvalidOperationException(string.Format("{0} is already open.", GetType().Name));
+			if (commands.Count > 0) throw new InvalidOperationException(string.Format(ResourceStrings.MessageFmt_0IsAlreadyOpen, GetType().Name));
 			bool dataSourceOpened = EnsureDataSourceOpen();
 			try {
 				LoadSysCommands();
@@ -1478,11 +1507,11 @@ namespace Dataweb.NShape {
 					IDbCommand updateOwnerCmd;
 					// For a new owner we assume parent shape. 
 					if (eb.Owner == null || eb.Owner is Shape)
-						updateOwnerCmd = GetCommand("Core.Shape", RepositoryCommandType.UpdateOwnerShape);
+						updateOwnerCmd = GetCommand(shapeEntityTypeName, RepositoryCommandType.UpdateOwnerShape);
 					else if (eb.Owner is Diagram)
-						updateOwnerCmd = GetCommand("Core.Shape", RepositoryCommandType.UpdateOwnerDiagram);
+						updateOwnerCmd = GetCommand(shapeEntityTypeName, RepositoryCommandType.UpdateOwnerDiagram);
 					else {
-						Debug.Fail("Unexpected owner in AdoNetRepository.Update.");
+						Debug.Fail("Unexpected owner in AdoNetRepository.Update!");
 						updateOwnerCmd = null;
 					}
 					updateOwnerCmd.Transaction = transaction;
@@ -1861,7 +1890,7 @@ namespace Dataweb.NShape {
 
 			private void ValidateFieldIndex() {
 				if (PropertyIndex >= dataReader.FieldCount)
-					throw new InvalidOperationException("An object tries to load more properties than the entity is defined to have.");
+					throw new InvalidOperationException(ResourceStrings.MessageTxt_AnObjectTriesToLoadMorePropertiesThanTheEntityIsDefined);
 			}
 
 
@@ -1931,7 +1960,7 @@ namespace Dataweb.NShape {
 					// Updating an entity
 					object result = command.ExecuteNonQuery();
 					if (result == null)
-						throw new Exception(string.Format("No Records affected by statement{0}{1}", Environment.NewLine, command.CommandText));
+						throw new Exception(string.Format(ResourceStrings.MessageFmt_NoRecordsAffectedByStatement01, Environment.NewLine, command.CommandText));
 				}
 			}
 
@@ -2072,7 +2101,8 @@ namespace Dataweb.NShape {
 			protected override void DoBeginWriteInnerObjects() {
 				++PropertyIndex;
 				ValidateInnerObjectsIndex();
-				if (!(propertyInfos[PropertyIndex] is EntityInnerObjectsDefinition)) throw new AdoNetStoreException("Property is not an inner objects property.");
+				if (!(propertyInfos[PropertyIndex] is EntityInnerObjectsDefinition)) 
+					throw new AdoNetStoreException(ResourceStrings.MessageTxt_PropertyIsNotAnInnerObjectsProperty);
 				//
 				EntityInnerObjectsDefinition innerInfo = (EntityInnerObjectsDefinition)propertyInfos[PropertyIndex];
 				if (AdoNetStore.IsComposition(innerInfo)) {
@@ -2118,7 +2148,7 @@ namespace Dataweb.NShape {
 			/// <override></override>
 			protected override void DoDeleteInnerObjects() {
 				ValidateInnerObjectsIndex();
-				if (!(propertyInfos[PropertyIndex] is EntityInnerObjectsDefinition)) throw new AdoNetStoreException("Property is not an inner objects property.");
+				if (!(propertyInfos[PropertyIndex] is EntityInnerObjectsDefinition)) throw new AdoNetStoreException(ResourceStrings.MessageTxt_PropertyIsNotAnInnerObjectsProperty);
 				//
 				// Delete all existing inner objects of the current persistable object			
 				IDbCommand command = store.GetCommand(((EntityInnerObjectsDefinition)propertyInfos[PropertyIndex]).EntityTypeName, RepositoryCommandType.Delete);
@@ -2141,14 +2171,14 @@ namespace Dataweb.NShape {
 			// columns, e.g for the parent id and the id.
 			private void ValidateFieldIndex() {
 				if (PropertyIndex >= command.Parameters.Count)
-					throw new AdoNetStoreException("Field '{0}' of entity cannot be written to the repository because the mapping contains less items. Check whether the SQL commands for this entity are correct.", PropertyIndex);
+					throw new AdoNetStoreException(MessageFmt_Field0OfEntityCannotBeWrittenNotEnoughParameters, PropertyIndex);
 			}
 
 
 			// Can check against the property count here, becuause there are no hidden inner objects.
 			private void ValidateInnerObjectsIndex() {
 				if (PropertyIndex >= propertyInfos.Count)
-					throw new AdoNetStoreException("Inner objects '{0}' of entity cannot be written to the data store because the entity defines less properties.", PropertyIndex);
+					throw new AdoNetStoreException(ResourceStrings.MessageFmt_InnerObjects0OfEntityCannotBeWrittenNotEnoughPropertyDefs, PropertyIndex);
 			}
 
 
@@ -2162,6 +2192,8 @@ namespace Dataweb.NShape {
 
 
 			#region Fields
+
+			private const string MessageFmt_Field0OfEntityCannotBeWrittenNotEnoughParameters = "Field '{0}' of entity cannot be written to the repository because the mapping contains not enough items. Check whether the SQL commands for this entity are correct.";
 
 			private AdoNetStore store;
 			private IDbCommand command;
@@ -2222,7 +2254,7 @@ namespace Dataweb.NShape {
 
 			/// <override></override>
 			protected internal override void DoEndObject() {
-				if (str[p] != AdoNetStore.CompositionSeperatorChar) throw new InvalidOperationException("Unsupported string. ';' expected.");
+				if (str[p] != AdoNetStore.CompositionSeperatorChar) throw new InvalidOperationException(ResourceStrings.MessageTxt_UnsupportedStringSemicolonExpected);
 				++p;
 			}
 
@@ -2269,7 +2301,7 @@ namespace Dataweb.NShape {
 			protected override byte DoReadByte() {
 				long value = DoReadIntValue();
 				if (value < byte.MinValue || byte.MaxValue < value)
-					throw new AdoNetStoreException("Invalid repository format");
+					throw new AdoNetStoreException(ResourceStrings.MessageTxt_InvalidRepositoryFormat);
 				return (byte)value;
 			}
 
@@ -2278,7 +2310,7 @@ namespace Dataweb.NShape {
 			protected override short DoReadInt16() {
 				long value = DoReadIntValue();
 				if (value < short.MinValue || short.MaxValue < value)
-					throw new AdoNetStoreException("Invalid repository format");
+					throw new AdoNetStoreException(ResourceStrings.MessageTxt_InvalidRepositoryFormat);
 				return (short)value;
 			}
 
@@ -2287,7 +2319,7 @@ namespace Dataweb.NShape {
 			protected override int DoReadInt32() {
 				long value = DoReadIntValue();
 				if (value < int.MinValue || int.MaxValue < value)
-					throw new AdoNetStoreException("Invalid repository format");
+					throw new AdoNetStoreException(ResourceStrings.MessageTxt_InvalidRepositoryFormat);
 				return (int)value;
 			}
 
@@ -2302,7 +2334,7 @@ namespace Dataweb.NShape {
 			protected override float DoReadFloat() {
 				double value = DoReadDblValue();
 				if (value < float.MinValue || float.MaxValue < value)
-					throw new AdoNetStoreException("Invalid repository format");
+					throw new AdoNetStoreException(ResourceStrings.MessageTxt_InvalidRepositoryFormat);
 				return (float)value;
 			}
 
@@ -2317,7 +2349,7 @@ namespace Dataweb.NShape {
 			protected override char DoReadChar() {
 				char value;
 				if (!char.TryParse(DoReadStringValue(), out value))
-					throw new AdoNetStoreException("Invalid repository format");
+					throw new AdoNetStoreException(ResourceStrings.MessageTxt_InvalidRepositoryFormat);
 				return value;
 			}
 
@@ -2374,7 +2406,7 @@ namespace Dataweb.NShape {
 
 			private string DoReadStringValue() {
 				int seperatorPos = str.IndexOfAny(seperators, p);
-				if (seperatorPos < 0) throw new AdoNetStoreException("Invalid repository format");
+				if (seperatorPos < 0) throw new AdoNetStoreException(ResourceStrings.MessageTxt_InvalidRepositoryFormat);
 				string result = Uri.UnescapeDataString(str.Substring(p, seperatorPos - p));
 				p = seperatorPos;
 				return result;
@@ -2565,9 +2597,9 @@ namespace Dataweb.NShape {
 			get {
 				if (connection == null) {
 					if (string.IsNullOrEmpty(ProviderName))
-						throw new AdoNetStoreException("ProviderName is not set.");
+						throw new AdoNetStoreException(ResourceStrings.MessageTxt_ProviderNameNotSet);
 					if (string.IsNullOrEmpty(ConnectionString))
-						throw new AdoNetStoreException("ConnectionString is not set.");
+						throw new AdoNetStoreException(ResourceStrings.MessageTxt_ConnectionStringNotSet);
 					connection = factory.CreateConnection();
 					connection.ConnectionString = ConnectionString;
 				}
@@ -2623,6 +2655,27 @@ namespace Dataweb.NShape {
 		}
 
 		#endregion
+
+
+		private class ResourceStrings {
+			internal const string MessageFmt_0AlreadyDeletedFromTheRepository = "{0} already deleted from the repository.";
+			internal const string MessageFmt_0AlreadyExistsInRepository = "{0} already exists in the repository.";
+			internal const string MessageFmt_0IsAlreadyOpen = "{0} is already open.";
+			internal const string MessageFmt_ADONETCommand0ForEntityType1HasNotBeenDefined = "ADO.NET command '{0}' for entity type '{1}' has not been defined.";
+			internal const string MessageFmt_InnerObjects0OfEntityCannotBeWrittenNotEnoughPropertyDefs = "Inner objects '{0}' of entity cannot be written to the data store because the entity defines not enough properties.";
+			internal const string MessageFmt_NoRecordsAffectedByStatement01 = "No Records affected by statement{0}{1}";
+			internal const string MessageFmt_Template0HasMoreThanOneShape = "Template {0} has more than one shape.";
+			internal const string MessageFmt_Template0HasNoShape = "Template {0} has no shape.";
+
+			internal const string MessageTxt_AnObjectTriesToLoadMorePropertiesThanTheEntityIsDefined = "An object tries to load more properties than the entity is defined to have.";
+			internal const string MessageTxt_CommandForCreatingTheSchemaIsNotDefined = "Command for creating the schema is not defined.";
+			internal const string MessageTxt_ConnectionStringNotSet = "ConnectionString is not set.";
+			internal const string MessageTxt_InvalidRepositoryFormat = "Invalid repository format.";
+			internal const string MessageTxt_NoValidADONETProviderSpecified = "No valid ADO.NET provider specified.";
+			internal const string MessageTxt_PropertyIsNotAnInnerObjectsProperty = "Property is not an inner objects property.";
+			internal const string MessageTxt_ProviderNameNotSet = "ProviderName is not set.";
+			internal const string MessageTxt_UnsupportedStringSemicolonExpected = "Unsupported string. ';' expected.";
+		}
 
 
 		#region Fields
