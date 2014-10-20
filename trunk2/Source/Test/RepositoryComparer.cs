@@ -1,5 +1,5 @@
 ﻿/******************************************************************************
-  Copyright 2009-2013 dataweb GmbH
+  Copyright 2009-2014 dataweb GmbH
   This file is part of the NShape framework.
   NShape is free software: you can redistribute it and/or modify it under the 
   terms of the GNU General Public License as published by the Free Software 
@@ -195,7 +195,7 @@ namespace NShapeTest {
 			Assert.AreEqual<System.Drawing.Drawing2D.HatchStyle>(styleA.FillPattern, styleB.FillPattern);
 			Assert.AreEqual<short>(styleA.GradientAngle, styleB.GradientAngle);
 			CompareNamedImage(styleA.Image, styleB.Image, version);
-			Assert.AreEqual<float>(styleA.ImageGammaCorrection, styleB.ImageGammaCorrection);
+			CompareFloat(styleA.ImageGammaCorrection, styleB.ImageGammaCorrection);
 			Assert.AreEqual<ImageLayoutMode>(styleA.ImageLayout, styleB.ImageLayout);
 			Assert.AreEqual<byte>(styleA.ImageTransparency, styleB.ImageTransparency);
 		}
@@ -211,7 +211,7 @@ namespace NShapeTest {
 			Assert.IsNotNull(styleB.DashPattern);
 			Assert.AreEqual<int>(styleA.DashPattern.Length, styleB.DashPattern.Length);
 			for (int i = styleA.DashPattern.Length - 1; i >= 0; --i)
-				Assert.AreEqual<float>(styleA.DashPattern[i], styleB.DashPattern[i]);
+				CompareFloat(styleA.DashPattern[i], styleB.DashPattern[i]);
 			Assert.AreEqual<DashType>(styleA.DashType, styleB.DashType);
 			Assert.AreEqual<System.Drawing.Drawing2D.LineJoin>(styleA.LineJoin, styleB.LineJoin);
 			Assert.AreEqual<int>(styleA.LineWidth, styleB.LineWidth);
@@ -322,7 +322,7 @@ namespace NShapeTest {
 					Assert.AreEqual<int>(diagramA.BackgroundImage.Width, diagramB.BackgroundImage.Width);
 					Assert.AreEqual<int>(diagramA.BackgroundImage.Height, diagramB.BackgroundImage.Height);
 				}
-				Assert.AreEqual<float>(diagramA.BackgroundImageGamma, diagramB.BackgroundImageGamma);
+				CompareFloat(diagramA.BackgroundImageGamma, diagramB.BackgroundImageGamma);
 				Assert.AreEqual<bool>(diagramA.BackgroundImageGrayscale, diagramB.BackgroundImageGrayscale);
 				Assert.AreEqual<ImageLayoutMode>(diagramA.BackgroundImageLayout, diagramB.BackgroundImageLayout);
 				Assert.AreEqual<byte>(diagramA.BackgroundImageTransparency, diagramB.BackgroundImageTransparency);

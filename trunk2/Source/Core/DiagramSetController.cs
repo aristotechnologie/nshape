@@ -1,5 +1,5 @@
 ﻿/******************************************************************************
-  Copyright 2009-2013 dataweb GmbH
+  Copyright 2009-2014 dataweb GmbH
   This file is part of the NShape framework.
   NShape is free software: you can redistribute it and/or modify it under the 
   terms of the GNU General Public License as published by the Free Software 
@@ -265,21 +265,32 @@ namespace Dataweb.NShape.Controllers {
 		}
 
 
-		/// <ToBeCompleted></ToBeCompleted>
-		public void Copy(Diagram source, IEnumerable<Shape> shapes, bool withModelObjects) {
-			Copy(source, shapes, withModelObjects, Geometry.InvalidPoint);
+		/// <summary>
+		/// Copies the specified shapes of the specified diagram.
+		/// </summary>
+		/// <param name="diagram">The diagram that contains the shapes to be copied.</param>
+		/// <param name="shapes">The shapes to be copied.</param>
+		/// <param name="withModelObjects">Specifies whether assigned model objects should be copied, too</param>
+		public void Copy(Diagram diagram, IEnumerable<Shape> shapes, bool withModelObjects) {
+			Copy(diagram, shapes, withModelObjects, Geometry.InvalidPoint);
 		}
 
 
-		/// <ToBeCompleted></ToBeCompleted>
-		public void Copy(Diagram source, IEnumerable<Shape> shapes, bool withModelObjects, Point startPos) {
-			if (source == null) throw new ArgumentNullException("source");
+		/// <summary>
+		/// Copies the specified shapes of the specified diagram.
+		/// </summary>
+		/// <param name="diagram">The diagram that contains the shapes to be copied.</param>
+		/// <param name="shapes">The shapes to be copied.</param>
+		/// <param name="withModelObjects">Specifies whether assigned model objects should be copied, too</param>
+		/// <param name="position">Mouse cursor position in diagram coordinates.</param>
+		public void Copy(Diagram diagram, IEnumerable<Shape> shapes, bool withModelObjects, Point position) {
+			if (diagram == null) throw new ArgumentNullException("source");
 			if (shapes == null) throw new ArgumentNullException("shapes");
 
 			editBuffer.Clear();
 			editBuffer.action = EditAction.Copy;
 			editBuffer.withModelObjects = withModelObjects;
-			editBuffer.initialMousePos = startPos;
+			editBuffer.initialMousePos = position;
 			editBuffer.shapes.AddRange(shapes);
 			
 			// We have to copy the shapes immediately because shapes (and/or model objects) may 
@@ -291,15 +302,26 @@ namespace Dataweb.NShape.Controllers {
 		}
 
 
-		/// <ToBeCompleted></ToBeCompleted>
-		public void Cut(Diagram source, IEnumerable<Shape> shapes, bool withModelObjects) {
-			Cut(source, shapes, withModelObjects, Geometry.InvalidPoint);
+		/// <summary>
+		/// Cuts the specified shapes out of the specified diagram.
+		/// </summary>
+		/// <param name="diagram">The diagram that contains the shapes to be cut out.</param>
+		/// <param name="shapes">The shapes to be cut out.</param>
+		/// <param name="withModelObjects">Specifies whether assigned model objects should be cut, too</param>
+		public void Cut(Diagram diagram, IEnumerable<Shape> shapes, bool withModelObjects) {
+			Cut(diagram, shapes, withModelObjects, Geometry.InvalidPoint);
 		}
 
 
-		/// <ToBeCompleted></ToBeCompleted>
-		public void Cut(Diagram source, IEnumerable<Shape> shapes, bool withModelObjects, Point startPos) {
-			if (source == null) throw new ArgumentNullException("source");
+		/// <summary>
+		/// Cuts the specified shapes out of the specified diagram.
+		/// </summary>
+		/// <param name="diagram">The diagram that contains the shapes to be cut out.</param>
+		/// <param name="shapes">The shapes to be cut out.</param>
+		/// <param name="withModelObjects">Specifies whether assigned model objects should be cut, too</param>
+		/// <param name="position">Mouse cursor position in diagram coordinates.</param>
+		public void Cut(Diagram diagram, IEnumerable<Shape> shapes, bool withModelObjects, Point position) {
+			if (diagram == null) throw new ArgumentNullException("source");
 			if (shapes == null) throw new ArgumentNullException("shapes");
 			if (project == null) throw new InvalidOperationException("Property Project not set!");
 			Dictionary<Shape, IModelObject> cutModelObjects = null;
@@ -307,7 +329,7 @@ namespace Dataweb.NShape.Controllers {
 			editBuffer.Clear();
 			editBuffer.action = EditAction.Cut;
 			editBuffer.withModelObjects = withModelObjects;
-			editBuffer.initialMousePos = startPos;
+			editBuffer.initialMousePos = position;
 			editBuffer.shapes.AddRange(shapes);
 			// Store model objects and shape connections
 			foreach (Shape s in editBuffer.shapes) {
@@ -332,7 +354,7 @@ namespace Dataweb.NShape.Controllers {
 				}
 			}
 
-			ICommand cmd = new DeleteShapesCommand(source, editBuffer.shapes, withModelObjects);
+			ICommand cmd = new DeleteShapesCommand(diagram, editBuffer.shapes, withModelObjects);
 			project.ExecuteCommand(cmd);
 
 			// Restore deleted model objects so they are available for pasting (one or more times)
@@ -343,14 +365,24 @@ namespace Dataweb.NShape.Controllers {
 		}
 
 
-		/// <ToBeCompleted></ToBeCompleted>
-		public void Paste(Diagram destination, LayerIds activeLayers) {
-			Paste(destination, activeLayers, 20, 20);
+		/// <summary>
+		/// Inserts the previously copied/cut shapes into the specified diagram.
+		/// </summary>
+		/// <param name="diagram">The diagram where to insert the previously cut/copied shapes.</param>
+		/// <param name="activeLayers">The layers which the inserted shapes will be assigned to.</param>
+		public void Paste(Diagram diagram, LayerIds activeLayers) {
+			Paste(diagram, activeLayers, 20, 20);
 		}
 
 
-		/// <ToBeCompleted></ToBeCompleted>
-		public void Paste(Diagram destination, LayerIds activeLayers, Point position) {
+		/// <summary>
+		/// Inserts the previously copied/cut shapes into the specified diagram.
+		/// </summary>
+		/// <param name="diagram">The diagram where to insert the previously cut/copied shapes.</param>
+		/// <param name="activeLayers">The layers which the inserted shapes will be assigned to.</param>
+		/// <param name="position">Specifies the mouse cursor position in diagram coordinates where the shapes should be inserted.</param>
+		/// <remarks>Inserting at the specified position will only work if the shapes were copied/cut with a valid position.</remarks>
+		public void Paste(Diagram diagram, LayerIds activeLayers, Point position) {
 			if (!editBuffer.IsEmpty) {
 				int dx = 40, dy = 40;
 				if (Geometry.IsValid(position)) {
@@ -358,15 +390,21 @@ namespace Dataweb.NShape.Controllers {
 					dx = position.X - (rect.X + (rect.Width / 2));
 					dy = position.Y - (rect.Y + (rect.Height / 2));
 				}
-				Paste(destination, activeLayers, dx, dy);
+				Paste(diagram, activeLayers, dx, dy);
 				editBuffer.initialMousePos = position;
 			}
 		}
 
 
-		/// <ToBeCompleted></ToBeCompleted>
-		public void Paste(Diagram destination, LayerIds activeLayers, int offsetX, int offsetY) {
-			if (destination == null) throw new ArgumentNullException("destination");
+		/// <summary>
+		/// Inserts the previously copied/cut shapes into the specified diagram.
+		/// </summary>
+		/// <param name="diagram">The diagram where to insert the previously cut/copied shapes.</param>
+		/// <param name="activeLayers">The layers which the inserted shapes will be assigned to.</param>
+		/// <param name="offsetX">Specifies the offset on the X axis in diagram coordinates that will be applied to the inserted shape's position.</param>
+		/// <param name="offsetY">Specifies the offset on the Y axis in diagram coordinates that will be applied to the inserted shape's position.</param>
+		public void Paste(Diagram diagram, LayerIds activeLayers, int offsetX, int offsetY) {
+			if (diagram == null) throw new ArgumentNullException("destination");
 			if (!editBuffer.IsEmpty) {
 				++editBuffer.pasteCount;
 
@@ -385,7 +423,7 @@ namespace Dataweb.NShape.Controllers {
 				}
 				// Create command
 				ICommand cmd = new CreateShapesCommand(
-					destination,
+					diagram,
 					activeLayers,
 					editBuffer.shapes,
 					editBuffer.withModelObjects,

@@ -1,5 +1,5 @@
 /******************************************************************************
-  Copyright 2009-2013 dataweb GmbH
+  Copyright 2009-2014 dataweb GmbH
   This file is part of the NShape framework.
   NShape is free software: you can redistribute it and/or modify it under the 
   terms of the GNU General Public License as published by the Free Software 
@@ -2249,7 +2249,7 @@ namespace Dataweb.NShape {
 			innerObjectsWriter = null;
 			foreach (EntityPropertyDefinition pi in entityType.PropertyDefinitions)
 				if (pi is EntityInnerObjectsDefinition)
-					template.SaveInnerObjects(pi.Name, repositoryWriter, version);
+					template.SaveInnerObjects(pi.Name, repositoryWriter, entityType.RepositoryVersion);
 			repositoryWriter.Finish();
 
 			// Save template's model mappings
@@ -2332,10 +2332,10 @@ namespace Dataweb.NShape {
 			imgWriter.Reset(entityType.PropertyDefinitions);
 			imgWriter.Prepare(entity);
 			imgWriter.WriteId(entity.Id);
-			entity.SaveFields(imgWriter, cache.RepositoryBaseVersion);
+			entity.SaveFields(imgWriter, entityType.RepositoryVersion);
 			foreach (EntityPropertyDefinition pi in entityType.PropertyDefinitions)
 				if (pi is EntityInnerObjectsDefinition)
-					entity.SaveInnerObjects(pi.Name, imgWriter, version);
+					entity.SaveInnerObjects(pi.Name, imgWriter, entityType.RepositoryVersion);
 			imgWriter.Finish();
 		}
 

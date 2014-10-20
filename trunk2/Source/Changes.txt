@@ -7,6 +7,35 @@ Known issues:
 
 
 ====================================================================================================
+Changes in 2.2.1:
+====================================================================================================
+- Interface Change: Definition of the abstract StyleCollection base class changed from 
+    public abstract class StyleCollection<TStyle> where TStyle : class, IStyle
+  to 
+    public abstract class StyleCollection<TStyle, TStyleInterface> : IEnumerable<TStyleInterface>
+		where TStyle : class, TStyleInterface 
+		where TStyleInterface : class, IStyle
+  due to the fact that the implementation of the enumerator moved from the specific style collections
+  to the base class which in turn wraps the enumerator of the internal list (see below).
+- Bugfix: Changing the StyleCollection iterator's implementation (see above) fixes a bug where you 
+  can change the collection's key while iterating through the collection. Doing so will now raise an
+  InvalidOperationException.
+- Bugfix: EmbeddedImageWriter now calls all IEntity.SaveFields and IEntity.SaveInnerObjects methods
+  with the library's version instead of the base repository version.
+- Bugfix: Moving shapes with arrow keys will no longer focus the scroll bars (which will break 
+  scrolling and zooming behavior)
+- BugFix: The display component no longer runs into an exception when pressing F2 while an 
+  ICaptionedShape without captions is selected.
+- Bugfix: Selecting shapes inside a group (or double clicking overlapping shapes) does no longer
+  cause the Display.ShapesSelected event to be fired multiple times when OverlappingShapesAction
+  ids set to OverlappingShapesAction.Cycle.
+- Improvement: StyleCollections will now handle renaming styles and maintain their name based indexer 
+  automatically in this case.
+- Improvement: Improved drawing performance of the diagram sheet's line grid noticeably.
+- Improvement: When selecting a shape and dragging it away within the double click detection time 
+  will now be handled as expected.
+
+====================================================================================================
 Changes in 2.2.0:
 ====================================================================================================
 - Interface Change: IDisplayService.NotifyBoundsChanged is obsolete now. 

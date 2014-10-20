@@ -1,5 +1,5 @@
 ﻿/******************************************************************************
-  Copyright 2009-2013 dataweb GmbH
+  Copyright 2009-2014 dataweb GmbH
   This file is part of the NShape framework.
   NShape is free software: you can redistribute it and/or modify it under the 
   terms of the GNU General Public License as published by the Free Software 
@@ -342,8 +342,8 @@ namespace NShapeTest {
 				project2.Close();
 
 				// Modify (and insert) content of the repository and save it
-				ModifyAndUpdateContent(project1, withContents);
 				CreateAndInsertContent(project1, withContents);
+				ModifyAndUpdateContent(project1, withContents);
 				project1.Repository.SaveChanges();
 
 				// Compare the saved data with the loaded data
@@ -704,60 +704,51 @@ namespace NShapeTest {
 
 
 		private void CreateAndInsertStyles(Design design, IRepository repository) {
-			List<IStyle> styleBuffer = new List<IStyle>();
-			foreach (IColorStyle style in design.ColorStyles)
-				styleBuffer.Add(CreateStyle(style, design));
-			foreach (IStyle style in styleBuffer) {
-				design.AddStyle(style);
-				repository.Insert(design, style);
-			}
-			styleBuffer.Clear();
-			
-			foreach (ICapStyle style in design.CapStyles)
-				styleBuffer.Add(CreateStyle(style, design));
-			foreach (IStyle style in styleBuffer) {
-				design.AddStyle(style);
-				repository.Insert(design, style);
-			}
-			styleBuffer.Clear();
+			int newStylesCnt;
 
-			foreach (ICharacterStyle style in design.CharacterStyles)
-				styleBuffer.Add(CreateStyle(style, design));
-			foreach (IStyle style in styleBuffer) {
-				design.AddStyle(style);
-				repository.Insert(design, style);
-			}
-			styleBuffer.Clear();
+			newStylesCnt = CreateAndInsertStyles(design, design.ColorStyles, repository);
+			Assert.AreEqual(newStylesCnt * 2, design.ColorStyles.Count);
 
-			foreach (IFillStyle style in design.FillStyles)
-				styleBuffer.Add(CreateStyle(style, design));
-			foreach (IStyle style in styleBuffer) {
-				design.AddStyle(style);
-				repository.Insert(design, style);
-			}
-			styleBuffer.Clear();
+			newStylesCnt = CreateAndInsertStyles(design, design.CapStyles, repository);
+			Assert.AreEqual(newStylesCnt * 2, design.CapStyles.Count);
 
-			foreach (ILineStyle style in design.LineStyles)
-				styleBuffer.Add(CreateStyle(style, design));
-			foreach (IStyle style in styleBuffer) {
-				design.AddStyle(style);
-				repository.Insert(design, style);
-			}
-			styleBuffer.Clear();
+			newStylesCnt = CreateAndInsertStyles(design, design.CharacterStyles, repository);
+			Assert.AreEqual(newStylesCnt * 2, design.CharacterStyles.Count);
 
-			foreach (IParagraphStyle style in design.ParagraphStyles)
-				styleBuffer.Add(CreateStyle(style, design));
+			newStylesCnt = CreateAndInsertStyles(design, design.FillStyles, repository);
+			Assert.AreEqual(newStylesCnt * 2, design.FillStyles.Count);
+
+			newStylesCnt = CreateAndInsertStyles(design, design.LineStyles, repository);
+			Assert.AreEqual(newStylesCnt * 2, design.LineStyles.Count);
+
+			newStylesCnt = CreateAndInsertStyles(design, design.ParagraphStyles, repository);
+			Assert.AreEqual(newStylesCnt * 2, design.ParagraphStyles.Count);
+		}
+
+
+		private int CreateAndInsertStyles<TStyle>(Design design, IEnumerable<TStyle> styles, IRepository repository) where TStyle : IStyle {
+			List<TStyle> styleBuffer = new List<TStyle>();
+			foreach (TStyle style in styles) {
+				if (style is ICapStyle) styleBuffer.Add((TStyle)CreateStyle((ICapStyle)style, design));
+				else if (style is IColorStyle) styleBuffer.Add((TStyle)CreateStyle((IColorStyle)style, design));
+				else if (style is ICharacterStyle) styleBuffer.Add((TStyle)CreateStyle((ICharacterStyle)style, design));
+				else if (style is IFillStyle) styleBuffer.Add((TStyle)CreateStyle((IFillStyle)style, design));
+				else if (style is ILineStyle) styleBuffer.Add((TStyle)CreateStyle((ILineStyle)style, design));
+				else if (style is IParagraphStyle) styleBuffer.Add((TStyle)CreateStyle((IParagraphStyle)style, design));
+				else throw new NotSupportedException("Unsupported stye type");
+			}
+			Assert.AreEqual(Counter.GetCount(styles), styleBuffer.Count);
 			foreach (IStyle style in styleBuffer) {
 				design.AddStyle(style);
 				repository.Insert(design, style);
 			}
-			styleBuffer.Clear();
+			return styleBuffer.Count;
 		}
 
 
 		private ICapStyle CreateStyle(ICapStyle sourceStyle, Design design) {
 			if (sourceStyle == null) throw new ArgumentNullException("baseStyle");
-			string newName = GetNewStyleName(sourceStyle, design, EditContentMode.Insert);
+			string newName = GetNewStyleName(sourceStyle, design);
 			CapStyle newStyle = new CapStyle(newName);
 			newStyle.Title = GetName(sourceStyle.Title, EditContentMode.Insert).ToLower();
 			newStyle.CapShape = sourceStyle.CapShape;
@@ -774,7 +765,7 @@ namespace NShapeTest {
 
 		private IColorStyle CreateStyle(IColorStyle sourceStyle, Design design) {
 			if (sourceStyle == null) throw new ArgumentNullException("baseStyle");
-			string newName = GetNewStyleName(sourceStyle, design, EditContentMode.Insert);
+			string newName = GetNewStyleName(sourceStyle, design);
 			ColorStyle newStyle = new ColorStyle(newName);
 			newStyle.Title = GetName(sourceStyle.Title, EditContentMode.Insert).ToLower();
 			newStyle.Color = sourceStyle.Color;
@@ -786,7 +777,7 @@ namespace NShapeTest {
 
 		private IFillStyle CreateStyle(IFillStyle sourceStyle, Design design) {
 			if (sourceStyle == null) throw new ArgumentNullException("baseStyle");
-			string newName = GetNewStyleName(sourceStyle, design, EditContentMode.Insert);
+			string newName = GetNewStyleName(sourceStyle, design);
 			FillStyle newStyle = new FillStyle(newName);
 			newStyle.Title = GetName(sourceStyle.Title, EditContentMode.Insert).ToLower();
 			if (sourceStyle.AdditionalColorStyle != null) {
@@ -818,7 +809,7 @@ namespace NShapeTest {
 
 		private ICharacterStyle CreateStyle(ICharacterStyle sourceStyle, Design design) {
 			if (sourceStyle == null) throw new ArgumentNullException("baseStyle");
-			string newName = GetNewStyleName(sourceStyle, design, EditContentMode.Insert);
+			string newName = GetNewStyleName(sourceStyle, design);
 			CharacterStyle newStyle = new CharacterStyle(newName);
 			newStyle.Title = GetName(sourceStyle.Title, EditContentMode.Insert).ToLower();
 			if (sourceStyle.ColorStyle != null) {
@@ -836,7 +827,7 @@ namespace NShapeTest {
 
 		private ILineStyle CreateStyle(ILineStyle sourceStyle, Design design) {
 			if (sourceStyle == null) throw new ArgumentNullException("baseStyle");
-			string newName = GetNewStyleName(sourceStyle, design, EditContentMode.Insert);
+			string newName = GetNewStyleName(sourceStyle, design);
 			LineStyle newStyle = new LineStyle(newName);
 			newStyle.Title = GetName(sourceStyle.Title, EditContentMode.Insert).ToLower();
 			if (sourceStyle.ColorStyle != null) {
@@ -855,7 +846,7 @@ namespace NShapeTest {
 
 		private IParagraphStyle CreateStyle(IParagraphStyle sourceStyle, Design design) {
 			if (sourceStyle == null) throw new ArgumentNullException("baseStyle");
-			string newName = GetNewStyleName(sourceStyle, design, EditContentMode.Insert);
+			string newName = GetNewStyleName(sourceStyle, design);
 			ParagraphStyle newStyle = new ParagraphStyle(newName);
 			newStyle.Title = GetName(sourceStyle.Title, EditContentMode.Insert).ToLower();
 			newStyle.Alignment = sourceStyle.Alignment;
@@ -965,19 +956,19 @@ namespace NShapeTest {
 
 		private void ModifyAndUpdateContent(Project project, bool withContent) {
 			IRepository repository = project.Repository;
-
+			//
 			// Modify designs and styles
 			foreach (Design design in repository.GetDesigns())
 				ModifyAndUpdateDesign(design, repository);
-
+			//
 			// Modify templates
 			foreach (Template template in repository.GetTemplates())
 				ModifyAndUpdateTemplate(template, repository, withContent);
-
+			//
 			// Modify model objects
 			foreach (IModelObject modelObject in repository.GetModelObjects(null))
 				ModifyAndUpdateModelObject(modelObject, repository, withContent);
-
+			//
 			// Modify diagrams and shapes
 			foreach (Diagram diagram in repository.GetDiagrams())
 				ModifyAndUpdateDiagram(diagram, repository, withContent);
@@ -985,17 +976,33 @@ namespace NShapeTest {
 
 
 		private void ModifyAndUpdateDesign(Design design, IRepository repository) {
-			foreach (CapStyle style in design.CapStyles) ModifyAndUpdateStyle(style, design, repository);
-			foreach (CharacterStyle style in design.CharacterStyles) ModifyAndUpdateStyle(style, design, repository);
-			foreach (FillStyle style in design.FillStyles) ModifyAndUpdateStyle(style, design, repository);
-			foreach (LineStyle style in design.LineStyles) ModifyAndUpdateStyle(style, design, repository);
-			foreach (ParagraphStyle style in design.ParagraphStyles) ModifyAndUpdateStyle(style, design, repository);
-			foreach (ColorStyle style in design.ColorStyles) ModifyAndUpdateStyle(style, design, repository);
+			// Buffer for iterating through the styles while changing their names (StyleCollection's key).
+			List<IStyle> styleBuffer = new List<IStyle>();
+			// Anonymous delegate for performing the 
+			Action<IEnumerable<IStyle>> modifyStylesAction = new Action<IEnumerable<IStyle>>((styleCollection) => {
+				styleBuffer.AddRange(styleCollection);
+				foreach (IStyle style in styleBuffer) {
+					if (style is CapStyle) ModifyAndUpdateStyle((CapStyle)style, design, repository);
+					else if (style is CharacterStyle) ModifyAndUpdateStyle((CharacterStyle)style, design, repository);
+					else if (style is ColorStyle) ModifyAndUpdateStyle((ColorStyle)style, design, repository);
+					else if (style is FillStyle) ModifyAndUpdateStyle((FillStyle)style, design, repository);
+					else if (style is LineStyle) ModifyAndUpdateStyle((LineStyle)style, design, repository);
+					else if (style is ParagraphStyle) ModifyAndUpdateStyle((ParagraphStyle)style, design, repository);
+				}
+				styleBuffer.Clear();
+			});
+
+			modifyStylesAction(design.CapStyles);
+			modifyStylesAction(design.CharacterStyles);
+			modifyStylesAction(design.FillStyles);
+			modifyStylesAction(design.LineStyles);
+			modifyStylesAction(design.ParagraphStyles);
+			modifyStylesAction(design.ColorStyles);
 		}
 
 
-		private void ModifyAndUpdateStyle(Style style, IRepository repository) {
-			if (!repository.GetDesign(null).IsStandardStyle(style))
+		private void ModifyAndUpdateBaseStyle(Style style, Design design, IRepository repository) {
+			if (!design.IsStandardStyle(style))
 				style.Name = GetName(style.Name, EditContentMode.Modify);
 			style.Title = GetName(style.Title, EditContentMode.Modify).ToLower();
 			repository.Update(style);
@@ -1006,7 +1013,7 @@ namespace NShapeTest {
 			style.CapShape = Enum<CapShape>.GetNextValue(style.CapShape);
 			style.CapSize += 1;
 			style.ColorStyle = GetNextValue(design.ColorStyles, style.ColorStyle);
-			ModifyAndUpdateStyle(style, repository);
+			ModifyAndUpdateBaseStyle(style, design, repository);
 		}
 
 
@@ -1015,7 +1022,7 @@ namespace NShapeTest {
 			style.FontFamily = GetNextValue(FontFamily.Families, style.FontFamily);
 			style.Size += 1;
 			style.Style = Enum<FontStyle>.GetNextValue(style.Style);
-			ModifyAndUpdateStyle(style, repository);
+			ModifyAndUpdateBaseStyle(style, design, repository);
 		}
 
 
@@ -1026,7 +1033,7 @@ namespace NShapeTest {
 			style.Color = Color.FromArgb(g, b, r);
 			style.ConvertToGray = !style.ConvertToGray;
 			style.Transparency = (style.Transparency <= 50) ? (byte)75 : (byte)25;
-			ModifyAndUpdateStyle(style, repository);
+			ModifyAndUpdateBaseStyle(style, design, repository);
 		}
 
 
@@ -1040,7 +1047,7 @@ namespace NShapeTest {
 			style.ImageLayout = Enum<ImageLayoutMode>.GetNextValue(style.ImageLayout);
 			style.ImageTransparency = (style.ImageTransparency < 100) ?
 				(byte)(style.ImageTransparency + 1) : (byte)(style.ImageTransparency - 1);
-			ModifyAndUpdateStyle(style, repository);
+			ModifyAndUpdateBaseStyle(style, design, repository);
 		}
 
 
@@ -1050,7 +1057,7 @@ namespace NShapeTest {
 			style.DashType = Enum<DashType>.GetNextValue(style.DashType);
 			style.LineJoin = Enum<System.Drawing.Drawing2D.LineJoin>.GetNextValue(style.LineJoin);
 			style.LineWidth += 1;
-			ModifyAndUpdateStyle(style, repository);
+			ModifyAndUpdateBaseStyle(style, design, repository);
 		}
 
 
@@ -1059,7 +1066,7 @@ namespace NShapeTest {
 			style.Padding = new TextPadding(style.Padding.Left + 1, style.Padding.Top + 1, style.Padding.Right + 1, style.Padding.Bottom + 1);
 			style.Trimming = Enum<StringTrimming>.GetNextValue(style.Trimming);
 			style.WordWrap = !style.WordWrap;
-			ModifyAndUpdateStyle(style, repository);
+			ModifyAndUpdateBaseStyle(style, design, repository);
 		}
 
 
@@ -1262,7 +1269,15 @@ namespace NShapeTest {
 
 		private void ModifyAndUpdateShape(IPlanarShape shape, Design design) {
 			shape.Angle += 10;
-			shape.FillStyle = GetNextValue(design.FillStyles, shape.FillStyle);
+			// In case the fill style is a styndard style, try to get a new/modified style
+			IFillStyle fillStyle = null;
+			if (design.IsStandardStyle(shape.FillStyle)) {
+				// Get new style based on the current standard style
+				string styleName = GetNewStyleName(shape.FillStyle, design);
+				if (design.FillStyles.Contains(styleName))
+					fillStyle = design.FillStyles[styleName];
+			}
+			shape.FillStyle = fillStyle ?? GetNextValue(design.FillStyles, shape.FillStyle);
 		}
 
 
@@ -1554,9 +1569,9 @@ namespace NShapeTest {
 		}
 
 
-		private string GetNewStyleName<TStyle>(TStyle style, Design design, EditContentMode mode)
+		private string GetNewStyleName<TStyle>(TStyle style, Design design)
 			where TStyle : IStyle {
-			string result = GetName(style.Name, mode);
+			string result = GetName(style.Name, EditContentMode.Insert);
 			if (design.ColorStyles.Contains(result)) {
 				result = result + " ({0})";
 				int i = 1;

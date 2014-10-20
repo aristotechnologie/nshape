@@ -1,5 +1,5 @@
 /******************************************************************************
-  Copyright 2009-2013 dataweb GmbH
+  Copyright 2009-2014 dataweb GmbH
   This file is part of the NShape framework.
   NShape is free software: you can redistribute it and/or modify it under the 
   terms of the GNU General Public License as published by the Free Software 
@@ -39,16 +39,16 @@ namespace Dataweb.NShape.WinFormsUI {
 		/// Constructor
 		/// </summary>
 		public Display() {
-			// Enable DoubleBuffered painting
-			this.SetStyle
-				(ControlStyles.AllPaintingInWmPaint
-				| ControlStyles.DoubleBuffer
-				| ControlStyles.ResizeRedraw
-				| ControlStyles.ContainerControl
+			this.SetStyle(
+				// enable double buffered painting, transparent background and resize redrawing
+				ControlStyles.AllPaintingInWmPaint | ControlStyles.DoubleBuffer | ControlStyles.UserPaint
 				| ControlStyles.SupportsTransparentBackColor
-				| ControlStyles.UserPaint
+				| ControlStyles.ResizeRedraw
+				// enable focusable container control
+				| ControlStyles.ContainerControl | ControlStyles.Selectable
 				, true);
 			this.UpdateStyles();
+			this.TabStop = true;
 			infoGraphics = Graphics.FromHwnd(this.Handle);
 
 			// Initialize components
@@ -73,6 +73,8 @@ namespace Dataweb.NShape.WinFormsUI {
 			scrollBarV.MouseEnter += ScrollBars_MouseEnter;
 			scrollBarH.VisibleChanged += ScrollBar_VisibleChanged;
 			scrollBarV.VisibleChanged += ScrollBar_VisibleChanged;
+			scrollBarH.GotFocus += scrollBar_GotFocus;
+			scrollBarV.GotFocus += scrollBar_GotFocus;
 			HScrollBarVisible = VScrollBarVisible = false;
 			hScrollBarPanel.BackColor = BackColor;
 
@@ -2463,8 +2465,10 @@ namespace Dataweb.NShape.WinFormsUI {
 									&& Project.SecurityManager.IsGranted(Permission.Data, SelectedShapes.TopMost)
 									&& SelectedShapes.TopMost is ICaptionedShape) {
 									ICaptionedShape captionedShape = (ICaptionedShape)SelectedShapes.TopMost;
-									DoOpenCaptionEditor(captionedShape, 0, string.Empty);
-									e.Handled = true;
+									if (captionedShape.CaptionCount > 0) {
+										DoOpenCaptionEditor(captionedShape, 0, string.Empty);
+										e.Handled = true;
+									}
 								}
 								break;
 
@@ -3037,6 +3041,41 @@ namespace Dataweb.NShape.WinFormsUI {
 				rectBuffer.Width =
 				rectBuffer.Height = handleRadius + handleRadius;
 				ControlPaint.DrawGrabHandle(currentGraphics, rectBuffer, true, true);
+			}
+		}
+
+		#endregion
+
+
+		#region [Protected] Method overrides
+
+		/// <override></override>
+		protected override bool IsInputKey(Keys keyData) {
+			// Get raw key data (pressed key without modifier keys)
+			Keys rawKeyData = keyData & ~Keys.Modifiers;
+			// Define cursor keys input keys for the display control. 
+			// This is necessary because the display's scrollbars will receive the focus when 
+			// pressing the arrow keys (e.g. for moving shapes with keyboard) which
+			// will break scrolling and zooming behavior as the scrollbar handle arrow keys and mouse
+			// wheel themselfs (for scrolling) and they will not loose the focus until another control 
+			// (that is not part of the display control) was focused.
+			switch (rawKeyData) {
+			    case Keys.Down:
+			    case Keys.Left:
+			    case Keys.Right:
+			    case Keys.Up:
+			        return true;
+				// Handling the modifier keys as InputKeys is not necessary but useful for debugging...
+				//case Keys.ShiftKey:
+				//case Keys.LShiftKey:
+				//case Keys.RShiftKey:
+				//case Keys.ControlKey:
+				//case Keys.LControlKey:
+				//case Keys.RControlKey:
+				//case Keys.Alt:
+				//    return true;
+			    default:
+			        return base.IsInputKey(keyData);
 			}
 		}
 
@@ -3881,6 +3920,12 @@ namespace Dataweb.NShape.WinFormsUI {
 			// causes the grid to wander around when zooming...
 			float zoomedGridSpace = gridSpace * zoomfactor;
 
+			// Reset smoothing mode to "None" for drawing the grid lines - there's no need for smoothing 
+			// horizontal / vertical 1-pixel lines anyway...
+			// This improves performance dramatically: ~3 ms vs ~9 ms for drawing an empty diagram sheet.
+			SmoothingMode origSmoothingMode = currentGraphics.SmoothingMode;
+			currentGraphics.SmoothingMode = SmoothingMode.None;
+
 			// Adjust grid spacing when zooming
 			float magnificationFactor = ((10 * gridSpace) / (int)Math.Ceiling(zoomedGridSpace * 10));
 			if (magnificationFactor >= 2) {
@@ -3937,6 +3982,9 @@ namespace Dataweb.NShape.WinFormsUI {
 				//s.Height = zoomedGridSpace;
 				//ControlPaint.DrawGrid(graphics, r, s, Color.Transparent);
 			}
+
+			// Restore smoothing mode
+			currentGraphics.SmoothingMode = origSmoothingMode;
 		}
 
 		#endregion
@@ -5606,6 +5654,14 @@ namespace Dataweb.NShape.WinFormsUI {
 		}
 
 
+		private void scrollBar_GotFocus(object sender, EventArgs e) {
+			// If the scrollBar gets focussed, Focus the display itself.
+			// This is necessary because in WinForms, the CanFocus method can 
+			// neither be set nor overwritten.
+			//this.Select();
+		}
+
+
 		private void scrollBar_KeyUp(object sender, KeyEventArgs e) {
 			OnKeyUp(e);
 		}
@@ -6055,6 +6111,40 @@ namespace Dataweb.NShape.WinFormsUI {
 		private List<Rectangle> invalidatedAreas;
 #endif
 		#endregion
+	}
+
+
+	internal class DisplayVScrollBar : VScrollBar {
+		
+		public DisplayVScrollBar()
+			: base() {
+		}
+
+		public new bool CanFocus {
+			get { return false; }
+		}
+
+		protected override void OnGotFocus(EventArgs e) {
+			base.OnGotFocus(e);
+		}
+
+	}
+
+
+	internal class DisplayHScrollBar : HScrollBar {
+
+		public DisplayHScrollBar()
+			: base() {
+		}
+
+		public new bool CanFocus {
+			get { return false; }
+		}
+
+		protected override void OnGotFocus(EventArgs e) {
+			base.OnGotFocus(e);
+		}
+
 	}
 
 }

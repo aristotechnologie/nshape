@@ -1,5 +1,5 @@
 /******************************************************************************
-  Copyright 2009-2013 dataweb GmbH
+  Copyright 2009-2014 dataweb GmbH
   This file is part of the NShape framework.
   NShape is free software: you can redistribute it and/or modify it under the 
   terms of the GNU General Public License as published by the Free Software 
@@ -5445,19 +5445,15 @@ namespace Dataweb.NShape.Commands {
 
 		/// <override></override>
 		public override void Execute() {
-			bool styleRenamed = propertyInfo.Name == "Name";
-			if (styleRenamed) RemoveModifiedStyles();
 			base.Execute();
-			UpdateDesignAndRepository(styleRenamed);
+			UpdateRepository();
 		}
 
 
 		/// <override></override>
 		public override void Revert() {
-			bool styleRenamed = propertyInfo.Name == "Name";
-			if (styleRenamed) RemoveModifiedStyles();
 			base.Revert();
-			UpdateDesignAndRepository(styleRenamed);
+			UpdateRepository();
 		}
 
 
@@ -5473,18 +5469,12 @@ namespace Dataweb.NShape.Commands {
 		//}
 
 
-		private void UpdateDesignAndRepository(bool styleRenamed) {
-			for (int i = modifiedObjects.Count - 1; i >= 0; --i) {
-				if (styleRenamed) design.AddStyle(modifiedObjects[i]);
-				if (Repository != null) Repository.Update(modifiedObjects[i]);
+		private void UpdateRepository() {
+			if (Repository != null) {
+				for (int i = modifiedObjects.Count - 1; i >= 0; --i)
+					Repository.Update(modifiedObjects[i]);
+				Repository.Update(design);
 			}
-			if (Repository != null) Repository.Update(design);
-		}
-
-
-		private void RemoveModifiedStyles() {
-			for (int i = modifiedObjects.Count - 1; i >= 0; --i)
-				design.RemoveStyle(modifiedObjects[i].Name, modifiedObjects[i].GetType());
 		}
 
 

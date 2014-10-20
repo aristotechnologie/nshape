@@ -136,6 +136,7 @@
     <Compile Include="PolyLineBase.cs" />
     <Compile Include="PropertyMappings.cs" />
     <Compile Include="RectangularLineBase.cs" />
+    <Compile Include="SelectionTool.cs" />
     <Compile Include="ShapeCollection.cs" />
     <Compile Include="ShapeDuplicator.cs" />
     <Compile Include="ShapeGroup.cs" />
@@ -207,6 +208,7 @@
     <Compile Include="TemplateController.cs">
       <SubType>Component</SubType>
     </Compile>
+    <Compile Include="TemplateTools.cs" />
     <Compile Include="TextMeasurer.cs" />
     <Compile Include="TextShape.cs" />
     <Compile Include="Tool.cs" />

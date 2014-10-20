@@ -110,6 +110,7 @@ namespace Dataweb.NShape.Designer {
 			this.toolStripMenuItem12 = new System.Windows.Forms.ToolStripSeparator();
 			this.nShapeEventMonitorToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
 			this.toolStripMenuItem9 = new System.Windows.Forms.ToolStripMenuItem();
+			this.viewHelpToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
 			this.aboutToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
 			this.defaultToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
 			this.RightToolStripPanel = new System.Windows.Forms.ToolStripPanel();
@@ -830,6 +831,7 @@ namespace Dataweb.NShape.Designer {
 			this.refreshToolStripMenuItem.Image = ((System.Drawing.Image)(resources.GetObject("refreshToolStripMenuItem.Image")));
 			this.refreshToolStripMenuItem.ImageTransparentColor = System.Drawing.Color.Fuchsia;
 			this.refreshToolStripMenuItem.Name = "refreshToolStripMenuItem";
+			this.refreshToolStripMenuItem.ShortcutKeys = System.Windows.Forms.Keys.F5;
 			this.refreshToolStripMenuItem.Size = new System.Drawing.Size(198, 22);
 			this.refreshToolStripMenuItem.Text = "Refresh Display";
 			this.refreshToolStripMenuItem.Click += new System.EventHandler(this.refreshButton_Click);
@@ -933,15 +935,24 @@ namespace Dataweb.NShape.Designer {
 			// toolStripMenuItem9
 			// 
 			this.toolStripMenuItem9.DropDownItems.AddRange(new System.Windows.Forms.ToolStripItem[] {
+            this.viewHelpToolStripMenuItem,
             this.aboutToolStripMenuItem});
 			this.toolStripMenuItem9.Name = "toolStripMenuItem9";
 			this.toolStripMenuItem9.Size = new System.Drawing.Size(44, 20);
 			this.toolStripMenuItem9.Text = "Help";
 			// 
+			// viewHelpToolStripMenuItem
+			// 
+			this.viewHelpToolStripMenuItem.Name = "viewHelpToolStripMenuItem";
+			this.viewHelpToolStripMenuItem.ShortcutKeys = System.Windows.Forms.Keys.F1;
+			this.viewHelpToolStripMenuItem.Size = new System.Drawing.Size(152, 22);
+			this.viewHelpToolStripMenuItem.Text = "View Help";
+			this.viewHelpToolStripMenuItem.Click += new System.EventHandler(this.viewHelpToolStripMenuItem_Click);
+			// 
 			// aboutToolStripMenuItem
 			// 
 			this.aboutToolStripMenuItem.Name = "aboutToolStripMenuItem";
-			this.aboutToolStripMenuItem.Size = new System.Drawing.Size(116, 22);
+			this.aboutToolStripMenuItem.Size = new System.Drawing.Size(152, 22);
 			this.aboutToolStripMenuItem.Text = "About...";
 			this.aboutToolStripMenuItem.Click += new System.EventHandler(this.aboutToolStripMenuItem_Click);
 			// 
@@ -1845,6 +1856,7 @@ namespace Dataweb.NShape.Designer {
 		private System.Windows.Forms.ToolStripMenuItem upgradeVersionMenuItem;
 		private System.Windows.Forms.ToolStripMenuItem useEmbeddedImagesToolStripMenuItem;
 		private System.Windows.Forms.ToolStripSeparator toolStripMenuItem14;
+		private System.Windows.Forms.ToolStripMenuItem viewHelpToolStripMenuItem;
 	}
 }
 

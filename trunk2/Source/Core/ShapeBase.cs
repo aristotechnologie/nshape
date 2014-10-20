@@ -1,5 +1,5 @@
 /******************************************************************************
-  Copyright 2009-2013 dataweb GmbH
+  Copyright 2009-2014 dataweb GmbH
   This file is part of the NShape framework.
   NShape is free software: you can redistribute it and/or modify it under the 
   terms of the GNU General Public License as published by the Free Software 
@@ -1355,11 +1355,8 @@ namespace Dataweb.NShape.Advanced {
 			if (otherShape.Diagram != null && this.Diagram != null && otherShape.Diagram != this.Diagram)
 				message = "Connecting to shapes of other diagrams is not supported.";
 			else if (!HasControlPointCapability(ownPointId, ControlPointCapabilities.Glue)) {
-				// If the own ControlPoint is not a GluePoint, call the other shape's Connect method.
 				if (!otherShape.HasControlPointCapability(otherPointId, ControlPointCapabilities.Glue))
-					message = String.Format("Neither {0}'s point {1} nor {2}'s point {3} is a glue point. At least one glue point is required for a connection between shapes.", Type.Name, ownPointId, otherShape.Type.Name, otherPointId);
-				else 
-					return otherShape.CanConnect(otherPointId, this, ownPointId);
+					message = string.Format("Neither {0}'s point {1} nor {2}'s point {3} is a glue point. At least one glue point is required for a connection between shapes.", Type.Name, ownPointId, otherShape.Type.Name, otherPointId);
 			} else {
 				// Check if connecting is possible:
 				//
@@ -1785,7 +1782,7 @@ namespace Dataweb.NShape.Advanced {
 		/// <summary>Template of the shape</summary>
 		private Template template;
 
-		/// <summary>Owning ShapeCollection</summary>
+		/// <summary>Owning ShapeCollection, typically the shape collection of the diagram or the parent shape</summary>
 		private ShapeCollection owner;
 
 		// The model object this shape displays

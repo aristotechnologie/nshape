@@ -1,5 +1,5 @@
 ﻿/******************************************************************************
-  Copyright 2009-2013 dataweb GmbH
+  Copyright 2009-2014 dataweb GmbH
   This file is part of the NShape framework.
   NShape is free software: you can redistribute it and/or modify it under the 
   terms of the GNU General Public License as published by the Free Software 
@@ -805,7 +805,7 @@ namespace Dataweb.NShape {
 	/// Provides a base class for <see cref="T:Dataweb.NShape.IStyle" /> implementations.
 	/// </summary>
 	[TypeDescriptionProvider(typeof(TypeDescriptionProviderDg))]
-	public abstract class Style : IStyle, IEquatable<IStyle>, IEquatable<Style> {
+	public abstract class Style : IStyle, IEquatable<IStyle>, IEquatable<Style>, INotifyPropertyChanged {
 
 		/// <override></override>
 		[Description("The name of the style, used for identifying this style in the style set. Has to unique inside its style set.")]
@@ -817,7 +817,10 @@ namespace Dataweb.NShape {
 				if (string.IsNullOrEmpty(value) || value == EmptyStyleName) throw new ArgumentException(string.Format("'{0}' is not a valid Style name.", value));
 				if (!renameable) throw new InvalidOperationException("Standard styles must not be renamed.");
 				else if (IsStandardName(value)) throw new ArgumentException(string.Format("'{0}' is a standard style name and therefore not valid for a custom style.", value));
-				name = value;
+				if (name != value) {
+					name = value;
+					OnPropertyChanged("Name");
+				}
 			}
 		}
 
@@ -832,6 +835,7 @@ namespace Dataweb.NShape {
 				if (value == name || string.IsNullOrEmpty(value))
 					title = null;
 				else title = value;
+				OnPropertyChanged("Title");
 			}
 		}
 
@@ -886,24 +890,26 @@ namespace Dataweb.NShape {
 
 
 		/// <summary>
-		/// Finalizer of <see cref="T:Dataweb.NShape.Style" />.
-		/// </summary>
-		~Style() {
-			Dispose();
-		}
-
-
-		/// <summary>
 		/// Tests if the given name is a standard style name.
 		/// </summary>
 		protected abstract bool IsStandardName(string name);
 
 
 		/// <summary>
+		/// Fires an INotityPropertyChanged.PropertyCHanged event.
+		/// </summary>
+		protected void OnPropertyChanged(string propertyName) {
+			if (propertyChangedHandler != null) 
+				propertyChangedHandler(this, new PropertyChangedEventArgs(propertyName));
+		}
+
+		
+		/// <summary>
 		/// Defines the name of the style meaning 'None' / 'Not Set' / 'Not Initialized'.
 		/// </summary>
 		protected internal const string EmptyStyleName = "0";
 
+		
 		/// <summary>
 		/// Defines the title of the style meaning 'None' / 'Not Set' / 'Not Initialized'.
 		/// </summary>
@@ -914,6 +920,17 @@ namespace Dataweb.NShape {
 
 		/// <override></override>
 		public abstract void Dispose();
+
+		#endregion
+
+
+		#region INotifyPropertyChanged Members
+		
+		/// <override></override>
+		event PropertyChangedEventHandler INotifyPropertyChanged.PropertyChanged {
+			add { propertyChangedHandler += value; }
+			remove { propertyChangedHandler -= value; }
+		}
 
 		#endregion
 
@@ -991,14 +1008,24 @@ namespace Dataweb.NShape {
 		#endregion
 
 
+		/// <summary>
+		/// Finalizer of <see cref="T:Dataweb.NShape.Style" />.
+		/// </summary>
+		~Style() {
+			Dispose();
+		}
+
+
 		#region Fields
 
 		private object id = null;
 		private string name = null;
 		private string title = null;
 		private bool renameable = true;
+		private PropertyChangedEventHandler propertyChangedHandler;
 
 		#endregion
+
 	}
 
 
@@ -2518,7 +2545,10 @@ namespace Dataweb.NShape {
 	/// <summary>
 	/// A collection of <see cref="T:Dataweb.NShape.IStyle" /> sorted by name.
 	/// </summary>
-	public abstract class StyleCollection<TStyle> where TStyle : class, IStyle {
+	public abstract class StyleCollection<TStyle, TStyleInterface> : IEnumerable<TStyleInterface>
+		where TStyle : class, TStyleInterface 
+		where TStyleInterface : class, IStyle
+	{
 
 		/// <summary>
 		/// Initialize a new instance of <see cref="T:Dataweb.NShape.StyleCollection`1" />.
@@ -2536,12 +2566,33 @@ namespace Dataweb.NShape {
 		}
 
 
+		#region IEnumerable<TStyleInterface> Members
+
+		/// <override></override>
+		public IEnumerator<TStyleInterface> GetEnumerator() {
+			return StyleCollectionEnumerator.Create(this);
+		}
+
+		#endregion
+
+
+		#region IEnumerable Members
+
+		IEnumerator IEnumerable.GetEnumerator() {
+			return StyleCollectionEnumerator.Create(this);
+		}
+
+		#endregion
+
+
+		#region [Public] Properties
+
 		/// <summary>
 		/// Provides index based direct access to the items of the collection.
 		/// </summary>
 		/// <param name="index">Zero-based index.</param>
 		public TStyle this[int index] {
-			get { return internalList[internalList.Keys[index]].Style; }
+			get { return internalList.Values[index].Style; }
 		}
 
 
@@ -2561,11 +2612,25 @@ namespace Dataweb.NShape {
 			get { return internalList.Count; }
 		}
 
+		#endregion
+
+
+		#region [Public] Methods
 
 		/// <ToBeCompleted></ToBeCompleted>
 		public TStyle GetPreviewStyle(TStyle style) {
 			if (style == null) throw new ArgumentNullException("style");
-			return internalList[style.Name].PreviewStyle;
+			// If the style has been renamed, the preview style won't be found by name,
+			// so we have to iterate through the elements and compare by reference.
+			TStyle result = null;
+			foreach (KeyValuePair<string, StylePair<TStyle>> item in internalList) {
+				if (item.Value.Style == style) {
+					result = item.Value.PreviewStyle;
+					break;
+				}
+			}
+			if (result == null) throw new KeyNotFoundException();
+			return result;
 		}
 
 
@@ -2580,10 +2645,11 @@ namespace Dataweb.NShape {
 		public void Add(TStyle style, TStyle previewStyle) {
 			if (style == null) throw new ArgumentNullException("style");
 			if (previewStyle == null) throw new ArgumentNullException("previewStyle");
-			internalList.Add(style.Name, new StyleCollection<TStyle>.StylePair<TStyle>(style, previewStyle));
+			internalList.Add(style.Name, new StylePair<TStyle>(style, previewStyle));
+			RegisterEventHandler(style);
 		}
 
-
+		
 		/// <override></override>
 		public void Clear() {
 			foreach (KeyValuePair<string, StylePair<TStyle>> item in internalList) {
@@ -2597,11 +2663,14 @@ namespace Dataweb.NShape {
 		}
 
 
-		/// <override></override>
+		/// <summary>
+		/// Returns true if the collection contains the given style itself or, in case the given 
+		/// style is a preview style, the style for the given preview style.
+		/// </summary>
 		public bool Contains(TStyle style) {
 			if (style == null) throw new ArgumentNullException("style");
-			foreach (StylePair<TStyle> stylePair in internalList.Values) {
-				if (stylePair.Style == style || stylePair.PreviewStyle == style)
+			foreach (KeyValuePair<string, StylePair<TStyle>> item in internalList) {
+				if (item.Value.Style == style || item.Value.PreviewStyle == style)
 					return true;
 			}
 			return false;
@@ -2615,13 +2684,16 @@ namespace Dataweb.NShape {
 		}
 
 
-		/// <ToBeCompleted></ToBeCompleted>
+		/// <summary>
+		/// Returns true if the collection contains a preview style for the given style or, in 
+		/// case the given style is a preview style, the given preview style itself.
+		/// </summary>
 		public bool ContainsPreviewStyle(TStyle style) {
 			if (style == null) throw new ArgumentNullException("style");
-			foreach (StylePair<TStyle> stylePair in internalList.Values) {
-				if (stylePair.Style == style)
-					return (stylePair.PreviewStyle != null);
-				else if (stylePair.PreviewStyle == style)
+			foreach (KeyValuePair<string, StylePair<TStyle>> item in internalList) {
+				if (item.Value.Style == style)
+					return (item.Value.PreviewStyle != null);
+				else if (item.Value.PreviewStyle == style)
 					return true;
 			}
 			return false;
@@ -2642,7 +2714,7 @@ namespace Dataweb.NShape {
 			if (item == null) throw new ArgumentNullException("item");
 			foreach (StylePair<TStyle> stylePair in internalList.Values) {
 				if (stylePair.Style == item || stylePair.PreviewStyle == item)
-					return internalList.IndexOfKey(stylePair.Style.Name);
+					return internalList.IndexOfValue(stylePair);
 			}
 			return -1;
 		}
@@ -2656,14 +2728,16 @@ namespace Dataweb.NShape {
 
 
 		/// <override></override>
-		public bool Remove(TStyle item) {
-			if (item == null) throw new ArgumentNullException("item");
-			return internalList.Remove(item.Name);
+		public bool Remove(TStyle style) {
+			if (style == null) throw new ArgumentNullException("item");
+			UnregisterEventHandler(style);
+			return internalList.Remove(style.Name);
 		}
 
 
 		/// <override></override>
 		public bool Remove(string styleName) {
+			UnregisterEventHandler(internalList[styleName].Style);
 			return internalList.Remove(styleName);
 		}
 
@@ -2671,6 +2745,7 @@ namespace Dataweb.NShape {
 		/// <override></override>
 		public void RemoveAt(int index) {
 			string key = internalList.Keys[index];
+			UnregisterEventHandler(internalList[key].Style);
 			internalList.Remove(key);
 		}
 
@@ -2694,6 +2769,8 @@ namespace Dataweb.NShape {
 			internalList[baseStyle.Name].PreviewStyle = value;
 		}
 
+		#endregion
+
 
 		/// <ToBeCompleted></ToBeCompleted>
 		protected void SetStyle(TStyle style, TStyle previewStyle) {
@@ -2701,6 +2778,41 @@ namespace Dataweb.NShape {
 			if (previewStyle == null) throw new ArgumentNullException("previewStyle");
 			internalList[style.Name].Style = style;
 			internalList[style.Name].PreviewStyle = previewStyle;
+		}
+
+
+		private void StyleCollection_PropertyChanged(object sender, PropertyChangedEventArgs e) {
+			if (e.PropertyName == "Name" && sender is TStyle) {
+				TStyle style = (TStyle)sender;
+				string key = null;
+				StylePair<TStyle> value = null;
+				foreach (KeyValuePair<string, StylePair<TStyle>> item in internalList) {
+					if (item.Value.Style == style || item.Value.PreviewStyle == style) {
+						key = item.Key;
+						value = item.Value;
+						break;
+					}
+				}
+				Debug.Assert(key != null && value != null);
+				// Once we have found the old key, remove and add the items from the 
+				// internal list (without re-registering the PropertyChanged event).
+				internalList.Remove(key);
+				internalList.Add(style.Name, value);
+			}
+		}
+
+
+		private void RegisterEventHandler(TStyle style) {
+			// Register for the style's propertyChanged event in order to get notified about name changes
+			if (style is INotifyPropertyChanged)
+				((INotifyPropertyChanged)style).PropertyChanged += new PropertyChangedEventHandler(StyleCollection_PropertyChanged);
+		}
+
+
+		private void UnregisterEventHandler(TStyle style) {
+			// Register for the style's propertyChanged event in order to get notified about name changes
+			if (style is INotifyPropertyChanged)
+				((INotifyPropertyChanged)style).PropertyChanged -= new PropertyChangedEventHandler(StyleCollection_PropertyChanged);
 		}
 
 
@@ -2729,6 +2841,82 @@ namespace Dataweb.NShape {
 		}
 
 
+		/// <summary>
+		/// Generic enumerator implementation for the generic StyleCollection.
+		/// Iterates through the styles of the StyleCollection.
+		/// </summary>
+		protected struct StyleCollectionEnumerator : IEnumerator<TStyleInterface> {
+
+			/// <summary>Represents an empty enumerator.</summary>
+			public static readonly StyleCollectionEnumerator Empty;
+
+			/// <summary>Constructs a new enumerator instance</summary>
+			public static StyleCollectionEnumerator Create(StyleCollection<TStyle, TStyleInterface> collection) {
+				if (collection == null) throw new ArgumentNullException("collection");
+				StyleCollectionEnumerator result = StyleCollectionEnumerator.Empty;
+				result.collection = collection;
+				result.enumerator = collection.internalList.GetEnumerator();
+				return result;
+			}
+
+			/// <summary>Constructs a new enumerator instance</summary>
+			public StyleCollectionEnumerator(StyleCollection<TStyle, TStyleInterface> collection) {
+				if (collection == null) throw new ArgumentNullException("collection");
+				this.collection = collection;
+				this.enumerator = collection.internalList.GetEnumerator();
+			}
+
+
+			#region IEnumerator<TStyleInterface> Members
+
+			/// <override></override>
+			public TStyleInterface Current {
+				get { return (TStyleInterface)enumerator.Current.Value.Style; }
+			}
+
+			#endregion
+
+
+			#region IDisposable Members
+
+			/// <override></override>
+			public void Dispose() {
+				collection = null;
+			}
+
+			#endregion
+
+
+			#region IEnumerator Members
+
+			/// <override></override>
+			object IEnumerator.Current {
+				get { return Current; }
+			}
+
+			/// <override></override>
+			public bool MoveNext() {
+				return enumerator.MoveNext();
+			}
+
+			/// <override></override>
+			public void Reset() {
+				enumerator.MoveNext();
+			}
+
+			#endregion
+
+			
+			static StyleCollectionEnumerator() {
+				Empty.collection = null;
+				Empty.enumerator = null;
+			}
+
+			private StyleCollection<TStyle, TStyleInterface> collection;
+			private IEnumerator<KeyValuePair<string, StylePair<TStyle>>> enumerator;
+		}
+
+
 		/// <ToBeCompleted></ToBeCompleted>
 		protected SortedList<string, StylePair<TStyle>> internalList = null;
 	}
@@ -2737,7 +2925,7 @@ namespace Dataweb.NShape {
 	/// <summary>
 	/// A collection of <see cref="T:Dataweb.NShape.CapStyle" /> sorted by name.
 	/// </summary>
-	public class CapStyleCollection : StyleCollection<CapStyle>, ICapStyles {
+	public class CapStyleCollection : StyleCollection<CapStyle, ICapStyle>, ICapStyles {
 
 		/// <summary>
 		/// Initializes a new instance of <see cref="T:Dataweb.NShape.CapStyleCollection" />.
@@ -2807,95 +2995,13 @@ namespace Dataweb.NShape {
 
 		#endregion
 
-
-		#region IEnumerable<ICapStyle> Members
-
-		/// <override></override>
-		public IEnumerator<ICapStyle> GetEnumerator() {
-			return Enumerator.Create(this);
-		}
-
-		#endregion
-
-
-		#region IEnumerable Members
-
-		IEnumerator IEnumerable.GetEnumerator() {
-			return Enumerator.Create(this);
-		}
-
-		#endregion
-
-
-		private struct Enumerator : IEnumerator<ICapStyle> {
-
-			public static readonly Enumerator Empty;
-
-			public static Enumerator Create(CapStyleCollection collection) {
-				if (collection == null) throw new ArgumentNullException("collection");
-				Enumerator result = Enumerator.Empty;
-				result.collection = collection;
-				result.cnt = collection.Count;
-				result.idx = -1;
-				return result;
-			}
-
-			public Enumerator(CapStyleCollection collection) {
-				if (collection == null) throw new ArgumentNullException("collection");
-				this.collection = collection;
-				this.cnt = collection.Count;
-				this.idx = -1;
-			}
-
-			#region IEnumerator<ICapStyle> Members
-
-			public ICapStyle Current {
-				get { return collection[idx]; }
-			}
-
-			#endregion
-
-			#region IDisposable Members
-
-			public void Dispose() {
-				collection = null;
-			}
-
-			#endregion
-
-			#region IEnumerator Members
-
-			object IEnumerator.Current {
-				get { return collection[idx]; }
-			}
-
-			public bool MoveNext() {
-				return (++idx < cnt);
-			}
-
-			public void Reset() {
-				idx = -1;
-			}
-
-			#endregion
-
-			static Enumerator() {
-				Empty.collection = null;
-				Empty.cnt = 0;
-				Empty.idx = -1;
-			}
-
-			private CapStyleCollection collection;
-			private int idx;
-			private int cnt;
-		}
 	}
 
 
 	/// <summary>
 	/// A collection of <see cref="T:Dataweb.NShape.CharacterStyle" /> sorted by name.
 	/// </summary>
-	public class CharacterStyleCollection : StyleCollection<CharacterStyle>, ICharacterStyles {
+	public class CharacterStyleCollection : StyleCollection<CharacterStyle, ICharacterStyle>, ICharacterStyles {
 
 		/// <summary>
 		/// Initializes a new instance of <see cref="T:Dataweb.NShape.CharacterStyleCollection" />.
@@ -2964,96 +3070,13 @@ namespace Dataweb.NShape {
 
 		#endregion
 
-
-		#region IEnumerable<ICharacterStyle> Members
-
-		/// <override></override>
-		public IEnumerator<ICharacterStyle> GetEnumerator() {
-			return Enumerator.Create(this);
-		}
-
-		#endregion
-
-
-		#region IEnumerable Members
-
-		IEnumerator IEnumerable.GetEnumerator() {
-			return Enumerator.Create(this);
-		}
-
-		#endregion
-
-
-		private struct Enumerator : IEnumerator<ICharacterStyle> {
-
-			public static readonly Enumerator Empty;
-
-			public static Enumerator Create(CharacterStyleCollection collection) {
-				if (collection == null) throw new ArgumentNullException("collection");
-				Enumerator result = Enumerator.Empty;
-				result.collection = collection;
-				result.cnt = collection.Count;
-				result.idx = -1;
-				return result;
-			}
-
-			public Enumerator(CharacterStyleCollection collection) {
-				if (collection == null) throw new ArgumentNullException("collection");
-				this.collection = collection;
-				this.cnt = collection.Count;
-				this.idx = -1;
-			}
-
-			#region IEnumerator<ICapStyle> Members
-
-			public ICharacterStyle Current {
-				get { return collection[idx]; }
-			}
-
-			#endregion
-
-			#region IDisposable Members
-
-			public void Dispose() {
-				collection = null;
-			}
-
-			#endregion
-
-			#region IEnumerator Members
-
-			object IEnumerator.Current {
-				get { return collection[idx]; }
-			}
-
-			public bool MoveNext() {
-				return (++idx < cnt);
-			}
-
-			public void Reset() {
-				idx = -1;
-			}
-
-			#endregion
-
-			static Enumerator() {
-				Empty.collection = null;
-				Empty.cnt = 0;
-				Empty.idx = -1;
-			}
-
-			private CharacterStyleCollection collection;
-			private int idx;
-			private int cnt;
-		}
 	}
-
 
 	
 	/// <summary>
 	/// A collection of <see cref="T:Dataweb.NShape.ColorStyle" /> sorted by name.
 	/// </summary>
-	public class ColorStyleCollection : StyleCollection<ColorStyle>, IColorStyles {
+	public class ColorStyleCollection : StyleCollection<ColorStyle, IColorStyle>, IColorStyles {
 
 		/// <summary>
 		/// Initializes a new instance of <see cref="T:Dataweb.NShape.ColorStyleCollection" />.
@@ -3171,96 +3194,13 @@ namespace Dataweb.NShape {
 
 		#endregion
 
-
-		#region IEnumerable<IColorStyle> Members
-
-		/// <override></override>
-		public IEnumerator<IColorStyle> GetEnumerator() {
-			return Enumerator.Create(this);
-		}
-
-		#endregion
-
-
-		#region IEnumerable Members
-
-		IEnumerator IEnumerable.GetEnumerator() {
-			return Enumerator.Create(this);
-		}
-
-		#endregion
-
-
-		private struct Enumerator : IEnumerator<IColorStyle> {
-
-			public static readonly Enumerator Empty;
-
-			public static Enumerator Create(ColorStyleCollection collection) {
-				if (collection == null) throw new ArgumentNullException("collection");
-				Enumerator result = Enumerator.Empty;
-				result.collection = collection;
-				result.cnt = collection.Count;
-				result.idx = -1;
-				return result;
-			}
-
-			public Enumerator(ColorStyleCollection collection) {
-				if (collection == null) throw new ArgumentNullException("collection");
-				this.collection = collection;
-				this.cnt = collection.Count;
-				this.idx = -1;
-			}
-
-
-			#region IEnumerator<IColorStyle> Members
-
-			public IColorStyle Current {
-				get { return collection[idx]; }
-			}
-
-			#endregion
-
-			#region IDisposable Members
-
-			public void Dispose() {
-				collection = null;
-			}
-
-			#endregion
-
-			#region IEnumerator Members
-
-			object IEnumerator.Current {
-				get { return collection[idx]; }
-			}
-
-			public bool MoveNext() {
-				return (++idx < cnt);
-			}
-
-			public void Reset() {
-				idx = -1;
-			}
-
-			#endregion
-
-			static Enumerator() {
-				Empty.collection = null;
-				Empty.idx = -1;
-				Empty.cnt = 0;
-			}
-
-			private ColorStyleCollection collection;
-			private int idx;
-			private int cnt;
-		}
 	}
 
 
 	/// <summary>
 	/// A collection of <see cref="T:Dataweb.NShape.FillStyle" /> sorted by name.
 	/// </summary>
-	public class FillStyleCollection : StyleCollection<FillStyle>, IFillStyles {
+	public class FillStyleCollection : StyleCollection<FillStyle, IFillStyle>, IFillStyles {
 
 		/// <summary>
 		/// Initializes a new instance of <see cref="T:Dataweb.NShape.FillStyleCollection" />.
@@ -3328,99 +3268,13 @@ namespace Dataweb.NShape {
 
 		#endregion
 
-
-		#region IEnumerable<IFillStyle> Members
-
-		/// <override></override>
-		public IEnumerator<IFillStyle> GetEnumerator() {
-			return Enumerator.Create(this);
-		}
-
-		#endregion
-
-
-		#region IEnumerable Members
-
-		IEnumerator IEnumerable.GetEnumerator() {
-			return Enumerator.Create(this);
-		}
-
-		#endregion
-
-
-		private struct Enumerator : IEnumerator<IFillStyle> {
-
-			public static readonly Enumerator Empty;
-
-			public static Enumerator Create(FillStyleCollection collection) {
-				if (collection == null) throw new ArgumentNullException("collection");
-				Enumerator result = Enumerator.Empty;
-				result.collection = collection;
-				result.cnt = collection.Count;
-				result.idx = -1;
-				return result;
-			}
-
-			public Enumerator(FillStyleCollection collection) {
-				if (collection == null) throw new ArgumentNullException("collection");
-				this.collection = collection;
-				this.cnt = collection.Count;
-				this.idx = -1;
-			}
-
-
-			#region IEnumerator<ICapStyle> Members
-
-			public IFillStyle Current {
-				get { return collection[idx]; }
-			}
-
-			#endregion
-
-
-			#region IDisposable Members
-
-			public void Dispose() {
-				collection = null;
-			}
-
-			#endregion
-
-
-			#region IEnumerator Members
-
-			object IEnumerator.Current {
-				get { return collection[idx]; }
-			}
-
-			public bool MoveNext() {
-				return (++idx < cnt);
-			}
-
-			public void Reset() {
-				idx = -1;
-			}
-
-			#endregion
-
-
-			static Enumerator() {
-				Empty.collection = null;
-				Empty.cnt = 0;
-				Empty.idx = -1;
-			}
-
-			private FillStyleCollection collection;
-			private int idx;
-			private int cnt;
-		}
 	}
 
 
 	/// <summary>
 	/// A collection of <see cref="T:Dataweb.NShape.LineStyle" /> sorted by name.
 	/// </summary>
-	public class LineStyleCollection : StyleCollection<LineStyle>, ILineStyles {
+	public class LineStyleCollection : StyleCollection<LineStyle, ILineStyle>, ILineStyles {
 
 		/// <summary>
 		/// Initializes a new instance of <see cref="T:Dataweb.NShape.LineStyleCollection" />.
@@ -3528,95 +3382,13 @@ namespace Dataweb.NShape {
 
 		#endregion
 
-
-		#region IEnumerable<ILineStyle> Members
-
-		/// <override></override>
-		public IEnumerator<ILineStyle> GetEnumerator() {
-			return Enumerator.Create(this);
-		}
-
-		#endregion
-
-
-		#region IEnumerable Members
-
-		IEnumerator IEnumerable.GetEnumerator() {
-			return Enumerator.Create(this);
-		}
-
-		#endregion
-
-
-		private struct Enumerator : IEnumerator<ILineStyle> {
-
-			public static readonly Enumerator Empty;
-
-			public static Enumerator Create(LineStyleCollection collection) {
-				if (collection == null) throw new ArgumentNullException("collection");
-				Enumerator result = Enumerator.Empty;
-				result.collection = collection;
-				result.cnt = collection.Count;
-				result.idx = -1;
-				return result;
-			}
-
-			public Enumerator(LineStyleCollection collection) {
-				if (collection == null) throw new ArgumentNullException("collection");
-				this.collection = collection;
-				this.cnt = collection.Count;
-				this.idx = -1;
-			}
-
-			#region IEnumerator<ICapStyle> Members
-
-			public ILineStyle Current {
-				get { return collection[idx]; }
-			}
-
-			#endregion
-
-			#region IDisposable Members
-
-			public void Dispose() {
-				collection = null;
-			}
-
-			#endregion
-
-			#region IEnumerator Members
-
-			object IEnumerator.Current {
-				get { return collection[idx]; }
-			}
-
-			public bool MoveNext() {
-				return (++idx < cnt);
-			}
-
-			public void Reset() {
-				idx = -1;
-			}
-
-			#endregion
-
-			static Enumerator() {
-				Empty.collection = null;
-				Empty.cnt = 0;
-				Empty.idx = -1;
-			}
-
-			private LineStyleCollection collection;
-			private int idx;
-			private int cnt;
-		}
 	}
 
 
 	/// <summary>
 	/// A collection of <see cref="T:Dataweb.NShape.ParagraphStyle" /> sorted by name.
 	/// </summary>
-	public class ParagraphStyleCollection : StyleCollection<ParagraphStyle>, IParagraphStyles {
+	public class ParagraphStyleCollection : StyleCollection<ParagraphStyle, IParagraphStyle>, IParagraphStyles {
 
 		/// <summary>
 		/// Initializes a new instance of <see cref="T:Dataweb.NShape.ParagraphStyleCollection" />.
@@ -3664,90 +3436,6 @@ namespace Dataweb.NShape {
 
 		#endregion
 
-
-		#region IEnumerable<IParagraphStyle> Members
-
-		/// <override></override>
-		public IEnumerator<IParagraphStyle> GetEnumerator() {
-			return Enumerator.Create(this);
-		}
-
-		#endregion
-
-
-		#region IEnumerable Members
-
-		IEnumerator IEnumerable.GetEnumerator() {
-			return Enumerator.Create(this);
-		}
-
-		#endregion
-
-
-		private struct Enumerator : IEnumerator<IParagraphStyle> {
-
-			public static readonly Enumerator Empty;
-
-			public static Enumerator Create(ParagraphStyleCollection collection) {
-				if (collection == null) throw new ArgumentNullException("collection");
-				Enumerator result = Enumerator.Empty;
-				result.collection = collection;
-				result.cnt = collection.Count;
-				result.idx = -1;
-				return result;
-			}
-
-			public Enumerator(ParagraphStyleCollection collection) {
-				if (collection == null) throw new ArgumentNullException("collection");
-				this.collection = collection;
-				this.cnt = collection.Count;
-				this.idx = -1;
-			}
-
-			#region IEnumerator<ICapStyle> Members
-
-			public IParagraphStyle Current {
-				get { return collection[idx]; }
-			}
-
-			#endregion
-
-			#region IDisposable Members
-
-			public void Dispose() {
-				collection = null;
-			}
-
-			#endregion
-
-			#region IEnumerator Members
-
-			object IEnumerator.Current {
-				get { return collection[idx]; }
-			}
-
-
-			public bool MoveNext() {
-				return (++idx < cnt);
-			}
-
-
-			public void Reset() {
-				idx = -1;
-			}
-
-			#endregion
-
-			static Enumerator() {
-				Empty.collection = null;
-				Empty.cnt = 0;
-				Empty.idx = -1;
-			}
-
-			private ParagraphStyleCollection collection;
-			private int idx;
-			private int cnt;
-		}
 	}
 
 	#endregion

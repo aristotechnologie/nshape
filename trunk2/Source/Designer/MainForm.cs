@@ -1,5 +1,5 @@
 /******************************************************************************
-  Copyright 2009-2013 dataweb GmbH
+  Copyright 2009-2014 dataweb GmbH
   This file is part of the NShape framework.
   NShape is free software: you can redistribute it and/or modify it under the 
   terms of the GNU General Public License as published by the Free Software 
@@ -1639,6 +1639,19 @@ namespace Dataweb.NShape.Designer {
 				project.History.CommandsExecuted += history_CommandsExecuted;
 				diagramSetController.SelectModelObjectsRequested += diagramSetController_SelectModelObjectsRequested;
 
+				// Deactivate "View Help" menu item if help file cannot be found
+				viewHelpToolStripMenuItem.Enabled = false;
+				DirectoryInfo helpDir = GetHelpDir();
+				if (!helpDir.Exists)
+					viewHelpToolStripMenuItem.ToolTipText = String.Format("Help file directory '{0}' does not exist (or is not accessible).", helpDir.FullName);
+				else {
+					FileInfo helpFile = GetHelpFile();
+					if (helpFile != null && helpFile.Exists)
+						viewHelpToolStripMenuItem.Enabled = true;
+					else
+						viewHelpToolStripMenuItem.ToolTipText = "Help file does not exist (or is not accessible).";
+				}				
+
 				// Add library load support
 				project.AutoLoadLibraries = true;
 				project.LibrarySearchPaths.Add(Application.StartupPath);
@@ -2619,6 +2632,32 @@ namespace Dataweb.NShape.Designer {
 		private void aboutToolStripMenuItem_Click(object sender, EventArgs e) {
 			using (AboutBox dlg = new AboutBox())
 				dlg.ShowDialog(this);
+		}
+
+
+		private void viewHelpToolStripMenuItem_Click(object sender, EventArgs e) {
+			FileInfo helpFile = GetHelpFile();
+			if (helpFile != null)
+				Process.Start(new ProcessStartInfo(helpFile.FullName));
+		}
+
+
+		private DirectoryInfo GetHelpDir() {
+			DirectoryInfo programDir = new DirectoryInfo(Application.StartupPath);
+			return new DirectoryInfo(Path.Combine(programDir.Parent.FullName, "Documentation"));
+		}
+
+
+		private FileInfo GetHelpFile() {
+			FileInfo helpFile = null;
+			DirectoryInfo helpDir = GetHelpDir();
+			if (helpDir.Exists) {
+				foreach (FileInfo fileInfo in helpDir.GetFiles("NShape*.chm")) {
+					if (helpFile == null || fileInfo.CreationTimeUtc > helpFile.CreationTimeUtc)
+						helpFile = fileInfo;
+				}
+			}
+			return helpFile;
 		}
 
 		#endregion

@@ -68,8 +68,10 @@ namespace Dataweb.NShape.WinFormsUI {
 		/// </summary>
 		private void InitializeComponent() {
 			this.components = new System.ComponentModel.Container();
-			this.scrollBarV = new System.Windows.Forms.VScrollBar();
-			this.scrollBarH = new System.Windows.Forms.HScrollBar();
+			//this.scrollBarV = new System.Windows.Forms.VScrollBar();
+			//this.scrollBarH = new System.Windows.Forms.HScrollBar();
+			this.scrollBarV = new DisplayVScrollBar();
+			this.scrollBarH = new DisplayHScrollBar();
 			this.hScrollBarPanel = new System.Windows.Forms.Panel();
 			this.displayContextMenuStrip = new System.Windows.Forms.ContextMenuStrip(this.components);
 			this.dummyItem = new System.Windows.Forms.ToolStripMenuItem();

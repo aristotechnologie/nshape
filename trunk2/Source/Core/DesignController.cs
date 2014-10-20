@@ -1,5 +1,5 @@
 ﻿/******************************************************************************
-  Copyright 2009-2013 dataweb GmbH
+  Copyright 2009-2014 dataweb GmbH
   This file is part of the NShape framework.
   NShape is free software: you can redistribute it and/or modify it under the 
   terms of the GNU General Public License as published by the Free Software 
@@ -309,8 +309,10 @@ namespace Dataweb.NShape.Controllers {
 		}
 
 
-		private string GetNewStyleName<T>(StyleCollection<T> styleCollection) 
-			where T : class, IStyle {
+		private string GetNewStyleName<T, TInterface>(StyleCollection<T, TInterface> styleCollection) 
+			where T : class, TInterface
+			where TInterface: class, IStyle
+		{
 			string newName;
 			string typeName = typeof(T).Name;
 			int cnt = styleCollection.Count;

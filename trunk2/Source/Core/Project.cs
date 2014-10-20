@@ -1,5 +1,5 @@
 /******************************************************************************
-  Copyright 2009-2013 dataweb GmbH
+  Copyright 2009-2014 dataweb GmbH
   This file is part of the NShape framework.
   NShape is free software: you can redistribute it and/or modify it under the 
   terms of the GNU General Public License as published by the Free Software 
@@ -1136,6 +1136,11 @@ namespace Dataweb.NShape {
 			initializingLibrary = library;
 			try {
 				InitializeLibrary(library);
+			} catch (System.Reflection.ReflectionTypeLoadException exc) {
+				DoRemoveLibrary(library);
+				if (exc.LoaderExceptions != null && exc.LoaderExceptions.Length > 0)
+					throw exc.LoaderExceptions[exc.LoaderExceptions.Length - 1];
+				else throw;
 			} catch (Exception exc) {
 				DoRemoveLibrary(library);
 				throw exc;
@@ -1334,8 +1339,8 @@ namespace Dataweb.NShape {
 					break;
 				}
 			}
-			// Update Toolcache and PreviewStyle
 			if (design != null) {
+				// Update Toolcache and PreviewStyle
 				if (changedStyle is CapStyle) {
 					DoNotifyStyleChanged(design.CapStyles, (CapStyle)changedStyle);
 					design.CapStyles.SetPreviewStyle((CapStyle)changedStyle, design.CreatePreviewStyle((ICapStyle)changedStyle));
@@ -1369,10 +1374,15 @@ namespace Dataweb.NShape {
 		}
 
 
-		private void DoNotifyStyleChanged<TStyle>(StyleCollection<TStyle> styleCollection, TStyle style) where TStyle : class, IStyle {
+		private void DoNotifyStyleChanged<TStyle, TStyleInterface>(StyleCollection<TStyle, TStyleInterface> styleCollection, TStyle style) 
+			where TStyle : class, TStyleInterface
+			where TStyleInterface : class, IStyle 
+		{
 			if (styleCollection == null) throw new ArgumentNullException("styleCollection");
 			if (style == null) throw new ArgumentNullException("style");
-			// create and set new PreviewStyle if the style is in the currently active design
+			// Maintain StyleCollection's name index in case the style was renamed
+			Debug.Assert(styleCollection.Contains(style) == styleCollection.Contains(style.Name));
+			// Create and set new PreviewStyle if the style is in the currently active design
 			if (styleCollection.ContainsPreviewStyle(style)) {
 				TStyle previewStyle = styleCollection.GetPreviewStyle(style);
 				Debug.Assert(previewStyle != null);
