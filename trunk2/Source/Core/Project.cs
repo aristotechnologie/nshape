@@ -1093,7 +1093,10 @@ namespace Dataweb.NShape {
 		/// Creates shape types for all mandatory framework shapes such as ShapeGroup.
 		/// </summary>
 		private IEnumerable<IEntityType> CreateCoreLibraryShapeEntityTypes(int version) {
-			foreach (ShapeType shapeType in CreateCoreLibraryShapeTypes()) {
+			// Do not use the ShapeType directly as this instance is not registered!
+			// Use its name for fetching the registered shape type from the ShapeTypes collection.
+			foreach (ShapeType st in CreateCoreLibraryShapeTypes()) {
+				ShapeType shapeType = ShapeTypes[st.FullName];
 				yield return new EntityType(shapeType.FullName, EntityCategory.Shape,
 					version, () => shapeType.CreateInstanceForLoading(), shapeType.GetPropertyDefinitions(version));
 			}

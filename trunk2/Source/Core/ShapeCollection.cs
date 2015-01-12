@@ -660,7 +660,7 @@ namespace Dataweb.NShape {
 			if (shapeDictionary.ContainsKey(shape)) throw new ArgumentException("The given shape is already part of the collection.");
 			int result = -1;
 			if (shapes.Count == 0 || index == shapes.Count || shape.ZOrder >= this.TopMost.ZOrder) {
-				if (shapes.Count > 0) Debug.Assert(shape.ZOrder >= shapes[shapes.Count - 1].ZOrder);
+				if (shapes.Count > 0) { Debug.Assert(shape.ZOrder >= shapes[shapes.Count - 1].ZOrder); }
 
 				// append shape
 				shapes.Add(shape);

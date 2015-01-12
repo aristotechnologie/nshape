@@ -196,7 +196,9 @@ namespace Dataweb.NShape.Advanced {
 		/// <override></override>
 		protected override void LoadFieldsCore(IRepositoryReader reader, int version) {
 			base.LoadFieldsCore(reader, version);
+			// Read Diameter and update the shape's points
 			diameter = reader.ReadFloat();
+			UpdateShapePoints();
 			VertexCount = reader.ReadInt32();
 		}
 
